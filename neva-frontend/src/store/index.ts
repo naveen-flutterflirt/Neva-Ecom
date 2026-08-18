@@ -8,6 +8,16 @@ export const store = configureStore({
     },
 });
 
+store.subscribe(() => {
+    if (typeof window !== 'undefined') {
+        try {
+            localStorage.setItem('neva-cart', JSON.stringify(store.getState().cart));
+        } catch (error) {
+            console.error('Failed to save cart to localStorage:', error);
+        }
+    }
+});
+
 export type RootState = ReturnType<typeof store.getState>;
 export type AppDispatch = typeof store.dispatch;
 

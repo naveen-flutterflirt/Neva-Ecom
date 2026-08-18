@@ -99,7 +99,7 @@ export default function QuickViewModal({ product, onClose, onAddToCart }: QuickV
                                         {Object.entries(product.specs).map(([key, val]) => (
                                             <div key={key} className="flex flex-col">
                                                 <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">{key}</span>
-                                                <span className="text-xs font-medium text-zinc-800 dark:text-zinc-200">{val}</span>
+                                            <span className="text-xs font-medium text-zinc-800 dark:text-zinc-200">{val}</span>
                                             </div>
                                         ))}
                                     </div>

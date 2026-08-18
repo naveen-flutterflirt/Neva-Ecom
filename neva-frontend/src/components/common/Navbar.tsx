@@ -1,100 +1,267 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { Search, ShoppingCart, User, Menu, X, Sun, Moon } from 'lucide-react';
+import {
+  Search,
+  ShoppingCart,
+  User,
+  Menu,
+  X,
+  Sun,
+  Moon,
+  ChevronDown,
+} from 'lucide-react';
 import { useAppSelector } from '../../store';
 import { useTheme } from '../providers/ThemeProvider';
 
 export default function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isProductsOpen, setIsProductsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+
   const { theme, toggleTheme } = useTheme();
+
   const cartItems = useAppSelector((state) => state.cart.items);
-  const totalCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
+  const totalCount = cartItems.reduce(
+    (acc, item) => acc + item.quantity,
+    0
+  );
+
+  const productsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);
     };
+
     window.addEventListener('scroll', handleScroll);
+
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  // Close mobile menu when clicking outside
+  useEffect(() => {
+    const handleOutsideClick = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+
+      if (
+        isMobileMenuOpen &&
+        !target.closest('[data-mobile-menu]') &&
+        !target.closest('[data-mobile-menu-button]')
+      ) {
+        setIsMobileMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleOutsideClick);
+
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideClick);
+    };
+  }, [isMobileMenuOpen]);
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen((prev) => !prev);
   };
+
+  // Only these two products appear inside the Products dropdown
+  const productCategories = [
+    {
+      label: 'PLA Products',
+      href: '/shop',
+    },
+    {
+      label: 'IoT Products',
+      href: '/categories',
+    },
+  ];
+
+  // These remain directly in the navbar
   const navLinks = [
-    { label: 'PLA Products', href: '/shop' },
-    { label: 'IoT Products', href: '/categories' },
-    { label: 'Custom Products', href: '/new-arrivals' },
-    { label: 'About', href: '/about' },
+    {
+      label: 'Custom Products',
+      href: '/new-arrivals',
+    },
+    {
+      label: 'About',
+      href: '/about',
+    },
   ];
 
   return (
-    <nav className={`fixed top-0 left-0 z-50 w-full transition-all duration-300 ${isScrolled
-      ? 'bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md border-b border-zinc-200/50 dark:border-zinc-800/50 shadow-lg'
-      : 'bg-transparent border-b border-transparent'
-      }`}>
-      {/* Added top margin spacer to prevent content shift when sticky */}
-      <div className="mx-auto flex max-w-7xl h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
+    <nav
+      className={`fixed top-0 left-0 z-50 w-full transition-all duration-300 ${
+        isScrolled
+          ? 'bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md border-b border-zinc-200/50 dark:border-zinc-800/50 shadow-lg'
+          : 'bg-transparent border-b border-transparent'
+      }`}
+    >
+      <div className="relative mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
 
-        <div className="flex flex-1 justify-start items-center">
-          <Link href="/" className="text-xl font-black tracking-widest text-zinc-900 dark:text-white hover:opacity-90">
+        {/* Logo */}
+        {/* Logo */}
+        <div className="flex min-w-0 flex-1 items-center justify-start">
+          <Link
+            href="/"
+            className="truncate text-[17px] font-black tracking-[0.12em] text-zinc-900 dark:text-white sm:text-xl sm:tracking-widest"
+          >
             NIVASHOP<span className="text-violet-400">.</span>IN
           </Link>
         </div>
 
-        <div className="hidden md:flex justify-center items-center gap-6">
+        {/* Desktop Navigation */}
+        <div className="absolute left-1/2 hidden -translate-x-1/2 items-center justify-center gap-6 md:flex">
+
+          {/* Products Dropdown */}
+          <div
+            ref={productsRef}
+            className="relative"
+            onMouseEnter={() => setIsProductsOpen(true)}
+            onMouseLeave={() => setIsProductsOpen(false)}
+          >
+            {/* Products Trigger */}
+            <div
+              className="flex cursor-default items-center gap-1 text-sm font-medium text-zinc-600 transition-colors hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white"
+              aria-haspopup="menu"
+            >
+              Products
+
+              <ChevronDown
+                className={`ml-0.5 h-3.5 w-3.5 stroke-[2.5] text-zinc-500 transition-transform duration-200 dark:text-zinc-400 ${
+                  isProductsOpen ? 'rotate-180' : ''
+                }`}
+              />
+            </div>
+
+            {/* Invisible Hover Bridge */}
+            <div className="absolute left-0 right-0 top-full h-3" />
+
+            {/* Products Dropdown */}
+            <div
+              className={`absolute left-1/2 top-full z-50 w-56 -translate-x-1/2 rounded-2xl border border-zinc-200/70 bg-white/95 p-2 shadow-[0_18px_45px_rgba(15,23,42,0.16)] backdrop-blur-md dark:border-zinc-800/80 dark:bg-zinc-950/95 transition-all duration-200 ${
+                isProductsOpen
+                  ? 'pointer-events-auto translate-y-3 opacity-100'
+                  : 'pointer-events-none translate-y-1 opacity-0'
+              }`}
+            >
+              {productCategories.map((item) => (
+                <Link
+                  key={item.label}
+                  href={item.href}
+                  className="block rounded-xl px-3 py-2.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-violet-50 hover:text-violet-700 dark:text-zinc-300 dark:hover:bg-zinc-900 dark:hover:text-violet-300"
+                >
+                  {item.label}
+                </Link>
+              ))}
+            </div>
+          </div>
+
+          {/* Custom Products + About */}
           {navLinks.map((link) => (
-            <Link key={link.label} href={link.href} className="text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors">
+            <Link
+              key={link.label}
+              href={link.href}
+              className="text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors"
+            >
               {link.label}
             </Link>
           ))}
         </div>
 
-        <div className="flex flex-1 justify-end items-center gap-2">
+        {/* Right Side Actions */}
+        {/* Right Side Actions */}
+        <div className="flex shrink-0 items-center justify-end gap-0.5 sm:gap-2">
+
+          {/* Theme Toggle */}
           <button
             onClick={toggleTheme}
-            className="p-2 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors"
+            className="shrink-0 p-1.5 text-zinc-600 transition-colors hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white sm:p-2"
             aria-label="Toggle Theme"
           >
-            {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+            {theme === 'dark' ? (
+              <Sun className="h-[18px] w-[18px] sm:h-5 sm:w-5" />
+            ) : (
+              <Moon className="h-[18px] w-[18px] sm:h-5 sm:w-5" />
+            )}
           </button>
 
-          <button className="p-2 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors" aria-label="Search">
-            <Search className="w-5 h-5" />
+          {/* Search */}
+          <button
+            className="shrink-0 p-1.5 text-zinc-600 transition-colors hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white sm:p-2"
+            aria-label="Search"
+          >
+            <Search className="h-[18px] w-[18px] sm:h-5 sm:w-5" />
           </button>
 
-          <Link href="/cart" className="relative p-2 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors" aria-label="Shopping Cart">
-            <ShoppingCart className="w-5 h-5" />
+          {/* Cart */}
+          <Link
+            href="/cart"
+            className="relative shrink-0 p-1.5 text-zinc-600 transition-colors hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white sm:p-2"
+            aria-label="Shopping Cart"
+          >
+            <ShoppingCart className="h-[18px] w-[18px] sm:h-5 sm:w-5" />
+
             {totalCount > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-violet-600 text-[9px] font-bold text-white shadow-[0_0_8px_rgba(124,58,237,0.6)]">
+              <span className="absolute -right-0.5 -top-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-violet-600 text-[8px] font-bold text-white shadow-[0_0_8px_rgba(124,58,237,0.6)] sm:h-4 sm:w-4 sm:text-[9px]">
                 {totalCount}
               </span>
             )}
           </Link>
 
-          <Link href="/login" className="hidden md:block p-2 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors" aria-label="Profile">
-            <User className="w-5 h-5" />
+          {/* Login - Desktop Only */}
+          <Link
+            href="/login"
+            className="hidden shrink-0 p-2 text-zinc-600 transition-colors hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white md:block"
+            aria-label="Login"
+          >
+            <User className="h-5 w-5" />
           </Link>
 
+          {/* Mobile Menu Button */}
           <button
+            data-mobile-menu-button
             onClick={toggleMobileMenu}
-            className="p-2 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white md:hidden transition-colors"
+            className="ml-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-zinc-600 transition-colors hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-white sm:ml-1 sm:h-10 sm:w-10 md:hidden"
             aria-label="Toggle Menu"
+            aria-expanded={isMobileMenuOpen}
           >
             {isMobileMenuOpen ? (
-              <X className="w-6 h-6" />
+              <X className="h-5 w-5 sm:h-6 sm:w-6" />
             ) : (
-              <Menu className="w-6 h-6" />
+              <Menu className="h-5 w-5 sm:h-6 sm:w-6" />
             )}
           </button>
+
         </div>
       </div>
 
+      {/* Mobile Menu */}
       {isMobileMenuOpen && (
-        <div className="md:hidden border-t border-zinc-200 dark:border-zinc-900 bg-white dark:bg-zinc-950 px-4 py-4 space-y-3 shadow-inner transition-all duration-200">
+        <div
+          data-mobile-menu
+          className="md:hidden border-t border-zinc-200 dark:border-zinc-900 bg-white dark:bg-zinc-950 px-4 py-4 space-y-3 shadow-inner transition-all duration-200"
+        >
+
+          {/* Mobile Products */}
+          <div className="space-y-2 border-b border-zinc-100 pb-2 dark:border-zinc-900/50">
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">
+              Products
+            </p>
+
+            {productCategories.map((link) => (
+              <Link
+                key={link.label}
+                href={link.href}
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="block text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white py-1.5"
+              >
+                {link.label}
+              </Link>
+            ))}
+          </div>
+
+          {/* Custom Products + About */}
           {navLinks.map((link) => (
             <Link
               key={link.label}
@@ -106,8 +273,9 @@ export default function Navbar() {
             </Link>
           ))}
 
+          {/* Profile */}
           <Link
-            href="/"
+            href="/login"
             onClick={() => setIsMobileMenuOpen(false)}
             className="block text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white py-1.5 border-b border-zinc-100 dark:border-zinc-900/50"
           >
@@ -118,4 +286,3 @@ export default function Navbar() {
     </nav>
   );
 }
-

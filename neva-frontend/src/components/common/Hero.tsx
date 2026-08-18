@@ -23,7 +23,7 @@ export default function Hero() {
     };
 
     return (
-        <div className="relative flex w-full flex-col items-center overflow-hidden bg-transparent pb-0 pt-16 lg:pb-12 text-zinc-950 dark:text-white">
+        <div className="relative flex w-full flex-col items-center overflow-hidden bg-transparent pb-0 pt-8 lg:pb-12 lg:pt-10 text-zinc-950 dark:text-white">
 
             {/* Promo Banner Carousel overlay */}
             <PromoBanner />
@@ -46,7 +46,7 @@ export default function Hero() {
             />
 
             {/* Main Grid Section */}
-            <div className="relative z-10 mx-auto grid w-full max-w-7xl grid-cols-1 items-center gap-12 px-4 pb-6 pt-8 sm:px-6 lg:grid-cols-12 lg:gap-10 lg:px-8 lg:pb-20 lg:pt-12">
+            <div className="relative z-10 mx-auto grid w-full max-w-7xl grid-cols-1 items-center gap-12 px-4 pb-6 pt-1 sm:px-6 lg:grid-cols-12 lg:gap-10 lg:px-8 lg:pb-20 lg:pt-2">
 
                 {/* LEFT COLUMN: Animated Headers and CTAs */}
                 <div className="relative z-20 flex flex-col items-center text-center lg:col-span-7 lg:items-start lg:text-left">
