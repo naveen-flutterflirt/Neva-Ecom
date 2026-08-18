@@ -5,7 +5,6 @@ import { ArrowRight, Cpu, Layers, Box } from 'lucide-react';
 import { motion } from 'framer-motion';
 import PromoBanner from './PromoBanner';
 import HeroTitle from './HeroTitle';
-import BreakoutImages from './BreakoutImages';
 
 export default function Hero() {
     const contentVariants = {
@@ -24,7 +23,7 @@ export default function Hero() {
     };
 
     return (
-        <div className="relative flex w-full flex-col items-center overflow-hidden bg-transparent pb-12 pt-16 text-zinc-950 dark:text-white">
+        <div className="relative flex w-full flex-col items-center overflow-hidden bg-transparent pb-0 pt-16 lg:pb-12 text-zinc-950 dark:text-white">
 
             {/* Promo Banner Carousel overlay */}
             <PromoBanner />
@@ -47,10 +46,10 @@ export default function Hero() {
             />
 
             {/* Main Grid Section */}
-            <div className="relative z-10 mx-auto grid w-full max-w-7xl grid-cols-1 items-center gap-12 px-4 pb-16 pt-8 sm:px-6 lg:grid-cols-12 lg:gap-10 lg:px-8 lg:pb-20 lg:pt-12">
+            <div className="relative z-10 mx-auto grid w-full max-w-7xl grid-cols-1 items-center gap-12 px-4 pb-6 pt-8 sm:px-6 lg:grid-cols-12 lg:gap-10 lg:px-8 lg:pb-20 lg:pt-12">
 
                 {/* LEFT COLUMN: Animated Headers and CTAs */}
-                <div className="flex flex-col items-center text-center lg:col-span-7 lg:items-start lg:text-left">
+                <div className="relative z-20 flex flex-col items-center text-center lg:col-span-7 lg:items-start lg:text-left">
 
                     {/* Category Pill Badges */}
                     <div className="flex flex-wrap gap-3 justify-center lg:justify-start">
@@ -147,8 +146,22 @@ export default function Hero() {
                     </motion.div>
                 </div>
 
-                {/* RIGHT COLUMN: Layered Floating Breakout Cards */}
-                <BreakoutImages />
+                {/* RIGHT COLUMN: Hero Video Player */}
+                <motion.div
+                    className="absolute inset-0 w-full h-full lg:relative lg:col-span-5 lg:flex lg:items-center lg:justify-center mt-0 lg:mt-0 z-0 lg:z-10"
+                >
+                    <div className="relative overflow-hidden w-full h-full lg:max-w-[640px] lg:h-[580px]">
+                        <video
+                            src="/yeti_dada.webm"
+                            autoPlay
+                            muted
+                            playsInline
+                            className="h-full w-full object-contain object-top transform -translate-y-8 lg:translate-y-0 lg:object-cover lg:object-center"
+                        />
+                        {/* Mobile backdrop blur overlay */}
+                        <div className="absolute inset-0 bg-white/30 dark:bg-zinc-950/85 backdrop-blur-[1px] lg:hidden pointer-events-none" />
+                    </div>
+                </motion.div>
             </div>
         </div>
     );

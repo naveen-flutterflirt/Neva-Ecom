@@ -5,9 +5,10 @@ const app = express();
 const PORT = config.port;
 app.use(express.json());
 
-app.get('/health', (req, res) => {
-  res.json({ status: 'ok', message: 'Neva Backend API is running' });
-});
+const authRoutes = require('./routes/authRoutes');
+
+
+app.use('/api/auth', authRoutes);
 
 const startServer = async () => {
   try {
