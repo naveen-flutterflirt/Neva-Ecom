@@ -19,7 +19,7 @@ export default function PromoBanner() {
     }, []);
 
     return (
-        <div className="z-20 mt-6 w-full py-2.5 text-center text-xs font-semibold tracking-wide text-zinc-300 backdrop-blur-md">
+        <div className="z-20 mt-6 w-full py-2.5 text-center text-xs font-semibold tracking-wide text-black dark:text-zinc-300 backdrop-blur-md">
             <span className="inline-flex items-center gap-0">
                 <motion.span
                     animate={{ rotate: [0, 15, -15, 0], scale: [1, 1.15, 1] }}

@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import Button from '../../components/ui/Button';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -391,34 +392,29 @@ export default function LoginPage() {
                   type="submit"
                   style={{ cursor: 'pointer' }}
                   className="
-                    w-full
-                    rounded-xl
-                    bg-gradient-to-r
-                    from-violet-500
-                    via-cyan-500
-                    to-indigo-500
-                    px-3
-                    py-2.5
-                    text-xs
-                    font-bold
-                    uppercase
-                    tracking-[0.16em]
-                    text-white
-                    shadow-[0_0_30px_rgba(168,85,247,0.28)]
-                    transition-all
-                    duration-200
-                    hover:-translate-y-0.5
-                    hover:shadow-[0_0_40px_rgba(34,211,238,0.35)]
-                    hover:brightness-110
-                    dark:shadow-[0_0_30px_rgba(34,211,238,0.35)]
-                    sm:rounded-2xl
-                    sm:px-4
-                    sm:py-3
-                    sm:text-sm
-                    sm:tracking-[0.2em]
-                    max-[320px]:py-2
-                    max-[320px]:text-[10px]
-                  "
+  w-full
+  rounded-xl
+  bg-violet-600
+  hover:bg-violet-500
+  px-3
+  py-2.5
+  text-xs
+  font-bold
+  uppercase
+  tracking-[0.16em]
+  text-white
+  shadow-lg
+  shadow-violet-600/10
+  transition-all
+  duration-200
+  sm:rounded-2xl
+  sm:px-4
+  sm:py-3
+  sm:text-sm
+  sm:tracking-[0.2em]
+  max-[320px]:py-2
+  max-[320px]:text-[10px]
+"
                 >
                   Login
                 </button>

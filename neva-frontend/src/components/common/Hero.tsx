@@ -78,14 +78,14 @@ export default function Hero() {
 
                     {/* Sub description */}
                     <motion.p
-                        initial="hidden"
-                        animate="visible"
-                        custom={0}
-                        variants={contentVariants}
-                        className="mt-6 max-w-lg text-base font-medium leading-relaxed text-zinc-600 dark:text-zinc-400 sm:text-lg"
-                    >
-                        NIVASHOP is the ultimate launchpad for creators. Get top-grade 3D filaments and smart microcontrollers. Built for developers, hackers, and makers.
-                    </motion.p>
+    initial="hidden"
+    animate="visible"
+    custom={0}
+    variants={contentVariants}
+    className="mt-6 max-w-lg text-base font-medium leading-relaxed text-zinc-950 drop-shadow-[0_1px_2px_rgba(255,255,255,0.8)] dark:text-zinc-400 dark:drop-shadow-none sm:text-lg"
+>
+    NIVASHOP is the ultimate launchpad for creators. Get top-grade 3D filaments and smart microcontrollers. Built for developers, hackers, and makers.
+</motion.p>
 
                     {/* Bullet Info Pills */}
                     <motion.div
@@ -139,8 +139,7 @@ export default function Hero() {
                             href="/shop?category=iot"
                             whileHover={{ y: -3, scale: 1.02, backgroundColor: 'rgba(39,39,42,0.85)' }}
                             whileTap={{ scale: 0.97 }}
-                            className="flex w-full items-center justify-center rounded-xl border border-zinc-300 dark:border-zinc-700 bg-zinc-100/60 dark:bg-zinc-900/60 px-8 py-4 text-sm font-bold text-zinc-700 dark:text-zinc-300 backdrop-blur-sm transition-colors sm:w-auto"
-                        >
+                            className="flex w-full items-center justify-center rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900/60 px-8 py-4 text-sm font-bold text-black dark:text-zinc-300 backdrop-blur-sm transition-colors hover:bg-white hover:text-white dark:hover:bg-zinc-900/60 sm:w-auto">
                             Shop IoT Products
                         </motion.a>
                     </motion.div>

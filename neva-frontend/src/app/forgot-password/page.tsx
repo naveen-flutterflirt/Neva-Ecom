@@ -1,6 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import Button from '../../components/ui/Button';
 
 export default function ForgotPasswordPage() {
   const router = useRouter();
@@ -191,34 +192,20 @@ export default function ForgotPasswordPage() {
                 <div className="flex items-center gap-3 pt-2">
 
                   {/* SEND OTP */}
-                  <button
+                  <Button
                     type="submit"
                     style={{ cursor: 'pointer' }}
                     className="
-                      flex-1
-                      rounded-2xl
-                      bg-gradient-to-r
-                      from-violet-500
-                      via-cyan-500
-                      to-indigo-500
-                      px-4
-                      py-3
-                      text-sm
-                      font-bold
-                      uppercase
-                      tracking-[0.12em]
-                      text-white
-                      shadow-[0_0_30px_rgba(168,85,247,0.28)]
-                      transition-all
-                      duration-200
-                      hover:-translate-y-0.5
-                      hover:shadow-[0_0_40px_rgba(34,211,238,0.35)]
-                      hover:brightness-110
-                      dark:shadow-[0_0_30px_rgba(168,85,247,0.35)]
-                    "
-                  >
+    flex-1
+    rounded-2xl
+    px-4
+    py-3
+    uppercase
+    tracking-[0.12em]
+  "
+>
                     Send OTP
-                  </button>
+                  </Button>
 
                   {/* BACK */}
                   <button
@@ -235,15 +222,8 @@ export default function ForgotPasswordPage() {
                       text-sm
                       font-semibold
                       text-zinc-700
-                      transition-all
-                      duration-200
-                      hover:border-cyan-400
-                      hover:text-cyan-600
-                      dark:border-zinc-700
-                      dark:bg-zinc-800/80
-                      dark:text-zinc-200
-                      dark:hover:border-cyan-400
-                      dark:hover:text-cyan-200
+                      
+                      
                     "
                   >
                     Back

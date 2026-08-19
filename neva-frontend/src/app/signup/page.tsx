@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Button from '../../components/ui/Button';
 
 export default function SignupPage() {
   const router = useRouter();
@@ -408,24 +409,18 @@ export default function SignupPage() {
                   type="submit"
                   style={{ cursor: 'pointer' }}
                   className="
-                    mt-1 w-full rounded-2xl
-                    bg-gradient-to-r
-                    from-cyan-500
-                    via-violet-500
-                    to-indigo-500
-                    px-4 py-3
-                    text-sm font-bold
-                    uppercase
-                    tracking-[0.2em]
-                    text-white
-                    shadow-[0_0_30px_rgba(34,211,238,0.28)]
-                    transition-all duration-200
-                    hover:-translate-y-0.5
-                    hover:scale-[1.01]
-                    hover:shadow-[0_0_40px_rgba(96,165,250,0.45)]
-                    hover:brightness-110
-                    dark:shadow-[0_0_30px_rgba(34,211,238,0.35)]
-                  "
+  mt-1 w-full rounded-2xl
+  bg-violet-600
+  hover:bg-violet-500
+  px-4 py-3
+  text-sm font-bold
+  uppercase
+  tracking-[0.2em]
+  text-white
+  shadow-lg
+  shadow-violet-600/10
+  
+"
                 >
                   Create Account
                 </button>
