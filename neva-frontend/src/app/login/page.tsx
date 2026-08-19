@@ -86,12 +86,21 @@ export default function LoginPage() {
                   Welcome back
                 </div>
 
-                <h1 className="text-4xl font-black tracking-tight text-zinc-900 dark:text-white">
+                <h1 className="text-3xl font-black tracking-tight text-zinc-900 dark:text-white">
                   Power your next build.
                 </h1>
-              </div>
+              <div className="mt-4 w-full overflow-hidden rounded-2xl">
+    <video
+        src="/yeti_idle.webm"
+        autoPlay
+        muted
+        loop
+        playsInline
+        className="h-[380px] w-full scale-130 object-contain"
+    />
+</div>
 
-              <div className="relative z-10 space-y-4 text-sm text-zinc-600 dark:text-zinc-300">
+              {/* <div className="relative z-10 space-y-4 text-sm text-zinc-600 dark:text-zinc-300">
 
                 <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-700/80 dark:bg-zinc-900/70">
                   <p className="text-[10px] uppercase tracking-[0.24em] text-violet-600 dark:text-violet-300">
@@ -111,7 +120,7 @@ export default function LoginPage() {
                   <p className="mt-2 font-medium text-zinc-700 dark:text-zinc-100">
                     Get real-time help for IoT devices and 3D printing projects.
                   </p>
-                </div>
+                </div> */}
 
               </div>
             </div>
@@ -388,36 +397,21 @@ export default function LoginPage() {
                 </div>
 
                 {/* LOGIN BUTTON */}
-                <button
+                <Button
                   type="submit"
                   style={{ cursor: 'pointer' }}
                   className="
-  w-full
-  rounded-xl
-  bg-violet-600
-  hover:bg-violet-500
-  px-3
-  py-2.5
-  text-xs
-  font-bold
-  uppercase
-  tracking-[0.16em]
-  text-white
-  shadow-lg
-  shadow-violet-600/10
-  transition-all
-  duration-200
-  sm:rounded-2xl
-  sm:px-4
-  sm:py-3
-  sm:text-sm
-  sm:tracking-[0.2em]
-  max-[320px]:py-2
-  max-[320px]:text-[10px]
-"
+    w-full
+    text-xs
+    uppercase
+    tracking-[0.16em]
+    sm:text-sm
+    sm:tracking-[0.2em]
+    max-[320px]:text-[10px]
+  "
                 >
                   Login
-                </button>
+                </Button>
 
               </form>
 

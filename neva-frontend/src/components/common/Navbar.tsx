@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import {
   Search,
   ShoppingCart,
@@ -16,6 +17,8 @@ import { useAppSelector } from '../../store';
 import { useTheme } from '../providers/ThemeProvider';
 
 export default function Navbar() {
+  const pathname = usePathname();
+
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProductsOpen, setIsProductsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -81,13 +84,21 @@ export default function Navbar() {
   const navLinks = [
     {
       label: 'Custom Products',
-      href: '/new-arrivals',
+      href: '/new-custom',
     },
     {
       label: 'About',
       href: '/about',
     },
   ];
+
+  // Check whether a navbar link is currently active
+  const isActive = (href: string) => pathname === href;
+
+  // Products is active when user is inside either product category
+  const isProductsActive = productCategories.some(
+    (item) => pathname === item.href
+  );
 
   return (
     <nav
@@ -99,7 +110,6 @@ export default function Navbar() {
     >
       <div className="relative mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
 
-        {/* Logo */}
         {/* Logo */}
         <div className="flex min-w-0 flex-1 items-center justify-start">
           <Link
@@ -122,13 +132,21 @@ export default function Navbar() {
           >
             {/* Products Trigger */}
             <div
-              className="flex cursor-default items-center gap-1 text-sm font-medium text-zinc-600 transition-colors hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white"
+              className={`flex cursor-default items-center gap-1 text-sm font-medium transition-colors ${
+                isProductsActive
+                  ? 'text-white'
+                  : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white'
+              }`}
               aria-haspopup="menu"
             >
               Products
 
               <ChevronDown
-                className={`ml-0.5 h-3.5 w-3.5 stroke-[2.5] text-zinc-500 transition-transform duration-200 dark:text-zinc-400 ${
+                className={`ml-0.5 h-3.5 w-3.5 stroke-[2.5] transition-transform duration-200 ${
+                  isProductsActive
+                    ? 'text-white'
+                    : 'text-zinc-500 dark:text-zinc-400'
+                } ${
                   isProductsOpen ? 'rotate-180' : ''
                 }`}
               />
@@ -149,7 +167,11 @@ export default function Navbar() {
                 <Link
                   key={item.label}
                   href={item.href}
-                  className="block rounded-xl px-3 py-2.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-violet-50 hover:text-violet-700 dark:text-zinc-300 dark:hover:bg-zinc-900 dark:hover:text-violet-300"
+                  className={`block rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
+                    isActive(item.href)
+                      ? 'bg-violet-50 text-violet-700 dark:bg-zinc-900 dark:text-violet-300'
+                      : 'text-zinc-700 hover:bg-violet-50 hover:text-violet-700 dark:text-zinc-300 dark:hover:bg-zinc-900 dark:hover:text-violet-300'
+                  }`}
                 >
                   {item.label}
                 </Link>
@@ -162,14 +184,17 @@ export default function Navbar() {
             <Link
               key={link.label}
               href={link.href}
-              className="text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors"
+              className={`text-sm font-medium transition-colors ${
+                isActive(link.href)
+                  ? 'text-white'
+                  : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white'
+              }`}
             >
               {link.label}
             </Link>
           ))}
         </div>
 
-        {/* Right Side Actions */}
         {/* Right Side Actions */}
         <div className="flex shrink-0 items-center justify-end gap-0.5 sm:gap-2">
 
@@ -254,7 +279,11 @@ export default function Navbar() {
                 key={link.label}
                 href={link.href}
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="block text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white py-1.5"
+                className={`block text-sm font-medium py-1.5 transition-colors ${
+                  isActive(link.href)
+                    ? 'text-white'
+                    : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white'
+                }`}
               >
                 {link.label}
               </Link>
@@ -267,7 +296,11 @@ export default function Navbar() {
               key={link.label}
               href={link.href}
               onClick={() => setIsMobileMenuOpen(false)}
-              className="block text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white py-1.5 border-b border-zinc-100 dark:border-zinc-900/50"
+              className={`block text-sm font-medium py-1.5 border-b border-zinc-100 dark:border-zinc-900/50 transition-colors ${
+                isActive(link.href)
+                  ? 'text-white'
+                  : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white'
+              }`}
             >
               {link.label}
             </Link>

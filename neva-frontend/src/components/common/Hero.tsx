@@ -1,12 +1,17 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { ArrowRight, Cpu, Layers, Box } from 'lucide-react';
 import { motion } from 'framer-motion';
 import PromoBanner from './PromoBanner';
 import HeroTitle from './HeroTitle';
 
 export default function Hero() {
+    const heroVideoClassName = 'h-full w-full object-contain object-top transform -translate-y-8 lg:translate-y-0 lg:object-cover lg:object-center';
+
+    const introVideoRef = useRef<HTMLVideoElement>(null);
+    const idleVideoRef = useRef<HTMLVideoElement>(null);
+
     const contentVariants = {
         hidden: { opacity: 0, y: 30, filter: 'blur(12px)', scale: 0.96 },
         visible: (customDelay: number) => ({
@@ -16,11 +21,51 @@ export default function Hero() {
             scale: 1,
             transition: {
                 duration: 0.9,
-                delay: 0.5 + customDelay, // Fast entry overlapping the title animation
+                delay: 0.5 + customDelay,
                 ease: [0.22, 1, 0.36, 1] as [number, number, number, number],
             },
         }),
     };
+
+    useEffect(() => {
+        const introVideo = introVideoRef.current;
+        const idleVideo = idleVideoRef.current;
+
+        if (!introVideo || !idleVideo) return;
+
+        let transitionStarted = false;
+
+        const handleTimeUpdate = () => {
+            if (
+                introVideo.duration &&
+                introVideo.currentTime >= introVideo.duration - 0.8 &&
+                !transitionStarted
+            ) {
+                transitionStarted = true;
+
+                // Start the second video before the first one ends
+                idleVideo.currentTime = 0;
+
+                void idleVideo.play();
+
+                // Smoothly bring the second video forward
+                idleVideo.style.opacity = '1';
+                introVideo.style.opacity = '0';
+            }
+        };
+
+        const handleEnded = () => {
+            introVideo.style.display = 'none';
+        };
+
+        introVideo.addEventListener('timeupdate', handleTimeUpdate);
+        introVideo.addEventListener('ended', handleEnded);
+
+        return () => {
+            introVideo.removeEventListener('timeupdate', handleTimeUpdate);
+            introVideo.removeEventListener('ended', handleEnded);
+        };
+    }, []);
 
     return (
         <div className="relative flex w-full flex-col items-center overflow-hidden bg-transparent pb-0 pt-8 lg:pb-12 lg:pt-10 text-zinc-950 dark:text-white">
@@ -62,6 +107,7 @@ export default function Hero() {
                             <Box className="h-3.5 w-3.5 text-violet-400" />
                             3D Printing
                         </motion.div>
+
                         <motion.div
                             initial={{ opacity: 0, y: 20, scale: 0.88 }}
                             animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -78,14 +124,14 @@ export default function Hero() {
 
                     {/* Sub description */}
                     <motion.p
-    initial="hidden"
-    animate="visible"
-    custom={0}
-    variants={contentVariants}
-    className="mt-6 max-w-lg text-base font-medium leading-relaxed text-zinc-950 drop-shadow-[0_1px_2px_rgba(255,255,255,0.8)] dark:text-zinc-400 dark:drop-shadow-none sm:text-lg"
->
-    NIVASHOP is the ultimate launchpad for creators. Get top-grade 3D filaments and smart microcontrollers. Built for developers, hackers, and makers.
-</motion.p>
+                        initial="hidden"
+                        animate="visible"
+                        custom={0}
+                        variants={contentVariants}
+                        className="mt-6 max-w-lg text-base font-medium leading-relaxed text-zinc-950 drop-shadow-[0_1px_2px_rgba(255,255,255,0.8)] dark:text-zinc-400 dark:drop-shadow-none sm:text-lg"
+                    >
+                        NIVASHOP is the ultimate launchpad for creators. Get top-grade 3D filaments and smart microcontrollers. Built for developers, hackers, and makers.
+                    </motion.p>
 
                     {/* Bullet Info Pills */}
                     <motion.div
@@ -102,6 +148,7 @@ export default function Hero() {
                             <Layers className="h-3.5 w-3.5 text-violet-400" />
                             Eco PLA Filaments
                         </motion.span>
+
                         <motion.span
                             whileHover={{ y: -3, scale: 1.04 }}
                             className="flex cursor-default items-center gap-1.5 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-100/60 dark:bg-zinc-900/60 px-3 py-1.5 text-xs font-semibold text-zinc-700 dark:text-zinc-300 backdrop-blur-sm"
@@ -109,6 +156,7 @@ export default function Hero() {
                             <Cpu className="h-3.5 w-3.5 text-pink-400" />
                             Dev-Ready IoT
                         </motion.span>
+
                         <motion.span
                             whileHover={{ y: -3, scale: 1.04 }}
                             className="flex cursor-default items-center gap-1.5 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-100/60 dark:bg-zinc-900/60 px-3 py-1.5 text-xs font-semibold text-zinc-700 dark:text-zinc-300 backdrop-blur-sm"
@@ -135,11 +183,13 @@ export default function Hero() {
                             Shop PLA Products
                             <ArrowRight className="h-4 w-4" />
                         </motion.a>
+
                         <motion.a
                             href="/shop?category=iot"
                             whileHover={{ y: -3, scale: 1.02, backgroundColor: 'rgba(39,39,42,0.85)' }}
                             whileTap={{ scale: 0.97 }}
-                            className="flex w-full items-center justify-center rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900/60 px-8 py-4 text-sm font-bold text-black dark:text-zinc-300 backdrop-blur-sm transition-colors hover:bg-white hover:text-white dark:hover:bg-zinc-900/60 sm:w-auto">
+                            className="flex w-full items-center justify-center rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900/60 px-8 py-4 text-sm font-bold text-black dark:text-zinc-300 backdrop-blur-sm transition-colors hover:bg-white hover:text-white dark:hover:bg-zinc-900/60 sm:w-auto"
+                        >
                             Shop IoT Products
                         </motion.a>
                     </motion.div>
@@ -150,15 +200,31 @@ export default function Hero() {
                     className="absolute inset-0 w-full h-full lg:relative lg:col-span-5 lg:flex lg:items-center lg:justify-center mt-0 lg:mt-0 z-0 lg:z-10"
                 >
                     <div className="relative overflow-hidden w-full h-full lg:max-w-[640px] lg:h-[580px]">
+
+                        {/* FIRST VIDEO */}
                         <video
+                            ref={introVideoRef}
                             src="/yeti_dada.webm"
                             autoPlay
                             muted
                             playsInline
-                            className="h-full w-full object-contain object-top transform -translate-y-8 lg:translate-y-0 lg:object-cover lg:object-center"
+                            preload="auto"
+                            className={`${heroVideoClassName} absolute inset-0 z-10 transition-opacity duration-500`}
                         />
+
+                        {/* SECOND VIDEO */}
+                        {/* <video
+                            ref={idleVideoRef}
+                            src="/yeti_idle.webm"
+                            muted
+                            loop
+                            playsInline
+                            preload="auto"
+                            className={`${heroVideoClassName} absolute inset-0 z-0 opacity-0 transition-opacity duration-500`}
+                        /> */}
+
                         {/* Mobile backdrop blur overlay */}
-                        <div className="absolute inset-0 bg-white/30 dark:bg-zinc-950/85 backdrop-blur-[1px] lg:hidden pointer-events-none" />
+                        <div className="absolute inset-0 z-20 bg-white/30 dark:bg-zinc-950/85 backdrop-blur-[1px] lg:hidden pointer-events-none" />
                     </div>
                 </motion.div>
             </div>

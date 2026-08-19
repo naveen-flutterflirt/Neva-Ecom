@@ -34,20 +34,10 @@ export default function ProductCard({ product, onQuickShop, onQuickView, onAddTo
                 <img
                     src={product.image}
                     alt={product.name}
-                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    onClick={() => onQuickView(product)}
+                    className="h-full w-full cursor-pointer object-cover  group-hover:scale-105"
                     loading="lazy"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-zinc-100/80 dark:from-zinc-950/80 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100 flex items-end justify-center pb-6">
-                    <div className="flex gap-2.5">
-                        <button
-                            onClick={() => onQuickView(product)}
-                            className="flex h-10 w-10 items-center justify-center rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white shadow-lg hover:scale-110 active:scale-95 transition-all duration-200"
-                            title="Quick View Details"
-                        >
-                            <Eye className="h-4 w-4" />
-                        </button>
-                    </div>
-                </div>
             </div>
 
             {/* Details Content */}

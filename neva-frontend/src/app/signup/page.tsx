@@ -89,34 +89,23 @@ export default function SignupPage() {
                   Join neva
                 </div>
 
-                <h1 className="text-4xl font-black tracking-tight text-zinc-900 dark:text-white">
+                <h1 className="text-3xl font-black tracking-tight text-zinc-900 dark:text-white">
                   Create your account.
                 </h1>
-              </div>
-
-              <div className="relative z-10 space-y-4 text-sm text-zinc-600 dark:text-zinc-300">
-
-                <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-700/80 dark:bg-zinc-900/70">
-                  <p className="text-[10px] uppercase tracking-[0.24em] text-violet-600 dark:text-violet-300">
-                    Exclusive access
-                  </p>
-
-                  <p className="mt-2 font-medium text-zinc-700 dark:text-zinc-100">
-                    Unlock custom order pricing, early drops, and special updates.
-                  </p>
-                </div>
-
-                <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-700/80 dark:bg-zinc-900/70">
-                  <p className="text-[10px] uppercase tracking-[0.24em] text-cyan-600 dark:text-cyan-300">
-                    Built for makers
-                  </p>
-
-                  <p className="mt-2 font-medium text-zinc-700 dark:text-zinc-100">
-                    Track projects, save favourites, and manage your filament needs.
-                  </p>
-                </div>
+               <div className="mt-4 w-full overflow-hidden rounded-2xl">
+    <video
+        src="/yeti_idle.webm"
+        autoPlay
+        muted
+        loop
+        playsInline
+        className="h-[380px] w-full scale-130 object-contain"
+    />
+</div>
 
               </div>
+
+              
             </div>
 
             {/* RIGHT SECTION */}
@@ -405,25 +394,19 @@ export default function SignupPage() {
                 </div>
 
                 {/* CREATE ACCOUNT */}
-                <button
+                <Button
                   type="submit"
                   style={{ cursor: 'pointer' }}
                   className="
-  mt-1 w-full rounded-2xl
-  bg-violet-600
-  hover:bg-violet-500
-  px-4 py-3
-  text-sm font-bold
-  uppercase
-  tracking-[0.2em]
-  text-white
-  shadow-lg
-  shadow-violet-600/10
-  
-"
+    mt-1
+    w-full
+    text-sm
+    uppercase
+    tracking-[0.2em]
+  "
                 >
                   Create Account
-                </button>
+                </Button>
 
               </form>
 

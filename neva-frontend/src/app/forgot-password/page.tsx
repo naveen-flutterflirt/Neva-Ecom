@@ -9,30 +9,28 @@ export default function ForgotPasswordPage() {
   return (
     <main
       className="
-        min-h-screen
-        overflow-y-auto
+        h-screen
+        overflow-hidden
         bg-[radial-gradient(circle_at_top,_rgba(168,85,247,0.12),transparent_30%),radial-gradient(circle_at_bottom_right,_rgba(34,211,238,0.12),transparent_25%),linear-gradient(180deg,#f8fafc,#eef2ff_35%,#f8fafc)]
         px-4
-        pb-8
+        pb-0
         pt-20
         text-zinc-900
         dark:bg-[radial-gradient(circle_at_top,_rgba(168,85,247,0.16),transparent_30%),radial-gradient(circle_at_bottom_right,_rgba(34,211,238,0.14),transparent_25%),linear-gradient(180deg,#020817,#0b1120_35%,#020817)]
         dark:text-white
-        md:h-screen
-        md:overflow-hidden
-        md:pb-0
-        md:pt-0
       "
     >
       <div
         className="
           flex
-          min-h-[calc(100vh-5rem)]
+          h-[calc(100vh-5rem)]
           w-full
           items-start
           justify-center
           pt-4
           sm:pt-6
+          sm:h-[calc(100vh-5rem)]
+          sm:items-center
           md:h-screen
           md:min-h-0
           md:items-center
@@ -196,14 +194,14 @@ export default function ForgotPasswordPage() {
                     type="submit"
                     style={{ cursor: 'pointer' }}
                     className="
-    flex-1
-    rounded-2xl
-    px-4
-    py-3
-    uppercase
-    tracking-[0.12em]
-  "
->
+                      flex-1
+                      rounded-2xl
+                      px-4
+                      py-3
+                      uppercase
+                      tracking-[0.12em]
+                    "
+                  >
                     Send OTP
                   </Button>
 
@@ -222,8 +220,6 @@ export default function ForgotPasswordPage() {
                       text-sm
                       font-semibold
                       text-zinc-700
-                      
-                      
                     "
                   >
                     Back

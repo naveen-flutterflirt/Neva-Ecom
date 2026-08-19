@@ -21,8 +21,8 @@ export default function Button({
         justify-center
         gap-2
         rounded-xl
-        bg-violet-600
-        hover:bg-violet-500
+        bg-[linear-gradient(90deg,#2E3192_0%,#1BFFFF_100%)]
+        hover:bg-[linear-gradient(90deg,#252879_0%,#16DCDC_100%)]
         active:scale-95
         text-white
         font-bold
