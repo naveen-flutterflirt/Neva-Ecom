@@ -18,7 +18,6 @@ import { useTheme } from '../providers/ThemeProvider';
 
 export default function Navbar() {
   const pathname = usePathname();
-
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProductsOpen, setIsProductsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -92,21 +91,23 @@ export default function Navbar() {
     },
   ];
 
-  // Check whether a navbar link is currently active
-  const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
+  const isActive = (href: string) =>
+    pathname === href || pathname.startsWith(`${href}/`);
 
-  // Products is active when user is inside either product category
-  const isProductsActive = productCategories.some(
-    (item) => pathname === item.href
+  const isProductsActive = productCategories.some((item) =>
+    isActive(item.href)
   );
+
+  if (pathname && (pathname.startsWith('/admin') || pathname === '/admin-login')) {
+    return null;
+  }
 
   return (
     <nav
-      className={`fixed top-0 left-0 z-50 w-full transition-all duration-300 ${
-        isScrolled
+      className={`fixed top-0 left-0 z-50 w-full transition-all duration-300 ${isScrolled
           ? 'bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md border-b border-zinc-200/50 dark:border-zinc-800/50 shadow-lg'
           : 'bg-transparent border-b border-transparent'
-      }`}
+        }`}
     >
       <div className="relative mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
 
@@ -157,11 +158,10 @@ export default function Navbar() {
 
             {/* Products Dropdown */}
             <div
-              className={`absolute left-1/2 top-full z-50 w-56 -translate-x-1/2 rounded-2xl border border-zinc-200/70 bg-white/95 p-2 shadow-[0_18px_45px_rgba(15,23,42,0.16)] backdrop-blur-md dark:border-zinc-800/80 dark:bg-zinc-950/95 transition-all duration-200 ${
-                isProductsOpen
+              className={`absolute left-1/2 top-full z-50 w-56 -translate-x-1/2 rounded-2xl border border-zinc-200/70 bg-white/95 p-2 shadow-[0_18px_45px_rgba(15,23,42,0.16)] backdrop-blur-md dark:border-zinc-800/80 dark:bg-zinc-950/95 transition-all duration-200 ${isProductsOpen
                   ? 'pointer-events-auto translate-y-3 opacity-100'
                   : 'pointer-events-none translate-y-1 opacity-0'
-              }`}
+                }`}
             >
               {productCategories.map((item) => (
                 <Link
@@ -180,19 +180,19 @@ export default function Navbar() {
           </div>
 
           {/* Custom Products + About */}
-          {navLinks.map((link) => (
-            <Link
-              key={link.label}
-              href={link.href}
-              className={`text-sm font-medium transition-colors ${
-                isActive(link.href)
-                  ? 'text-white'
-                  : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white'
-              }`}
-            >
-              {link.label}
-            </Link>
-          ))}
+          {navLinks.map((link) => ( 
+  <Link 
+    key={link.label} 
+    href={link.href} 
+    className={`text-sm font-medium transition-colors ${ 
+      isActive(link.href) 
+        ? 'text-zinc-900 dark:text-white' 
+        : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white' 
+    }`} 
+  > 
+    {link.label} 
+  </Link> 
+))}
         </div>
 
         {/* Right Side Actions */}
