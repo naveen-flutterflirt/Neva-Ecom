@@ -70,7 +70,7 @@ export default function Navbar() {
   // Only these two products appear inside the Products dropdown
   const productCategories = [
     {
-      label: 'PLA Products',
+      label: '3D Products',
       href: '/shop',
     },
     {

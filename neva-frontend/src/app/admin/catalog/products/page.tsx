@@ -671,6 +671,201 @@ export default function AdminProductsPage() {
                 />
               </div>
 
+              
+  {/* Material Variants */}
+  <div className="space-y-2">
+    <label className="block text-[10px] font-semibold uppercase tracking-wider text-zinc-400">
+      Material Variants
+    </label>
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between bg-zinc-50 rounded-lg px-3 py-2 border border-zinc-100">
+        <span className="text-xs text-zinc-700">Tough PLA (base price)</span>
+        <span className="text-xs font-semibold text-zinc-500">0</span>
+      </div>
+      <div className="flex items-center justify-between bg-zinc-50 rounded-lg px-3 py-2 border border-zinc-100">
+        <span className="text-xs text-zinc-700">PETG</span>
+        <span className="text-xs font-semibold text-zinc-500">+150</span>
+      </div>
+      <div className="flex items-center justify-between bg-zinc-50 rounded-lg px-3 py-2 border border-zinc-100">
+        <span className="text-xs text-zinc-700">ABS</span>
+        <span className="text-xs font-semibold text-zinc-500">+200</span>
+      </div>
+      <button className="text-xs text-violet-600 font-medium hover:text-violet-700 transition-colors flex items-center gap-1">
+        <Plus className="h-3 w-3" />
+        Add Material
+      </button>
+    </div>
+  </div>
+
+  {/* Chipset / Processor */}
+  <div>
+    <label className="block text-[10px] font-semibold uppercase tracking-wider text-zinc-400 mb-1.5">
+      Chipset / Processor
+    </label>
+    <input
+      type="text"
+      placeholder="e.g. ESP32-S3"
+      className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs text-zinc-900 outline-none focus:border-violet-500 focus:bg-white"
+    />
+  </div>
+
+  {/* Sensors */}
+  <div>
+    <label className="block text-[10px] font-semibold uppercase tracking-wider text-zinc-400 mb-1.5">
+      Sensors
+    </label>
+    <div className="flex items-center gap-2">
+      <span className="text-xs text-zinc-700">Temperature</span>
+      <button className="text-xs text-violet-600 font-medium hover:text-violet-700 transition-colors flex items-center gap-1">
+        <Plus className="h-3 w-3" />
+        Add sensor...
+      </button>
+    </div>
+  </div>
+
+  {/* Display */}
+  <div>
+    <label className="block text-[10px] font-semibold uppercase tracking-wider text-zinc-400 mb-1.5">
+      Display
+    </label>
+    <input
+      type="text"
+      placeholder="e.g. 1.54 inch OLED"
+      className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs text-zinc-900 outline-none focus:border-violet-500 focus:bg-white"
+    />
+  </div>
+
+  {/* Power Source */}
+  <div>
+    <label className="block text-[10px] font-semibold uppercase tracking-wider text-zinc-400 mb-1.5">
+      Power Source
+    </label>
+    <input
+      type="text"
+      placeholder="USB-C"
+      className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs text-zinc-900 outline-none focus:border-violet-500 focus:bg-white"
+    />
+  </div>
+
+  {/* Voltage / Current */}
+  <div>
+    <label className="block text-[10px] font-semibold uppercase tracking-wider text-zinc-400 mb-1.5">
+      Voltage / Current
+    </label>
+    <input
+      type="text"
+      placeholder="e.g. 5V / 2A"
+      className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs text-zinc-900 outline-none focus:border-violet-500 focus:bg-white"
+    />
+  </div>
+
+  {/* Connectivity Type */}
+  <div>
+    <label className="block text-[10px] font-semibold uppercase tracking-wider text-zinc-400 mb-1.5">
+      Connectivity Type
+    </label>
+    <div className="flex flex-wrap gap-2">
+      {['Wi-Fi', 'Bluetooth', 'Zigbee', 'Z-Wave', 'LoRa'].map((type) => (
+        <button
+          key={type}
+          className="text-xs px-3 py-1.5 rounded-lg border border-zinc-200 bg-zinc-50 text-zinc-700 hover:border-violet-400 hover:bg-violet-50 transition-colors"
+        >
+          {type}
+        </button>
+      ))}
+    </div>
+  </div>
+
+  {/* Wi-Fi Band */}
+  <div>
+    <label className="block text-[10px] font-semibold uppercase tracking-wider text-zinc-400 mb-1.5">
+      Wi-Fi Band
+    </label>
+    <input
+      type="text"
+      placeholder="Dual-band"
+      className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs text-zinc-900 outline-none focus:border-violet-500 focus:bg-white"
+    />
+  </div>
+
+  {/* Bluetooth Version */}
+  <div>
+    <label className="block text-[10px] font-semibold uppercase tracking-wider text-zinc-400 mb-1.5">
+      Bluetooth Version
+    </label>
+    <input
+      type="text"
+      placeholder="5.2 LE"
+      className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs text-zinc-900 outline-none focus:border-violet-500 focus:bg-white"
+    />
+  </div>
+
+  {/* Dimensions */}
+  <div>
+    <label className="block text-[10px] font-semibold uppercase tracking-wider text-zinc-400 mb-1.5">
+      Dimensions
+    </label>
+    <div className="grid grid-cols-3 gap-2">
+      <div>
+        <input
+          type="text"
+          placeholder="Length"
+          className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs text-zinc-900 outline-none focus:border-violet-500 focus:bg-white"
+        />
+      </div>
+      <div>
+        <input
+          type="text"
+          placeholder="Width"
+          className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs text-zinc-900 outline-none focus:border-violet-500 focus:bg-white"
+        />
+      </div>
+      <div>
+        <input
+          type="text"
+          placeholder="Height"
+          className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs text-zinc-900 outline-none focus:border-violet-500 focus:bg-white"
+        />
+      </div>
+    </div>
+    <span className="text-[10px] text-zinc-400 mt-1 block">mm</span>
+  </div>
+
+  {/* Key Features */}
+  <div>
+    <label className="block text-[10px] font-semibold uppercase tracking-wider text-zinc-400 mb-1.5">
+      Key Features
+    </label>
+    <div className="space-y-1.5">
+      <div className="flex items-center gap-2 bg-zinc-50 rounded-lg px-3 py-2 border border-zinc-100">
+        <span className="text-xs text-zinc-700">Seamless App Control</span>
+      </div>
+      <div className="flex items-center gap-2 bg-zinc-50 rounded-lg px-3 py-2 border border-zinc-100">
+        <span className="text-xs text-zinc-700">Ultra-long Battery Life</span>
+      </div>
+      <button className="text-xs text-violet-600 font-medium hover:text-violet-700 transition-colors flex items-center gap-1">
+        <Plus className="h-3 w-3" />
+        Add Feature
+      </button>
+    </div>
+  </div>
+
+  {/* Care Instructions */}
+  <div>
+    <label className="block text-[10px] font-semibold uppercase tracking-wider text-zinc-400 mb-1.5">
+      Care Instructions
+    </label>
+    <div className="space-y-1.5">
+      <div className="flex items-center gap-2 bg-zinc-50 rounded-lg px-3 py-2 border border-zinc-100">
+        <span className="text-xs text-zinc-700">- Wipe clean with a dry cloth.</span>
+      </div>
+      <button className="text-xs text-violet-600 font-medium hover:text-violet-700 transition-colors flex items-center gap-1">
+        <Plus className="h-3 w-3" />
+        Add instruction...
+      </button>
+    </div>
+  </div>
+
               {/* AWS S3 Product Media Upload Section */}
               <div className="space-y-4">
                 {/* Unified Media Upload Zone */}

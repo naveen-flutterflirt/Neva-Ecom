@@ -99,7 +99,6 @@ export default function ProductInfoPage() {
   );
   const [selectedColor, setSelectedColor] = useState(colors[0].name);
 
-  // Quality selection
   const [selectedQuality, setSelectedQuality] = useState('standard');
 
   const [quantity, setQuantity] = useState(1);
@@ -267,7 +266,6 @@ export default function ProductInfoPage() {
       setBackTopViewFile(uploadedImage);
     }
 
-    // Reset input so same file can be selected again
     event.target.value = '';
 
     showToast(`${file.name} uploaded successfully.`);
@@ -524,272 +522,272 @@ export default function ProductInfoPage() {
       case 'product-info':
         return (
           <div className="space-y-6">
+
             {/* Reference Images */}
-            <div>
-              <h3 className="text-sm font-semibold text-zinc-700 dark:text-zinc-200">
-                Reference Images
-              </h3>
+<div>
+  <h3 className="text-sm font-semibold text-zinc-700 dark:text-zinc-200">
+    Reference Images
+  </h3>
 
-              <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
-                {/* Front View */}
-                <div className="relative">
-                  <div
-                    role="button"
-                    tabIndex={0}
-                    onClick={() =>
-                      frontViewInputRef.current?.click()
-                    }
-                    onKeyDown={(event) => {
-                      if (
-                        event.key === 'Enter' ||
-                        event.key === ' '
-                      ) {
-                        event.preventDefault();
-                        frontViewInputRef.current?.click();
-                      }
-                    }}
-                    className="group relative flex h-60 w-full cursor-pointer items-center justify-center overflow-hidden rounded-xl border-2 border-dashed border-zinc-300 text-center transition hover:border-violet-400 hover:bg-violet-50/50 dark:border-white/15 dark:hover:bg-violet-500/5"
-                  >
-                    {frontViewFile ? (
-                      <div className="relative h-full w-full">
-                        <img
-                          src={frontViewFile.previewUrl}
-                          alt="Front view preview"
-                          className="h-full w-full object-contain bg-zinc-100 p-2 dark:bg-white/[0.03]"
-                        />
+  {/* Three upload containers in one row */}
+  <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
 
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/0 transition group-hover:bg-black/20">
-                          <span className="rounded-lg bg-black/60 px-3 py-1.5 text-xs font-medium text-white opacity-0 transition group-hover:opacity-100">
-                            Click to replace
-                          </span>
-                        </div>
+    {/* Front View */}
+    <div className="relative min-w-0">
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={() =>
+          frontViewInputRef.current?.click()
+        }
+        onKeyDown={(event) => {
+          if (
+            event.key === 'Enter' ||
+            event.key === ' '
+          ) {
+            event.preventDefault();
+            frontViewInputRef.current?.click();
+          }
+        }}
+        className="group relative mx-auto flex aspect-[4/3] w-full max-w-[280px] cursor-pointer items-center justify-center overflow-hidden rounded-xl border-2 border-dashed border-zinc-300 text-center transition hover:border-violet-400 hover:bg-violet-50/50 dark:border-white/15 dark:hover:bg-violet-500/5"
+      >
+        {frontViewFile ? (
+          <div className="relative h-full w-full">
+            <img
+              src={frontViewFile.previewUrl}
+              alt="Front view preview"
+              className="h-full w-full object-cover"
+            />
 
-                        {/* Cross */}
-                        <button
-                          type="button"
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            handleDeleteReferenceImage('front');
-                          }}
-                          className="absolute right-2 top-2 z-20 flex h-7 w-7 items-center justify-center rounded-full bg-black/70 text-lg leading-none text-white shadow-md transition hover:bg-red-500"
-                          aria-label="Delete front view image"
-                        >
-                          ×
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="p-6">
-                        <Upload className="mx-auto h-8 w-8 text-zinc-400" />
-
-                        <p className="mt-2 text-sm font-medium">
-                          Front View
-                        </p>
-
-                        <p className="text-xs text-zinc-400">
-                          Drag &amp; drop or click
-                        </p>
-                      </div>
-                    )}
-                  </div>
-
-                  <input
-                    id="front-view-upload"
-                    ref={frontViewInputRef}
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp"
-                    onChange={(event) =>
-                      handleReferenceImageChange(
-                        event,
-                        'front'
-                      )
-                    }
-                    className="hidden"
-                  />
-
-                  {frontViewFile && (
-                    <p className="mt-2 truncate text-xs font-medium text-emerald-600 dark:text-emerald-400">
-                      ✓ {frontViewFile.name}
-                    </p>
-                  )}
-                </div>
-
-                {/* Side View */}
-                <div className="relative">
-                  <div
-                    role="button"
-                    tabIndex={0}
-                    onClick={() =>
-                      sideViewInputRef.current?.click()
-                    }
-                    onKeyDown={(event) => {
-                      if (
-                        event.key === 'Enter' ||
-                        event.key === ' '
-                      ) {
-                        event.preventDefault();
-                        sideViewInputRef.current?.click();
-                      }
-                    }}
-                    className="group relative flex h-60 w-full cursor-pointer items-center justify-center overflow-hidden rounded-xl border-2 border-dashed border-zinc-300 text-center transition hover:border-violet-400 hover:bg-violet-50/50 dark:border-white/15 dark:hover:bg-violet-500/5"
-                  >
-                    {sideViewFile ? (
-                      <div className="relative h-full w-full">
-                        <img
-                          src={sideViewFile.previewUrl}
-                          alt="Side view preview"
-                          className="h-full w-full object-contain bg-zinc-100 p-2 dark:bg-white/[0.03]"
-                        />
-
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/0 transition group-hover:bg-black/20">
-                          <span className="rounded-lg bg-black/60 px-3 py-1.5 text-xs font-medium text-white opacity-0 transition group-hover:opacity-100">
-                            Click to replace
-                          </span>
-                        </div>
-
-                        {/* Cross */}
-                        <button
-                          type="button"
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            handleDeleteReferenceImage('side');
-                          }}
-                          className="absolute right-2 top-2 z-20 flex h-7 w-7 items-center justify-center rounded-full bg-black/70 text-lg leading-none text-white shadow-md transition hover:bg-red-500"
-                          aria-label="Delete side view image"
-                        >
-                          ×
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="p-6">
-                        <Upload className="mx-auto h-8 w-8 text-zinc-400" />
-
-                        <p className="mt-2 text-sm font-medium">
-                          Side View
-                        </p>
-
-                        <p className="text-xs text-zinc-400">
-                          Drag &amp; drop or click
-                        </p>
-                      </div>
-                    )}
-                  </div>
-
-                  <input
-                    id="side-view-upload"
-                    ref={sideViewInputRef}
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp"
-                    onChange={(event) =>
-                      handleReferenceImageChange(
-                        event,
-                        'side'
-                      )
-                    }
-                    className="hidden"
-                  />
-
-                  {sideViewFile && (
-                    <p className="mt-2 truncate text-xs font-medium text-emerald-600 dark:text-emerald-400">
-                      ✓ {sideViewFile.name}
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              <p className="mt-2 text-xs text-zinc-500">
-                Images uploaded:{' '}
-                {
-                  [
-                    frontViewFile,
-                    sideViewFile,
-                    backTopViewFile,
-                  ].filter(Boolean).length
-                }{' '}
-                of 3
-              </p>
-
-              {/* Back / Top View */}
-              <div className="relative mt-3">
-                <div
-                  role="button"
-                  tabIndex={0}
-                  onClick={() =>
-                    backTopViewInputRef.current?.click()
-                  }
-                  onKeyDown={(event) => {
-                    if (
-                      event.key === 'Enter' ||
-                      event.key === ' '
-                    ) {
-                      event.preventDefault();
-                      backTopViewInputRef.current?.click();
-                    }
-                  }}
-                  className="group relative flex h-60 w-full cursor-pointer items-center justify-center overflow-hidden rounded-xl border-2 border-dashed border-zinc-300 text-center transition hover:border-violet-400 hover:bg-violet-50/50 dark:border-white/15 dark:hover:bg-violet-500/5"
-                >
-                  {backTopViewFile ? (
-                    <div className="relative h-full w-full">
-                      <img
-                        src={backTopViewFile.previewUrl}
-                        alt="Back or top view preview"
-                        className="h-full w-full object-contain bg-zinc-100 p-2 dark:bg-white/[0.03]"
-                      />
-
-                      <div className="absolute inset-0 flex items-center justify-center bg-black/0 transition group-hover:bg-black/20">
-                        <span className="rounded-lg bg-black/60 px-3 py-1.5 text-xs font-medium text-white opacity-0 transition group-hover:opacity-100">
-                          Click to replace
-                        </span>
-                      </div>
-
-                      {/* Cross */}
-                      <button
-                        type="button"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          handleDeleteReferenceImage('back');
-                        }}
-                        className="absolute right-2 top-2 z-20 flex h-7 w-7 items-center justify-center rounded-full bg-black/70 text-lg leading-none text-white shadow-md transition hover:bg-red-500"
-                        aria-label="Delete back/top view image"
-                      >
-                        ×
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="p-6">
-                      <Upload className="mx-auto h-7 w-7 text-zinc-400" />
-
-                      <p className="mt-1 text-sm font-medium">
-                        Back/Top View
-                      </p>
-
-                      <p className="text-xs text-zinc-400">
-                        Drag &amp; drop or click
-                      </p>
-                    </div>
-                  )}
-                </div>
-
-                <input
-                  id="back-top-view-upload"
-                  ref={backTopViewInputRef}
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  onChange={(event) =>
-                    handleReferenceImageChange(
-                      event,
-                      'back'
-                    )
-                  }
-                  className="hidden"
-                />
-
-                {backTopViewFile && (
-                  <p className="mt-2 truncate text-xs font-medium text-emerald-600 dark:text-emerald-400">
-                    ✓ {backTopViewFile.name}
-                  </p>
-                )}
-              </div>
+            <div className="absolute inset-0 flex items-center justify-center bg-black/0 transition group-hover:bg-black/20">
+              <span className="rounded-lg bg-black/60 px-3 py-1.5 text-xs font-medium text-white opacity-0 transition group-hover:opacity-100">
+                Click to replace
+              </span>
             </div>
+
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                handleDeleteReferenceImage('front');
+              }}
+              className="absolute right-2 top-2 z-20 flex h-7 w-7 items-center justify-center rounded-full bg-black/70 text-lg leading-none text-white shadow-md transition hover:bg-red-500"
+              aria-label="Delete front view image"
+            >
+              ×
+            </button>
+          </div>
+        ) : (
+          <div className="p-4">
+            <Upload className="mx-auto h-7 w-7 text-zinc-400" />
+
+            <p className="mt-2 text-sm font-medium">
+              Front View
+            </p>
+
+            <p className="text-xs text-zinc-400">
+              Drag &amp; drop or click
+            </p>
+          </div>
+        )}
+      </div>
+
+      <input
+        id="front-view-upload"
+        ref={frontViewInputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        onChange={(event) =>
+          handleReferenceImageChange(
+            event,
+            'front'
+          )
+        }
+        className="hidden"
+      />
+
+      {frontViewFile && (
+        <p className="mt-2 truncate text-xs font-medium text-emerald-600 dark:text-emerald-400">
+          ✓ {frontViewFile.name}
+        </p>
+      )}
+    </div>
+
+    {/* Side View */}
+    <div className="relative min-w-0">
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={() =>
+          sideViewInputRef.current?.click()
+        }
+        onKeyDown={(event) => {
+          if (
+            event.key === 'Enter' ||
+            event.key === ' '
+          ) {
+            event.preventDefault();
+            sideViewInputRef.current?.click();
+          }
+        }}
+        className="group relative mx-auto flex aspect-[4/3] w-full max-w-[280px] cursor-pointer items-center justify-center overflow-hidden rounded-xl border-2 border-dashed border-zinc-300 text-center transition hover:border-violet-400 hover:bg-violet-50/50 dark:border-white/15 dark:hover:bg-violet-500/5"
+      >
+        {sideViewFile ? (
+          <div className="relative h-full w-full">
+            <img
+              src={sideViewFile.previewUrl}
+              alt="Side view preview"
+              className="h-full w-full object-cover"
+            />
+
+            <div className="absolute inset-0 flex items-center justify-center bg-black/0 transition group-hover:bg-black/20">
+              <span className="rounded-lg bg-black/60 px-3 py-1.5 text-xs font-medium text-white opacity-0 transition group-hover:opacity-100">
+                Click to replace
+              </span>
+            </div>
+
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                handleDeleteReferenceImage('side');
+              }}
+              className="absolute right-2 top-2 z-20 flex h-7 w-7 items-center justify-center rounded-full bg-black/70 text-lg leading-none text-white shadow-md transition hover:bg-red-500"
+              aria-label="Delete side view image"
+            >
+              ×
+            </button>
+          </div>
+        ) : (
+          <div className="p-4">
+            <Upload className="mx-auto h-7 w-7 text-zinc-400" />
+
+            <p className="mt-2 text-sm font-medium">
+              Side View
+            </p>
+
+            <p className="text-xs text-zinc-400">
+              Drag &amp; drop or click
+            </p>
+          </div>
+        )}
+      </div>
+
+      <input
+        id="side-view-upload"
+        ref={sideViewInputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        onChange={(event) =>
+          handleReferenceImageChange(
+            event,
+            'side'
+          )
+        }
+        className="hidden"
+      />
+
+      {sideViewFile && (
+        <p className="mt-2 truncate text-xs font-medium text-emerald-600 dark:text-emerald-400">
+          ✓ {sideViewFile.name}
+        </p>
+      )}
+    </div>
+
+    {/* Back / Top View */}
+    <div className="relative min-w-0">
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={() =>
+          backTopViewInputRef.current?.click()
+        }
+        onKeyDown={(event) => {
+          if (
+            event.key === 'Enter' ||
+            event.key === ' '
+          ) {
+            event.preventDefault();
+            backTopViewInputRef.current?.click();
+          }
+        }}
+        className="group relative mx-auto flex aspect-[4/3] w-full max-w-[280px] cursor-pointer items-center justify-center overflow-hidden rounded-xl border-2 border-dashed border-zinc-300 text-center transition hover:border-violet-400 hover:bg-violet-50/50 dark:border-white/15 dark:hover:bg-violet-500/5"
+      >
+        {backTopViewFile ? (
+          <div className="relative h-full w-full">
+            <img
+              src={backTopViewFile.previewUrl}
+              alt="Back or top view preview"
+              className="h-full w-full object-cover"
+            />
+
+            <div className="absolute inset-0 flex items-center justify-center bg-black/0 transition group-hover:bg-black/20">
+              <span className="rounded-lg bg-black/60 px-3 py-1.5 text-xs font-medium text-white opacity-0 transition group-hover:opacity-100">
+                Click to replace
+              </span>
+            </div>
+
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                handleDeleteReferenceImage('back');
+              }}
+              className="absolute right-2 top-2 z-20 flex h-7 w-7 items-center justify-center rounded-full bg-black/70 text-lg leading-none text-white shadow-md transition hover:bg-red-500"
+              aria-label="Delete back/top view image"
+            >
+              ×
+            </button>
+          </div>
+        ) : (
+          <div className="p-4">
+            <Upload className="mx-auto h-7 w-7 text-zinc-400" />
+
+            <p className="mt-2 text-sm font-medium">
+              Back/Top View
+            </p>
+
+            <p className="text-xs text-zinc-400">
+              Drag &amp; drop or click
+            </p>
+          </div>
+        )}
+      </div>
+
+      <input
+        id="back-top-view-upload"
+        ref={backTopViewInputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        onChange={(event) =>
+          handleReferenceImageChange(
+            event,
+            'back'
+          )
+        }
+        className="hidden"
+      />
+
+      {backTopViewFile && (
+        <p className="mt-2 truncate text-xs font-medium text-emerald-600 dark:text-emerald-400">
+          ✓ {backTopViewFile.name}
+        </p>
+      )}
+    </div>
+  </div>
+
+  <p className="mt-2 text-xs text-zinc-500">
+    Images uploaded:{' '}
+    {
+      [
+        frontViewFile,
+        sideViewFile,
+        backTopViewFile,
+      ].filter(Boolean).length
+    }{' '}
+    of 3
+  </p>
+</div>
 
             {/* Description & Details */}
             <div>
@@ -870,8 +868,7 @@ export default function ProductInfoPage() {
                   htmlFor="file-upload"
                   className="mt-2 block cursor-pointer text-xs text-violet-500 hover:underline"
                 >
-                  {referenceFile ||
-                    'No file selected'}
+                  {referenceFile || 'No file selected'}
                 </label>
               </div>
 
@@ -1428,68 +1425,96 @@ export default function ProductInfoPage() {
                 </div>
 
                 {/* Uploaded Reference Images */}
-                {(
-                  frontViewFile ||
-                  sideViewFile ||
-                  backTopViewFile
-                ) && (
-                  <div className="mt-3 rounded-lg bg-zinc-100 p-3 dark:bg-white/5">
-                    <p className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
-                      Reference Images
-                    </p>
+{(
+  frontViewFile ||
+  sideViewFile ||
+  backTopViewFile
+) && (
+  <div className="mt-3">
+    <p className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+      Reference Images
+    </p>
 
-                    <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
-                      {frontViewFile && (
-                        <div className="overflow-hidden rounded-lg border border-zinc-200 bg-white dark:border-white/10 dark:bg-white/[0.03]">
-                          <img
-                            src={frontViewFile.previewUrl}
-                            alt="Front view"
-                            className="h-32 w-full object-contain"
-                          />
+    <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
 
-                          <p className="truncate border-t border-zinc-200 px-2 py-2 text-xs text-zinc-500 dark:border-white/10">
-                            Front View:{' '}
-                            {frontViewFile.name}
-                          </p>
-                        </div>
-                      )}
+      {/* Front View */}
+      {frontViewFile && (
+        <div className="relative min-w-0">
+          <div className="group relative mx-auto flex aspect-[4/3] w-full max-w-[280px] items-center justify-center overflow-hidden rounded-xl border-2 border-dashed border-zinc-300 text-center transition hover:border-violet-400 dark:border-white/15">
+            <div className="relative h-full w-full">
+              <img
+                src={frontViewFile.previewUrl}
+                alt="Front view preview"
+                className="h-full w-full object-cover"
+              />
 
-                      {sideViewFile && (
-                        <div className="overflow-hidden rounded-lg border border-zinc-200 bg-white dark:border-white/10 dark:bg-white/[0.03]">
-                          <img
-                            src={sideViewFile.previewUrl}
-                            alt="Side view"
-                            className="h-32 w-full object-contain"
-                          />
+              <div className="absolute inset-0 flex items-center justify-center bg-black/0 transition group-hover:bg-black/20">
+                <span className="rounded-lg bg-black/60 px-3 py-1.5 text-xs font-medium text-white opacity-0 transition group-hover:opacity-100">
+                  Front View
+                </span>
+              </div>
+            </div>
+          </div>
 
-                          <p className="truncate border-t border-zinc-200 px-2 py-2 text-xs text-zinc-500 dark:border-white/10">
-                            Side View:{' '}
-                            {sideViewFile.name}
-                          </p>
-                        </div>
-                      )}
+          <p className="mt-2 truncate text-xs font-medium text-emerald-600 dark:text-emerald-400">
+            ✓ {frontViewFile.name}
+          </p>
+        </div>
+      )}
 
-                      {backTopViewFile && (
-                        <div className="overflow-hidden rounded-lg border border-zinc-200 bg-white dark:border-white/10 dark:bg-white/[0.03]">
-                          <img
-                            src={
-                              backTopViewFile.previewUrl
-                            }
-                            alt="Back or top view"
-                            className="h-32 w-full object-contain"
-                          />
+      {/* Side View */}
+      {sideViewFile && (
+        <div className="relative min-w-0">
+          <div className="group relative mx-auto flex aspect-[4/3] w-full max-w-[280px] items-center justify-center overflow-hidden rounded-xl border-2 border-dashed border-zinc-300 text-center transition hover:border-violet-400 dark:border-white/15">
+            <div className="relative h-full w-full">
+              <img
+                src={sideViewFile.previewUrl}
+                alt="Side view preview"
+                className="h-full w-full object-cover"
+              />
 
-                          <p className="truncate border-t border-zinc-200 px-2 py-2 text-xs text-zinc-500 dark:border-white/10">
-                            Back/Top View:{' '}
-                            {
-                              backTopViewFile.name
-                            }
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
+              <div className="absolute inset-0 flex items-center justify-center bg-black/0 transition group-hover:bg-black/20">
+                <span className="rounded-lg bg-black/60 px-3 py-1.5 text-xs font-medium text-white opacity-0 transition group-hover:opacity-100">
+                  Side View
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <p className="mt-2 truncate text-xs font-medium text-emerald-600 dark:text-emerald-400">
+            ✓ {sideViewFile.name}
+          </p>
+        </div>
+      )}
+
+      {/* Back / Top View */}
+      {backTopViewFile && (
+        <div className="relative min-w-0">
+          <div className="group relative mx-auto flex aspect-[4/3] w-full max-w-[280px] items-center justify-center overflow-hidden rounded-xl border-2 border-dashed border-zinc-300 text-center transition hover:border-violet-400 dark:border-white/15">
+            <div className="relative h-full w-full">
+              <img
+                src={backTopViewFile.previewUrl}
+                alt="Back or top view preview"
+                className="h-full w-full object-cover"
+              />
+
+              <div className="absolute inset-0 flex items-center justify-center bg-black/0 transition group-hover:bg-black/20">
+                <span className="rounded-lg bg-black/60 px-3 py-1.5 text-xs font-medium text-white opacity-0 transition group-hover:opacity-100">
+                  Back/Top View
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <p className="mt-2 truncate text-xs font-medium text-emerald-600 dark:text-emerald-400">
+            ✓ {backTopViewFile.name}
+          </p>
+        </div>
+      )}
+
+    </div>
+  </div>
+)}
               </div>
             </div>
 
@@ -1755,6 +1780,7 @@ export default function ProductInfoPage() {
   return (
     <main className="min-h-screen overflow-x-hidden bg-[#f5f7fb] pb-16 pt-20 text-zinc-900 dark:bg-[#0b0c11] dark:text-zinc-100 sm:pt-24">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+
         {/* Back button */}
         <div className="mb-6 flex items-center justify-between gap-4 text-xs font-semibold text-zinc-500 dark:text-zinc-400">
           <Link
@@ -1769,6 +1795,7 @@ export default function ProductInfoPage() {
         {/* Main content */}
         <div className="w-full">
           <div className="space-y-4">
+
             {/* Timeline Header */}
             <div className="rounded-[20px] border border-zinc-200 bg-white p-6 dark:border-white/10 dark:bg-[#111217]">
               <div className="flex items-center justify-between">
