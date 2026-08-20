@@ -1,6 +1,6 @@
 'use client';
 
-import { ChangeEvent, useRef, useState } from 'react';
+import { ChangeEvent, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Button from '../../../components/ui/Button';
@@ -8,13 +8,9 @@ import {
   ArrowLeft,
   Check,
   ChevronDown,
-  ChevronRight,
-  CircleUserRound,
   FileUp,
   Minus,
   Plus,
-  Ruler,
-  ShoppingBag,
   Sparkles,
   Upload,
   ChevronUp,
@@ -66,7 +62,6 @@ const colors = [
   { name: 'Nexus Blue', value: '#3b82f6' },
 ];
 
-// Timeline steps with their content
 const timelineSteps = [
   {
     id: 'product-info',
@@ -90,12 +85,23 @@ const timelineSteps = [
   },
 ];
 
+type UploadedImage = {
+  name: string;
+  previewUrl: string;
+};
+
 export default function ProductInfoPage() {
   const dispatch = useAppDispatch();
   const router = useRouter();
 
-  const [selectedMaterial, setSelectedMaterial] = useState(materials[0].name);
+  const [selectedMaterial, setSelectedMaterial] = useState(
+    materials[0].name
+  );
   const [selectedColor, setSelectedColor] = useState(colors[0].name);
+
+  // Quality selection
+  const [selectedQuality, setSelectedQuality] = useState('standard');
+
   const [quantity, setQuantity] = useState(1);
   const [dimensions, setDimensions] = useState('');
   const [referenceFile, setReferenceFile] = useState('');
@@ -103,10 +109,15 @@ export default function ProductInfoPage() {
   const [activeStep, setActiveStep] = useState('product-info');
   const [completedSteps, setCompletedSteps] = useState<string[]>([]);
 
-  // Reference image files
-  const [frontViewFile, setFrontViewFile] = useState('');
-  const [sideViewFile, setSideViewFile] = useState('');
-  const [backTopViewFile, setBackTopViewFile] = useState('');
+  // Reference image states
+  const [frontViewFile, setFrontViewFile] =
+    useState<UploadedImage | null>(null);
+
+  const [sideViewFile, setSideViewFile] =
+    useState<UploadedImage | null>(null);
+
+  const [backTopViewFile, setBackTopViewFile] =
+    useState<UploadedImage | null>(null);
 
   // File input refs
   const frontViewInputRef = useRef<HTMLInputElement>(null);
@@ -127,7 +138,8 @@ export default function ProductInfoPage() {
   const [confirmDetails, setConfirmDetails] = useState(false);
 
   const materialPrice =
-    materials.find((material) => material.name === selectedMaterial)?.price ?? 0;
+    materials.find((material) => material.name === selectedMaterial)?.price ??
+    0;
 
   const unitPrice = customProduct.price + materialPrice;
   const totalPrice = unitPrice * quantity;
@@ -135,11 +147,32 @@ export default function ProductInfoPage() {
   const showToast = (message: string) => {
     setToastMessage(message);
 
-    window.setTimeout(() => setToastMessage(null), 3000);
+    window.setTimeout(() => {
+      setToastMessage(null);
+    }, 3000);
   };
 
+  // Cleanup preview URLs when component unmounts
+  useEffect(() => {
+    return () => {
+      if (frontViewFile?.previewUrl) {
+        URL.revokeObjectURL(frontViewFile.previewUrl);
+      }
+
+      if (sideViewFile?.previewUrl) {
+        URL.revokeObjectURL(sideViewFile.previewUrl);
+      }
+
+      if (backTopViewFile?.previewUrl) {
+        URL.revokeObjectURL(backTopViewFile.previewUrl);
+      }
+    };
+  }, [frontViewFile, sideViewFile, backTopViewFile]);
+
   // 3D File Upload
-  const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (
+    event: ChangeEvent<HTMLInputElement>
+  ) => {
     const file = event.target.files?.[0];
 
     if (!file) return;
@@ -151,8 +184,13 @@ export default function ProductInfoPage() {
       .pop()
       ?.toLowerCase();
 
-    if (!fileExtension || !allowedExtensions.includes(fileExtension)) {
-      showToast('Please select a valid STL, OBJ, or STEP file.');
+    if (
+      !fileExtension ||
+      !allowedExtensions.includes(fileExtension)
+    ) {
+      showToast(
+        'Please select a valid STL, OBJ, or STEP file.'
+      );
       return;
     }
 
@@ -186,43 +224,125 @@ export default function ProductInfoPage() {
 
     if (!allowedTypes.includes(file.type)) {
       showToast('Please select a JPG, PNG, or WEBP image.');
+      event.target.value = '';
       return;
     }
 
-    // Optional image size limit: 10MB
     const maxSize = 10 * 1024 * 1024;
 
     if (file.size > maxSize) {
       showToast('Image size must be less than 10MB.');
+      event.target.value = '';
       return;
     }
 
+    const previewUrl = URL.createObjectURL(file);
+
+    const uploadedImage: UploadedImage = {
+      name: file.name,
+      previewUrl,
+    };
+
     if (view === 'front') {
-      setFrontViewFile(file.name);
+      if (frontViewFile?.previewUrl) {
+        URL.revokeObjectURL(frontViewFile.previewUrl);
+      }
+
+      setFrontViewFile(uploadedImage);
     }
 
     if (view === 'side') {
-      setSideViewFile(file.name);
+      if (sideViewFile?.previewUrl) {
+        URL.revokeObjectURL(sideViewFile.previewUrl);
+      }
+
+      setSideViewFile(uploadedImage);
     }
 
     if (view === 'back') {
-      setBackTopViewFile(file.name);
+      if (backTopViewFile?.previewUrl) {
+        URL.revokeObjectURL(backTopViewFile.previewUrl);
+      }
+
+      setBackTopViewFile(uploadedImage);
     }
+
+    // Reset input so same file can be selected again
+    event.target.value = '';
 
     showToast(`${file.name} uploaded successfully.`);
   };
 
+  // Delete Reference Image
+  const handleDeleteReferenceImage = (
+    view: 'front' | 'side' | 'back'
+  ) => {
+    if (view === 'front') {
+      if (frontViewFile?.previewUrl) {
+        URL.revokeObjectURL(frontViewFile.previewUrl);
+      }
+
+      setFrontViewFile(null);
+
+      if (frontViewInputRef.current) {
+        frontViewInputRef.current.value = '';
+      }
+
+      showToast('Front view image removed.');
+    }
+
+    if (view === 'side') {
+      if (sideViewFile?.previewUrl) {
+        URL.revokeObjectURL(sideViewFile.previewUrl);
+      }
+
+      setSideViewFile(null);
+
+      if (sideViewInputRef.current) {
+        sideViewInputRef.current.value = '';
+      }
+
+      showToast('Side view image removed.');
+    }
+
+    if (view === 'back') {
+      if (backTopViewFile?.previewUrl) {
+        URL.revokeObjectURL(backTopViewFile.previewUrl);
+      }
+
+      setBackTopViewFile(null);
+
+      if (backTopViewInputRef.current) {
+        backTopViewInputRef.current.value = '';
+      }
+
+      showToast('Back/Top view image removed.');
+    }
+  };
+
   const handleAddToCart = () => {
-    dispatch(addToCart({ product: customProduct, quantity }));
+    dispatch(
+      addToCart({
+        product: customProduct,
+        quantity,
+      })
+    );
+
     showToast('Custom build added to your cart.');
   };
 
   const handleStepClick = (stepId: string) => {
-    const currentIndex = timelineSteps.findIndex((s) => s.id === stepId);
-    const previousSteps = timelineSteps.slice(0, currentIndex);
+    const currentIndex = timelineSteps.findIndex(
+      (s) => s.id === stepId
+    );
 
-    const allPreviousCompleted = previousSteps.every((s) =>
-      completedSteps.includes(s.id)
+    const previousSteps = timelineSteps.slice(
+      0,
+      currentIndex
+    );
+
+    const allPreviousCompleted = previousSteps.every(
+      (s) => completedSteps.includes(s.id)
     );
 
     if (
@@ -236,13 +356,23 @@ export default function ProductInfoPage() {
 
   const handleStepComplete = (stepId: string) => {
     if (!completedSteps.includes(stepId)) {
-      setCompletedSteps([...completedSteps, stepId]);
+      setCompletedSteps([
+        ...completedSteps,
+        stepId,
+      ]);
     }
 
-    const currentIndex = timelineSteps.findIndex((s) => s.id === stepId);
+    const currentIndex = timelineSteps.findIndex(
+      (s) => s.id === stepId
+    );
 
-    if (currentIndex < timelineSteps.length - 1) {
-      setActiveStep(timelineSteps[currentIndex + 1].id);
+    if (
+      currentIndex <
+      timelineSteps.length - 1
+    ) {
+      setActiveStep(
+        timelineSteps[currentIndex + 1].id
+      );
     }
   };
 
@@ -253,11 +383,19 @@ export default function ProductInfoPage() {
     activeStep === stepId;
 
   const isStepLocked = (stepId: string) => {
-    const index = timelineSteps.findIndex((s) => s.id === stepId);
-    const previousSteps = timelineSteps.slice(0, index);
+    const index = timelineSteps.findIndex(
+      (s) => s.id === stepId
+    );
+
+    const previousSteps = timelineSteps.slice(
+      0,
+      index
+    );
 
     return (
-      !previousSteps.every((s) => completedSteps.includes(s.id)) &&
+      !previousSteps.every((s) =>
+        completedSteps.includes(s.id)
+      ) &&
       !completedSteps.includes(stepId)
     );
   };
@@ -265,15 +403,22 @@ export default function ProductInfoPage() {
   // Get Current Location
   const getCurrentLocation = () => {
     if (!navigator.geolocation) {
-      showToast('Geolocation is not supported by your browser.');
+      showToast(
+        'Geolocation is not supported by your browser.'
+      );
       return;
     }
 
-    showToast('📍 Detecting your current location...');
+    showToast(
+      '📍 Detecting your current location...'
+    );
 
     navigator.geolocation.getCurrentPosition(
       async (position) => {
-        const { latitude, longitude } = position.coords;
+        const {
+          latitude,
+          longitude,
+        } = position.coords;
 
         try {
           const response = await fetch(
@@ -286,7 +431,9 @@ export default function ProductInfoPage() {
           );
 
           if (!response.ok) {
-            throw new Error('Unable to fetch address');
+            throw new Error(
+              'Unable to fetch address'
+            );
           }
 
           const data = await response.json();
@@ -307,18 +454,25 @@ export default function ProductInfoPage() {
             address.municipality ||
             '';
 
-          const detectedState = address.state || '';
+          const detectedState =
+            address.state || '';
 
-          const detectedZip = address.postcode || '';
+          const detectedZip =
+            address.postcode || '';
 
           setAddressLine1(detectedAddress);
           setCity(detectedCity);
           setState(detectedState);
           setZipCode(detectedZip);
 
-          showToast('📍 Current location detected successfully.');
+          showToast(
+            '📍 Current location detected successfully.'
+          );
         } catch (error) {
-          console.error('Reverse geocoding error:', error);
+          console.error(
+            'Reverse geocoding error:',
+            error
+          );
 
           showToast(
             '📍 Location detected, but address could not be fetched. Please enter it manually.'
@@ -326,7 +480,10 @@ export default function ProductInfoPage() {
         }
       },
       (error) => {
-        console.error('Geolocation error:', error);
+        console.error(
+          'Geolocation error:',
+          error
+        );
 
         switch (error.code) {
           case error.PERMISSION_DENIED:
@@ -336,15 +493,21 @@ export default function ProductInfoPage() {
             break;
 
           case error.POSITION_UNAVAILABLE:
-            showToast('Unable to determine your current location.');
+            showToast(
+              'Unable to determine your current location.'
+            );
             break;
 
           case error.TIMEOUT:
-            showToast('Location request timed out. Please try again.');
+            showToast(
+              'Location request timed out. Please try again.'
+            );
             break;
 
           default:
-            showToast('Unable to get your current location.');
+            showToast(
+              'Unable to get your current location.'
+            );
         }
       },
       {
@@ -369,78 +532,168 @@ export default function ProductInfoPage() {
 
               <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
                 {/* Front View */}
-                <button
-                  type="button"
-                  onClick={() =>
-                    frontViewInputRef.current?.click()
-                  }
-                  className="rounded-xl border-2 border-dashed border-zinc-300 p-6 text-center transition hover:border-violet-400 hover:bg-violet-50/50 dark:border-white/15 dark:hover:bg-violet-500/5"
-                >
-                  <Upload className="mx-auto h-8 w-8 text-zinc-400" />
+                <div className="relative">
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={() =>
+                      frontViewInputRef.current?.click()
+                    }
+                    onKeyDown={(event) => {
+                      if (
+                        event.key === 'Enter' ||
+                        event.key === ' '
+                      ) {
+                        event.preventDefault();
+                        frontViewInputRef.current?.click();
+                      }
+                    }}
+                    className="group relative flex h-60 w-full cursor-pointer items-center justify-center overflow-hidden rounded-xl border-2 border-dashed border-zinc-300 text-center transition hover:border-violet-400 hover:bg-violet-50/50 dark:border-white/15 dark:hover:bg-violet-500/5"
+                  >
+                    {frontViewFile ? (
+                      <div className="relative h-full w-full">
+                        <img
+                          src={frontViewFile.previewUrl}
+                          alt="Front view preview"
+                          className="h-full w-full object-contain bg-zinc-100 p-2 dark:bg-white/[0.03]"
+                        />
 
-                  <p className="mt-2 text-sm font-medium">
-                    {frontViewFile || 'Front View'}
-                  </p>
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/0 transition group-hover:bg-black/20">
+                          <span className="rounded-lg bg-black/60 px-3 py-1.5 text-xs font-medium text-white opacity-0 transition group-hover:opacity-100">
+                            Click to replace
+                          </span>
+                        </div>
 
-                  <p className="text-xs text-zinc-400">
-                    {frontViewFile
-                      ? 'Click to replace image'
-                      : 'Drag & drop or click'}
-                  </p>
+                        {/* Cross */}
+                        <button
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            handleDeleteReferenceImage('front');
+                          }}
+                          className="absolute right-2 top-2 z-20 flex h-7 w-7 items-center justify-center rounded-full bg-black/70 text-lg leading-none text-white shadow-md transition hover:bg-red-500"
+                          aria-label="Delete front view image"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="p-6">
+                        <Upload className="mx-auto h-8 w-8 text-zinc-400" />
+
+                        <p className="mt-2 text-sm font-medium">
+                          Front View
+                        </p>
+
+                        <p className="text-xs text-zinc-400">
+                          Drag &amp; drop or click
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  <input
+                    id="front-view-upload"
+                    ref={frontViewInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    onChange={(event) =>
+                      handleReferenceImageChange(
+                        event,
+                        'front'
+                      )
+                    }
+                    className="hidden"
+                  />
 
                   {frontViewFile && (
                     <p className="mt-2 truncate text-xs font-medium text-emerald-600 dark:text-emerald-400">
-                      ✓ {frontViewFile}
+                      ✓ {frontViewFile.name}
                     </p>
                   )}
-                </button>
-
-                <input
-                  ref={frontViewInputRef}
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  onChange={(event) =>
-                    handleReferenceImageChange(event, 'front')
-                  }
-                  className="hidden"
-                />
+                </div>
 
                 {/* Side View */}
-                <button
-                  type="button"
-                  onClick={() =>
-                    sideViewInputRef.current?.click()
-                  }
-                  className="rounded-xl border-2 border-dashed border-zinc-300 p-6 text-center transition hover:border-violet-400 hover:bg-violet-50/50 dark:border-white/15 dark:hover:bg-violet-500/5"
-                >
-                  <Upload className="mx-auto h-8 w-8 text-zinc-400" />
+                <div className="relative">
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={() =>
+                      sideViewInputRef.current?.click()
+                    }
+                    onKeyDown={(event) => {
+                      if (
+                        event.key === 'Enter' ||
+                        event.key === ' '
+                      ) {
+                        event.preventDefault();
+                        sideViewInputRef.current?.click();
+                      }
+                    }}
+                    className="group relative flex h-60 w-full cursor-pointer items-center justify-center overflow-hidden rounded-xl border-2 border-dashed border-zinc-300 text-center transition hover:border-violet-400 hover:bg-violet-50/50 dark:border-white/15 dark:hover:bg-violet-500/5"
+                  >
+                    {sideViewFile ? (
+                      <div className="relative h-full w-full">
+                        <img
+                          src={sideViewFile.previewUrl}
+                          alt="Side view preview"
+                          className="h-full w-full object-contain bg-zinc-100 p-2 dark:bg-white/[0.03]"
+                        />
 
-                  <p className="mt-2 text-sm font-medium">
-                    {sideViewFile || 'Side View'}
-                  </p>
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/0 transition group-hover:bg-black/20">
+                          <span className="rounded-lg bg-black/60 px-3 py-1.5 text-xs font-medium text-white opacity-0 transition group-hover:opacity-100">
+                            Click to replace
+                          </span>
+                        </div>
 
-                  <p className="text-xs text-zinc-400">
-                    {sideViewFile
-                      ? 'Click to replace image'
-                      : 'Drag & drop or click'}
-                  </p>
+                        {/* Cross */}
+                        <button
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            handleDeleteReferenceImage('side');
+                          }}
+                          className="absolute right-2 top-2 z-20 flex h-7 w-7 items-center justify-center rounded-full bg-black/70 text-lg leading-none text-white shadow-md transition hover:bg-red-500"
+                          aria-label="Delete side view image"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="p-6">
+                        <Upload className="mx-auto h-8 w-8 text-zinc-400" />
+
+                        <p className="mt-2 text-sm font-medium">
+                          Side View
+                        </p>
+
+                        <p className="text-xs text-zinc-400">
+                          Drag &amp; drop or click
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  <input
+                    id="side-view-upload"
+                    ref={sideViewInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    onChange={(event) =>
+                      handleReferenceImageChange(
+                        event,
+                        'side'
+                      )
+                    }
+                    className="hidden"
+                  />
 
                   {sideViewFile && (
                     <p className="mt-2 truncate text-xs font-medium text-emerald-600 dark:text-emerald-400">
-                      ✓ {sideViewFile}
+                      ✓ {sideViewFile.name}
                     </p>
                   )}
-                </button>
-
-                <input
-                  ref={sideViewInputRef}
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  onChange={(event) =>
-                    handleReferenceImageChange(event, 'side')
-                  }
-                  className="hidden"
-                />
+                </div>
               </div>
 
               <p className="mt-2 text-xs text-zinc-500">
@@ -456,41 +709,86 @@ export default function ProductInfoPage() {
               </p>
 
               {/* Back / Top View */}
-              <button
-                type="button"
-                onClick={() =>
-                  backTopViewInputRef.current?.click()
-                }
-                className="mt-3 block w-full rounded-xl border-2 border-dashed border-zinc-300 p-4 text-center transition hover:border-violet-400 hover:bg-violet-50/50 dark:border-white/15 dark:hover:bg-violet-500/5"
-              >
-                <Upload className="mx-auto h-6 w-6 text-zinc-400" />
+              <div className="relative mt-3">
+                <div
+                  role="button"
+                  tabIndex={0}
+                  onClick={() =>
+                    backTopViewInputRef.current?.click()
+                  }
+                  onKeyDown={(event) => {
+                    if (
+                      event.key === 'Enter' ||
+                      event.key === ' '
+                    ) {
+                      event.preventDefault();
+                      backTopViewInputRef.current?.click();
+                    }
+                  }}
+                  className="group relative flex h-60 w-full cursor-pointer items-center justify-center overflow-hidden rounded-xl border-2 border-dashed border-zinc-300 text-center transition hover:border-violet-400 hover:bg-violet-50/50 dark:border-white/15 dark:hover:bg-violet-500/5"
+                >
+                  {backTopViewFile ? (
+                    <div className="relative h-full w-full">
+                      <img
+                        src={backTopViewFile.previewUrl}
+                        alt="Back or top view preview"
+                        className="h-full w-full object-contain bg-zinc-100 p-2 dark:bg-white/[0.03]"
+                      />
 
-                <p className="mt-1 text-sm font-medium">
-                  {backTopViewFile || 'Back/Top View'}
-                </p>
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/0 transition group-hover:bg-black/20">
+                        <span className="rounded-lg bg-black/60 px-3 py-1.5 text-xs font-medium text-white opacity-0 transition group-hover:opacity-100">
+                          Click to replace
+                        </span>
+                      </div>
 
-                <p className="text-xs text-zinc-400">
-                  {backTopViewFile
-                    ? 'Click to replace image'
-                    : 'Drag & drop or click'}
-                </p>
+                      {/* Cross */}
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          handleDeleteReferenceImage('back');
+                        }}
+                        className="absolute right-2 top-2 z-20 flex h-7 w-7 items-center justify-center rounded-full bg-black/70 text-lg leading-none text-white shadow-md transition hover:bg-red-500"
+                        aria-label="Delete back/top view image"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="p-6">
+                      <Upload className="mx-auto h-7 w-7 text-zinc-400" />
+
+                      <p className="mt-1 text-sm font-medium">
+                        Back/Top View
+                      </p>
+
+                      <p className="text-xs text-zinc-400">
+                        Drag &amp; drop or click
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                <input
+                  id="back-top-view-upload"
+                  ref={backTopViewInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={(event) =>
+                    handleReferenceImageChange(
+                      event,
+                      'back'
+                    )
+                  }
+                  className="hidden"
+                />
 
                 {backTopViewFile && (
                   <p className="mt-2 truncate text-xs font-medium text-emerald-600 dark:text-emerald-400">
-                    ✓ {backTopViewFile}
+                    ✓ {backTopViewFile.name}
                   </p>
                 )}
-              </button>
-
-              <input
-                ref={backTopViewInputRef}
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                onChange={(event) =>
-                  handleReferenceImageChange(event, 'back')
-                }
-                className="hidden"
-              />
+              </div>
             </div>
 
             {/* Description & Details */}
@@ -572,7 +870,8 @@ export default function ProductInfoPage() {
                   htmlFor="file-upload"
                   className="mt-2 block cursor-pointer text-xs text-violet-500 hover:underline"
                 >
-                  {referenceFile || 'No file selected'}
+                  {referenceFile ||
+                    'No file selected'}
                 </label>
               </div>
 
@@ -587,7 +886,7 @@ export default function ProductInfoPage() {
               </p>
             </div>
 
-            {/* Print Configuration - Merged from right section */}
+            {/* Print Configuration */}
             <div>
               <h3 className="text-sm font-semibold text-zinc-700 dark:text-zinc-200">
                 Print Configuration
@@ -605,10 +904,13 @@ export default function ProductInfoPage() {
                       key={material.name}
                       type="button"
                       onClick={() =>
-                        setSelectedMaterial(material.name)
+                        setSelectedMaterial(
+                          material.name
+                        )
                       }
                       className={`rounded-lg border px-4 py-2 text-sm font-medium transition ${
-                        selectedMaterial === material.name
+                        selectedMaterial ===
+                        material.name
                           ? 'border-violet-500 bg-violet-50 text-violet-700 dark:bg-violet-500/10 dark:text-violet-200'
                           : 'border-zinc-200 hover:border-violet-300 dark:border-white/10'
                       }`}
@@ -631,10 +933,13 @@ export default function ProductInfoPage() {
                       key={color.name}
                       type="button"
                       onClick={() =>
-                        setSelectedColor(color.name)
+                        setSelectedColor(
+                          color.name
+                        )
                       }
                       className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition ${
-                        selectedColor === color.name
+                        selectedColor ===
+                        color.name
                           ? 'border-violet-500 bg-violet-50 dark:bg-violet-500/10'
                           : 'border-zinc-200 hover:border-violet-300 dark:border-white/10'
                       }`}
@@ -642,13 +947,15 @@ export default function ProductInfoPage() {
                       <span
                         className="h-5 w-5 rounded-full border-2 border-white/80 shadow-sm"
                         style={{
-                          backgroundColor: color.value,
+                          backgroundColor:
+                            color.value,
                         }}
                       />
 
                       {color.name}
 
-                      {selectedColor === color.name && (
+                      {selectedColor ===
+                        color.name && (
                         <Check className="h-4 w-4 text-violet-500" />
                       )}
                     </button>
@@ -656,7 +963,7 @@ export default function ProductInfoPage() {
                 </div>
               </div>
 
-              {/* Quality (Layer Height) */}
+              {/* Quality */}
               <div className="mt-3">
                 <p className="text-xs font-medium text-zinc-500">
                   Quality (Layer Height)
@@ -680,9 +987,24 @@ export default function ProductInfoPage() {
                     <button
                       key={option.value}
                       type="button"
-                      className="rounded-lg border border-zinc-200 px-4 py-2 text-sm font-medium transition hover:border-violet-300 dark:border-white/10"
+                      onClick={() =>
+                        setSelectedQuality(
+                          option.value
+                        )
+                      }
+                      className={`rounded-lg border px-4 py-2 text-sm font-medium transition ${
+                        selectedQuality ===
+                        option.value
+                          ? 'border-violet-500 bg-violet-50 text-violet-700 dark:bg-violet-500/10 dark:text-violet-200'
+                          : 'border-zinc-200 hover:border-violet-300 dark:border-white/10'
+                      }`}
                     >
                       {option.label}
+
+                      {selectedQuality ===
+                        option.value && (
+                        <Check className="ml-2 inline-block h-4 w-4 text-violet-500" />
+                      )}
                     </button>
                   ))}
                 </div>
@@ -714,7 +1036,9 @@ export default function ProductInfoPage() {
                   <button
                     type="button"
                     onClick={() =>
-                      setQuantity((value) => value + 1)
+                      setQuantity(
+                        (value) => value + 1
+                      )
                     }
                     className="flex h-10 w-10 items-center justify-center rounded-xl border border-zinc-200 transition hover:border-violet-400 dark:border-white/10"
                   >
@@ -726,7 +1050,9 @@ export default function ProductInfoPage() {
 
             <Button
               onClick={() =>
-                handleStepComplete('product-info')
+                handleStepComplete(
+                  'product-info'
+                )
               }
               className="w-full rounded-xl bg-violet-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-violet-700"
             >
@@ -763,7 +1089,9 @@ export default function ProductInfoPage() {
                       type="text"
                       value={fullName}
                       onChange={(e) =>
-                        setFullName(e.target.value)
+                        setFullName(
+                          e.target.value
+                        )
                       }
                       placeholder="John Doe"
                       className="w-full rounded-xl border border-zinc-200 bg-zinc-50 py-3 pl-10 pr-4 text-sm outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 dark:border-white/10 dark:bg-white/[0.03]"
@@ -783,7 +1111,9 @@ export default function ProductInfoPage() {
                       type="email"
                       value={email}
                       onChange={(e) =>
-                        setEmail(e.target.value)
+                        setEmail(
+                          e.target.value
+                        )
                       }
                       placeholder="john@example.com"
                       className="w-full rounded-xl border border-zinc-200 bg-zinc-50 py-3 pl-10 pr-4 text-sm outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 dark:border-white/10 dark:bg-white/[0.03]"
@@ -810,7 +1140,9 @@ export default function ProductInfoPage() {
                         type="tel"
                         value={phone}
                         onChange={(e) =>
-                          setPhone(e.target.value)
+                          setPhone(
+                            e.target.value
+                          )
                         }
                         placeholder="555-123-4567"
                         className="flex-1 rounded-r-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 dark:border-white/10 dark:bg-white/[0.03]"
@@ -840,7 +1172,9 @@ export default function ProductInfoPage() {
                       type="text"
                       value={addressLine1}
                       onChange={(e) =>
-                        setAddressLine1(e.target.value)
+                        setAddressLine1(
+                          e.target.value
+                        )
                       }
                       placeholder="123 Main Street"
                       className="w-full rounded-xl border border-zinc-200 bg-zinc-50 py-3 pl-10 pr-4 text-sm outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 dark:border-white/10 dark:bg-white/[0.03]"
@@ -860,7 +1194,9 @@ export default function ProductInfoPage() {
                       type="text"
                       value={addressLine2}
                       onChange={(e) =>
-                        setAddressLine2(e.target.value)
+                        setAddressLine2(
+                          e.target.value
+                        )
                       }
                       placeholder="Apt. Suite, Box (Optional)"
                       className="w-full rounded-xl border border-zinc-200 bg-zinc-50 py-3 pl-10 pr-4 text-sm outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 dark:border-white/10 dark:bg-white/[0.03]"
@@ -868,7 +1204,7 @@ export default function ProductInfoPage() {
                   </div>
                 </div>
 
-                {/* Current Location Button */}
+                {/* Current Location */}
                 <div className="mt-1">
                   <button
                     type="button"
@@ -892,7 +1228,9 @@ export default function ProductInfoPage() {
                       type="text"
                       value={city}
                       onChange={(e) =>
-                        setCity(e.target.value)
+                        setCity(
+                          e.target.value
+                        )
                       }
                       placeholder="San Francisco"
                       className="w-full rounded-xl border border-zinc-200 bg-zinc-50 py-3 pl-10 pr-4 text-sm outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 dark:border-white/10 dark:bg-white/[0.03]"
@@ -913,7 +1251,9 @@ export default function ProductInfoPage() {
                         type="text"
                         value={state}
                         onChange={(e) =>
-                          setState(e.target.value)
+                          setState(
+                            e.target.value
+                          )
                         }
                         placeholder="California"
                         className="w-full rounded-xl border border-zinc-200 bg-zinc-50 py-3 pl-10 pr-4 text-sm outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 dark:border-white/10 dark:bg-white/[0.03]"
@@ -931,7 +1271,9 @@ export default function ProductInfoPage() {
                         type="text"
                         value={zipCode}
                         onChange={(e) =>
-                          setZipCode(e.target.value)
+                          setZipCode(
+                            e.target.value
+                          )
                         }
                         placeholder="94105"
                         className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 dark:border-white/10 dark:bg-white/[0.03]"
@@ -960,7 +1302,9 @@ export default function ProductInfoPage() {
                     rows={3}
                     value={deliveryInstructions}
                     onChange={(e) =>
-                      setDeliveryInstructions(e.target.value)
+                      setDeliveryInstructions(
+                        e.target.value
+                      )
                     }
                     placeholder="Key Deliveries are USPS UPS DHL FedEx"
                     className="w-full rounded-xl border border-zinc-200 bg-zinc-50 py-3 pl-10 pr-4 text-sm outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 dark:border-white/10 dark:bg-white/[0.03]"
@@ -973,7 +1317,9 @@ export default function ProductInfoPage() {
               <button
                 type="button"
                 onClick={() =>
-                  setActiveStep('product-info')
+                  setActiveStep(
+                    'product-info'
+                  )
                 }
                 className="flex-1 rounded-xl border border-zinc-200 px-4 py-3 text-sm font-semibold transition hover:border-violet-400 dark:border-white/10"
               >
@@ -982,7 +1328,9 @@ export default function ProductInfoPage() {
 
               <Button
                 onClick={() =>
-                  handleStepComplete('personal-info')
+                  handleStepComplete(
+                    'personal-info'
+                  )
                 }
                 className="flex-1 rounded-xl bg-violet-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-violet-700"
               >
@@ -1047,6 +1395,22 @@ export default function ProductInfoPage() {
                         </span>
                       </span>
                     </div>
+
+                    <div className="mt-2 text-xs">
+                      <span className="text-zinc-500">
+                        Quality:{' '}
+                      </span>
+
+                      <span className="font-medium text-zinc-700 dark:text-zinc-300">
+                        {selectedQuality ===
+                        'over'
+                          ? 'Over 0.5mm'
+                          : selectedQuality ===
+                            'standard'
+                          ? 'Standard 0.5mm'
+                          : 'High 0.5mm'}
+                      </span>
+                    </div>
                   </div>
                 </div>
 
@@ -1054,7 +1418,8 @@ export default function ProductInfoPage() {
                   <FileUp className="h-4 w-4 text-violet-500" />
 
                   <span className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
-                    {referenceFile || 'No 3D file selected'}
+                    {referenceFile ||
+                      'No 3D file selected'}
                   </span>
 
                   <span className="ml-auto text-[10px] text-zinc-400">
@@ -1063,31 +1428,64 @@ export default function ProductInfoPage() {
                 </div>
 
                 {/* Uploaded Reference Images */}
-                {(frontViewFile ||
+                {(
+                  frontViewFile ||
                   sideViewFile ||
-                  backTopViewFile) && (
+                  backTopViewFile
+                ) && (
                   <div className="mt-3 rounded-lg bg-zinc-100 p-3 dark:bg-white/5">
                     <p className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
                       Reference Images
                     </p>
 
-                    <div className="mt-2 space-y-1">
+                    <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
                       {frontViewFile && (
-                        <p className="text-xs text-zinc-500">
-                          Front View: {frontViewFile}
-                        </p>
+                        <div className="overflow-hidden rounded-lg border border-zinc-200 bg-white dark:border-white/10 dark:bg-white/[0.03]">
+                          <img
+                            src={frontViewFile.previewUrl}
+                            alt="Front view"
+                            className="h-32 w-full object-contain"
+                          />
+
+                          <p className="truncate border-t border-zinc-200 px-2 py-2 text-xs text-zinc-500 dark:border-white/10">
+                            Front View:{' '}
+                            {frontViewFile.name}
+                          </p>
+                        </div>
                       )}
 
                       {sideViewFile && (
-                        <p className="text-xs text-zinc-500">
-                          Side View: {sideViewFile}
-                        </p>
+                        <div className="overflow-hidden rounded-lg border border-zinc-200 bg-white dark:border-white/10 dark:bg-white/[0.03]">
+                          <img
+                            src={sideViewFile.previewUrl}
+                            alt="Side view"
+                            className="h-32 w-full object-contain"
+                          />
+
+                          <p className="truncate border-t border-zinc-200 px-2 py-2 text-xs text-zinc-500 dark:border-white/10">
+                            Side View:{' '}
+                            {sideViewFile.name}
+                          </p>
+                        </div>
                       )}
 
                       {backTopViewFile && (
-                        <p className="text-xs text-zinc-500">
-                          Back/Top View: {backTopViewFile}
-                        </p>
+                        <div className="overflow-hidden rounded-lg border border-zinc-200 bg-white dark:border-white/10 dark:bg-white/[0.03]">
+                          <img
+                            src={
+                              backTopViewFile.previewUrl
+                            }
+                            alt="Back or top view"
+                            className="h-32 w-full object-contain"
+                          />
+
+                          <p className="truncate border-t border-zinc-200 px-2 py-2 text-xs text-zinc-500 dark:border-white/10">
+                            Back/Top View:{' '}
+                            {
+                              backTopViewFile.name
+                            }
+                          </p>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -1107,7 +1505,8 @@ export default function ProductInfoPage() {
                     <User className="h-4 w-4 text-zinc-400" />
 
                     <span className="font-medium text-zinc-700 dark:text-zinc-300">
-                      {fullName || 'Alex Chan'}
+                      {fullName ||
+                        'Alex Chan'}
                     </span>
                   </div>
 
@@ -1115,7 +1514,8 @@ export default function ProductInfoPage() {
                     <Mail className="h-4 w-4 text-zinc-400" />
 
                     <span className="text-zinc-600 dark:text-zinc-400">
-                      {email || 'alex.chan@example.com'}
+                      {email ||
+                        'alex.chan@example.com'}
                     </span>
                   </div>
 
@@ -1123,7 +1523,8 @@ export default function ProductInfoPage() {
                     <Phone className="h-4 w-4 text-zinc-400" />
 
                     <span className="text-zinc-600 dark:text-zinc-400">
-                      {phone || '+1 (555) 019-8372'}
+                      {phone ||
+                        '+1 (555) 019-8372'}
                     </span>
                   </div>
 
@@ -1132,7 +1533,8 @@ export default function ProductInfoPage() {
 
                     <div className="text-zinc-600 dark:text-zinc-400">
                       <p>
-                        {addressLine1 || '1024 Hexagon Lane'}
+                        {addressLine1 ||
+                          '1024 Hexagon Lane'}
                       </p>
 
                       <p>
@@ -1141,7 +1543,10 @@ export default function ProductInfoPage() {
                       </p>
 
                       <p>
-                        {city || 'Neo-Seattle'}, {state || 'WA'}{' '}
+                        {city ||
+                          'Neo-Seattle'}
+                        ,{' '}
+                        {state || 'WA'}{' '}
                         {zipCode || '98109'}
                       </p>
 
@@ -1192,7 +1597,9 @@ export default function ProductInfoPage() {
                   type="checkbox"
                   checked={confirmDetails}
                   onChange={(e) =>
-                    setConfirmDetails(e.target.checked)
+                    setConfirmDetails(
+                      e.target.checked
+                    )
                   }
                   className="h-4 w-4 rounded border-zinc-300 text-violet-600 focus:ring-violet-500"
                 />
@@ -1207,7 +1614,9 @@ export default function ProductInfoPage() {
               <button
                 type="button"
                 onClick={() =>
-                  setActiveStep('personal-info')
+                  setActiveStep(
+                    'personal-info'
+                  )
                 }
                 className="flex-1 rounded-xl border border-zinc-200 px-4 py-3 text-sm font-semibold transition hover:border-violet-400 dark:border-white/10"
               >
@@ -1216,7 +1625,9 @@ export default function ProductInfoPage() {
 
               <Button
                 onClick={() =>
-                  handleStepComplete('summary')
+                  handleStepComplete(
+                    'summary'
+                  )
                 }
                 disabled={!confirmDetails}
                 className="flex-1 rounded-xl bg-violet-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-50"
@@ -1302,7 +1713,9 @@ export default function ProductInfoPage() {
             <div className="flex flex-col gap-3">
               <button
                 type="button"
-                onClick={() => router.push('/')}
+                onClick={() =>
+                  router.push('/')
+                }
                 className="w-full rounded-xl border border-zinc-200 px-4 py-3 text-sm font-semibold transition hover:border-violet-400 dark:border-white/10"
               >
                 Back to Home
@@ -1353,9 +1766,8 @@ export default function ProductInfoPage() {
           </Link>
         </div>
 
-        {/* Main content - Full width */}
+        {/* Main content */}
         <div className="w-full">
-          {/* Left column - Timeline with Accordion (Full width) */}
           <div className="space-y-4">
             {/* Timeline Header */}
             <div className="rounded-[20px] border border-zinc-200 bg-white p-6 dark:border-white/10 dark:bg-[#111217]">
@@ -1374,13 +1786,15 @@ export default function ProductInfoPage() {
                   <span className="text-zinc-500">
                     Step{' '}
                     {timelineSteps.findIndex(
-                      (s) => s.id === activeStep
+                      (s) =>
+                        s.id === activeStep
                     ) + 1}{' '}
                     of {timelineSteps.length}
                   </span>
 
                   <span className="rounded-full bg-violet-100 px-2.5 py-0.5 text-xs font-semibold text-violet-700 dark:bg-violet-500/20 dark:text-violet-300">
-                    {completedSteps.length}/{timelineSteps.length}
+                    {completedSteps.length}/
+                    {timelineSteps.length}
                   </span>
                 </div>
               </div>
@@ -1388,205 +1802,234 @@ export default function ProductInfoPage() {
               {/* Horizontal Timeline Steps */}
               <div className="mt-6">
                 <div className="flex items-start justify-between">
-                  {timelineSteps.map((step, index) => {
-                    const isActive = isStepActive(step.id);
-                    const isCompleted = isStepCompleted(step.id);
-                    const isLocked = isStepLocked(step.id);
+                  {timelineSteps.map(
+                    (step, index) => {
+                      const isActive =
+                        isStepActive(step.id);
 
-                    return (
-                      <button
-                        key={step.id}
-                        onClick={() =>
-                          !isLocked &&
-                          handleStepClick(step.id)
-                        }
-                        disabled={isLocked}
-                        className="group relative flex flex-1 flex-col items-center gap-1.5"
-                      >
-                        <div className="flex w-full flex-col items-center">
-                          {/* Connecting Line - Left */}
-                          {index > 0 && (
-                            <div
-                              className={`absolute left-0 top-4 h-0.5 w-1/2 -translate-y-1/2 ${
-                                isCompleted ||
-                                (isActive &&
-                                  completedSteps.includes(
-                                    timelineSteps[index - 1]?.id ||
-                                      ''
-                                  ))
-                                  ? 'bg-violet-500'
-                                  : 'bg-zinc-300 dark:bg-zinc-600'
-                              }`}
-                            />
-                          )}
+                      const isCompleted =
+                        isStepCompleted(
+                          step.id
+                        );
 
-                          {/* Connecting Line - Right */}
-                          {index < timelineSteps.length - 1 && (
-                            <div
-                              className={`absolute right-0 top-4 h-0.5 w-1/2 -translate-y-1/2 ${
-                                isCompleted
-                                  ? 'bg-violet-500'
-                                  : 'bg-zinc-300 dark:bg-zinc-600'
-                              }`}
-                            />
-                          )}
+                      const isLocked =
+                        isStepLocked(
+                          step.id
+                        );
 
-                          {/* Circle */}
-                          <div
-                            className={`relative z-10 flex h-10 w-10 items-center justify-center rounded-full border-2 transition-all duration-300 ${
-                              isActive
-                                ? 'border-violet-500 bg-violet-500 text-white shadow-lg shadow-violet-500/30'
-                                : isCompleted
-                                ? 'border-emerald-500 bg-emerald-500 text-white'
-                                : isLocked
-                                ? 'border-zinc-300 bg-zinc-100 text-zinc-400 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-500'
-                                : 'border-zinc-300 bg-white text-zinc-500 hover:border-violet-400 dark:border-zinc-600 dark:bg-[#111217] dark:text-zinc-400'
-                            }`}
-                          >
-                            {isCompleted ? (
-                              <Check className="h-5 w-5" />
-                            ) : (
-                              <span className="text-sm font-bold">
-                                {index + 1}
-                              </span>
+                      return (
+                        <button
+                          key={step.id}
+                          onClick={() =>
+                            !isLocked &&
+                            handleStepClick(
+                              step.id
+                            )
+                          }
+                          disabled={isLocked}
+                          className="group relative flex flex-1 flex-col items-center gap-1.5"
+                        >
+                          <div className="flex w-full flex-col items-center">
+                            {index > 0 && (
+                              <div
+                                className={`absolute left-0 top-4 h-0.5 w-1/2 -translate-y-1/2 ${
+                                  isCompleted ||
+                                  (isActive &&
+                                    completedSteps.includes(
+                                      timelineSteps[
+                                        index -
+                                          1
+                                      ]?.id ||
+                                        ''
+                                    ))
+                                    ? 'bg-violet-500'
+                                    : 'bg-zinc-300 dark:bg-zinc-600'
+                                }`}
+                              />
                             )}
-                          </div>
 
-                          {/* Step Label */}
-                          <span
-                            className={`mt-2 text-xs font-semibold transition-colors ${
-                              isActive
-                                ? 'text-violet-600 dark:text-violet-300'
-                                : isCompleted
-                                ? 'text-emerald-600 dark:text-emerald-400'
-                                : isLocked
-                                ? 'text-zinc-400 dark:text-zinc-500'
-                                : 'text-zinc-600 hover:text-violet-500 dark:text-zinc-400'
-                            }`}
-                          >
-                            {step.label}
-                          </span>
-                        </div>
-                      </button>
-                    );
-                  })}
+                            {index <
+                              timelineSteps.length -
+                                1 && (
+                              <div
+                                className={`absolute right-0 top-4 h-0.5 w-1/2 -translate-y-1/2 ${
+                                  isCompleted
+                                    ? 'bg-violet-500'
+                                    : 'bg-zinc-300 dark:bg-zinc-600'
+                                }`}
+                              />
+                            )}
+
+                            <div
+                              className={`relative z-10 flex h-10 w-10 items-center justify-center rounded-full border-2 transition-all duration-300 ${
+                                isActive
+                                  ? 'border-violet-500 bg-violet-500 text-white shadow-lg shadow-violet-500/30'
+                                  : isCompleted
+                                  ? 'border-emerald-500 bg-emerald-500 text-white'
+                                  : isLocked
+                                  ? 'border-zinc-300 bg-zinc-100 text-zinc-400 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-500'
+                                  : 'border-zinc-300 bg-white text-zinc-500 hover:border-violet-400 dark:border-zinc-600 dark:bg-[#111217] dark:text-zinc-400'
+                              }`}
+                            >
+                              {isCompleted ? (
+                                <Check className="h-5 w-5" />
+                              ) : (
+                                <span className="text-sm font-bold">
+                                  {index + 1}
+                                </span>
+                              )}
+                            </div>
+
+                            <span
+                              className={`mt-2 text-xs font-semibold transition-colors ${
+                                isActive
+                                  ? 'text-violet-600 dark:text-violet-300'
+                                  : isCompleted
+                                  ? 'text-emerald-600 dark:text-emerald-400'
+                                  : isLocked
+                                  ? 'text-zinc-400 dark:text-zinc-500'
+                                  : 'text-zinc-600 hover:text-violet-500 dark:text-zinc-400'
+                              }`}
+                            >
+                              {step.label}
+                            </span>
+                          </div>
+                        </button>
+                      );
+                    }
+                  )}
                 </div>
               </div>
             </div>
 
             {/* Accordion Steps */}
             <div className="space-y-3">
-              {timelineSteps.map((step, index) => {
-                const isActive = isStepActive(step.id);
-                const isCompleted = isStepCompleted(step.id);
-                const isLocked = isStepLocked(step.id);
+              {timelineSteps.map(
+                (step, index) => {
+                  const isActive =
+                    isStepActive(step.id);
 
-                return (
-                  <div
-                    key={step.id}
-                    className={`rounded-[20px] border transition-all ${
-                      isActive
-                        ? 'border-violet-500 bg-white shadow-lg dark:bg-[#111217]'
-                        : isCompleted
-                        ? 'border-emerald-200 bg-white dark:border-emerald-400/20 dark:bg-[#111217]'
-                        : 'border-zinc-200 bg-white/50 dark:border-white/10 dark:bg-[#111217]/50'
-                    }`}
-                  >
-                    {/* Step Header */}
-                    <button
-                      onClick={() =>
-                        !isLocked &&
-                        handleStepClick(step.id)
-                      }
-                      className={`flex w-full items-center gap-4 p-5 text-left transition ${
-                        isLocked
-                          ? 'cursor-not-allowed opacity-60'
-                          : 'cursor-pointer hover:bg-zinc-50 dark:hover:bg-white/5'
-                      } ${
+                  const isCompleted =
+                    isStepCompleted(
+                      step.id
+                    );
+
+                  const isLocked =
+                    isStepLocked(
+                      step.id
+                    );
+
+                  return (
+                    <div
+                      key={step.id}
+                      className={`rounded-[20px] border transition-all ${
                         isActive
-                          ? 'rounded-t-[20px]'
-                          : 'rounded-[20px]'
+                          ? 'border-violet-500 bg-white shadow-lg dark:bg-[#111217]'
+                          : isCompleted
+                          ? 'border-emerald-200 bg-white dark:border-emerald-400/20 dark:bg-[#111217]'
+                          : 'border-zinc-200 bg-white/50 dark:border-white/10 dark:bg-[#111217]/50'
                       }`}
-                      disabled={isLocked}
                     >
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full">
-                        {isCompleted ? (
-                          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500 text-white">
-                            <Check className="h-5 w-5" />
-                          </div>
-                        ) : isActive ? (
-                          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-violet-600 font-bold text-white">
-                            {index + 1}
-                          </div>
-                        ) : (
-                          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-zinc-200 font-bold text-zinc-500 dark:bg-white/10">
-                            {index + 1}
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <span
-                            className={`font-semibold ${
-                              isActive
-                                ? 'text-violet-700 dark:text-violet-300'
-                                : isCompleted
-                                ? 'text-emerald-700 dark:text-emerald-300'
-                                : 'text-zinc-500'
-                            }`}
-                          >
-                            {step.label}
-                          </span>
-
-                          {isCompleted && (
-                            <span className="text-[10px] font-bold uppercase text-emerald-600 dark:text-emerald-400">
-                              ✓ Done
-                            </span>
-                          )}
-
-                          {isLocked && (
-                            <span className="text-[10px] font-bold uppercase text-zinc-400">
-                              🔒 Locked
-                            </span>
+                      {/* Step Header */}
+                      <button
+                        onClick={() =>
+                          !isLocked &&
+                          handleStepClick(
+                            step.id
+                          )
+                        }
+                        className={`flex w-full items-center gap-4 p-5 text-left transition ${
+                          isLocked
+                            ? 'cursor-not-allowed opacity-60'
+                            : 'cursor-pointer hover:bg-zinc-50 dark:hover:bg-white/5'
+                        } ${
+                          isActive
+                            ? 'rounded-t-[20px]'
+                            : 'rounded-[20px]'
+                        }`}
+                        disabled={isLocked}
+                      >
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full">
+                          {isCompleted ? (
+                            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500 text-white">
+                              <Check className="h-5 w-5" />
+                            </div>
+                          ) : isActive ? (
+                            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-violet-600 font-bold text-white">
+                              {index + 1}
+                            </div>
+                          ) : (
+                            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-zinc-200 font-bold text-zinc-500 dark:bg-white/10">
+                              {index + 1}
+                            </div>
                           )}
                         </div>
 
-                        <p
-                          className={`text-xs ${
-                            isActive
-                              ? 'text-zinc-600 dark:text-zinc-400'
-                              : 'text-zinc-400'
-                          }`}
-                        >
-                          {step.description}
-                        </p>
-                      </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <span
+                              className={`font-semibold ${
+                                isActive
+                                  ? 'text-violet-700 dark:text-violet-300'
+                                  : isCompleted
+                                  ? 'text-emerald-700 dark:text-emerald-300'
+                                  : 'text-zinc-500'
+                              }`}
+                            >
+                              {step.label}
+                            </span>
 
-                      <div className="shrink-0">
-                        {isActive ? (
-                          <ChevronUp className="h-5 w-5 text-violet-500" />
-                        ) : (
-                          <ChevronDown
-                            className={`h-5 w-5 ${
-                              isCompleted
-                                ? 'text-emerald-500'
+                            {isCompleted && (
+                              <span className="text-[10px] font-bold uppercase text-emerald-600 dark:text-emerald-400">
+                                ✓ Done
+                              </span>
+                            )}
+
+                            {isLocked && (
+                              <span className="text-[10px] font-bold uppercase text-zinc-400">
+                                🔒 Locked
+                              </span>
+                            )}
+                          </div>
+
+                          <p
+                            className={`text-xs ${
+                              isActive
+                                ? 'text-zinc-600 dark:text-zinc-400'
                                 : 'text-zinc-400'
                             }`}
-                          />
-                        )}
-                      </div>
-                    </button>
+                          >
+                            {step.description}
+                          </p>
+                        </div>
 
-                    {/* Step Content */}
-                    {isActive && (
-                      <div className="border-t border-zinc-200 px-5 pb-6 pt-4 dark:border-white/10">
-                        {renderStepContent(step.id)}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+                        <div className="shrink-0">
+                          {isActive ? (
+                            <ChevronUp className="h-5 w-5 text-violet-500" />
+                          ) : (
+                            <ChevronDown
+                              className={`h-5 w-5 ${
+                                isCompleted
+                                  ? 'text-emerald-500'
+                                  : 'text-zinc-400'
+                              }`}
+                            />
+                          )}
+                        </div>
+                      </button>
+
+                      {/* Step Content */}
+                      {isActive && (
+                        <div className="border-t border-zinc-200 px-5 pb-6 pt-4 dark:border-white/10">
+                          {renderStepContent(
+                            step.id
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                }
+              )}
             </div>
           </div>
         </div>
