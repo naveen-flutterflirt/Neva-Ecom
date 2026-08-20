@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import {
   Search,
   ShoppingCart,
@@ -16,6 +17,7 @@ import { useAppSelector } from '../../store';
 import { useTheme } from '../providers/ThemeProvider';
 
 export default function Navbar() {
+  const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProductsOpen, setIsProductsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -89,13 +91,16 @@ export default function Navbar() {
     },
   ];
 
+  if (pathname && (pathname.startsWith('/admin') || pathname === '/admin-login')) {
+    return null;
+  }
+
   return (
     <nav
-      className={`fixed top-0 left-0 z-50 w-full transition-all duration-300 ${
-        isScrolled
+      className={`fixed top-0 left-0 z-50 w-full transition-all duration-300 ${isScrolled
           ? 'bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md border-b border-zinc-200/50 dark:border-zinc-800/50 shadow-lg'
           : 'bg-transparent border-b border-transparent'
-      }`}
+        }`}
     >
       <div className="relative mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
 
@@ -128,9 +133,8 @@ export default function Navbar() {
               Products
 
               <ChevronDown
-                className={`ml-0.5 h-3.5 w-3.5 stroke-[2.5] text-zinc-500 transition-transform duration-200 dark:text-zinc-400 ${
-                  isProductsOpen ? 'rotate-180' : ''
-                }`}
+                className={`ml-0.5 h-3.5 w-3.5 stroke-[2.5] text-zinc-500 transition-transform duration-200 dark:text-zinc-400 ${isProductsOpen ? 'rotate-180' : ''
+                  }`}
               />
             </div>
 
@@ -139,11 +143,10 @@ export default function Navbar() {
 
             {/* Products Dropdown */}
             <div
-              className={`absolute left-1/2 top-full z-50 w-56 -translate-x-1/2 rounded-2xl border border-zinc-200/70 bg-white/95 p-2 shadow-[0_18px_45px_rgba(15,23,42,0.16)] backdrop-blur-md dark:border-zinc-800/80 dark:bg-zinc-950/95 transition-all duration-200 ${
-                isProductsOpen
+              className={`absolute left-1/2 top-full z-50 w-56 -translate-x-1/2 rounded-2xl border border-zinc-200/70 bg-white/95 p-2 shadow-[0_18px_45px_rgba(15,23,42,0.16)] backdrop-blur-md dark:border-zinc-800/80 dark:bg-zinc-950/95 transition-all duration-200 ${isProductsOpen
                   ? 'pointer-events-auto translate-y-3 opacity-100'
                   : 'pointer-events-none translate-y-1 opacity-0'
-              }`}
+                }`}
             >
               {productCategories.map((item) => (
                 <Link
