@@ -84,7 +84,7 @@ export default function Navbar() {
   const navLinks = [
     {
       label: 'Custom Products',
-      href: '/new-custom',
+      href: '/custom-products/product-info',
     },
     {
       label: 'About',
@@ -93,7 +93,7 @@ export default function Navbar() {
   ];
 
   // Check whether a navbar link is currently active
-  const isActive = (href: string) => pathname === href;
+  const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
 
   // Products is active when user is inside either product category
   const isProductsActive = productCategories.some(

@@ -13,7 +13,7 @@ export default function ForgotPasswordPage() {
         overflow-hidden
         bg-[radial-gradient(circle_at_top,_rgba(168,85,247,0.12),transparent_30%),radial-gradient(circle_at_bottom_right,_rgba(34,211,238,0.12),transparent_25%),linear-gradient(180deg,#f8fafc,#eef2ff_35%,#f8fafc)]
         px-4
-        pb-0
+        pb-8
         pt-20
         text-zinc-900
         dark:bg-[radial-gradient(circle_at_top,_rgba(168,85,247,0.16),transparent_30%),radial-gradient(circle_at_bottom_right,_rgba(34,211,238,0.14),transparent_25%),linear-gradient(180deg,#020817,#0b1120_35%,#020817)]
@@ -29,12 +29,14 @@ export default function ForgotPasswordPage() {
           justify-center
           pt-4
           sm:pt-6
+          md:mt-0
           sm:h-[calc(100vh-5rem)]
           sm:items-center
           md:h-screen
           md:min-h-0
           md:items-center
-          md:pt-16
+          md:justify-center
+          // md:pt-0
         "
       >
         <div className="w-full max-w-6xl">
