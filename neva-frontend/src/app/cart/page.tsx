@@ -33,7 +33,7 @@ export default function CartPage() {
     };
 
     // Calculate invoice totals
-    const subtotal = cartItems.reduce((acc, item) => acc + item.product.price * item.quantity, 0);
+    const subtotal = cartItems.reduce((acc, item) => acc + Number(item.product.price) * item.quantity, 0);
     const discountAmount = Math.round((subtotal * appliedDiscount) / 100);
     const shipping = subtotal > 1500 || subtotal === 0 ? 0 : 99;
     const gst = Math.round((subtotal - discountAmount) * 0.18);
@@ -161,7 +161,7 @@ export default function CartPage() {
                                         {/* Total Product Price */}
                                         <div className="text-right min-w-[70px] hidden sm:block">
                                             <span className="text-zinc-500 text-[10px] font-bold uppercase tracking-wider block">Total</span>
-                                            <span className="font-black text-zinc-900 dark:text-white text-base">₹{item.product.price * item.quantity}</span>
+                                            <span className="font-black text-zinc-900 dark:text-white text-base">₹{Number(item.product.price) * item.quantity}</span>
                                         </div>
 
                                         {/* Remove Action */}

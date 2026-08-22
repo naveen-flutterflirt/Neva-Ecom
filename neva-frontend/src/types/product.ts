@@ -15,6 +15,7 @@ export interface ColorOptionItem {
   name: string;
   code: string;
   priceAdjustment?: number;
+  imageUrl?: string;
 }
 
 export interface SizeVariantItem {

@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useParams, useRouter } from 'next/router';
+import { useParams, useRouter } from 'next/navigation';
 import {
   ArrowLeft, Star, Cpu, Layers, Heart, ShoppingCart, Zap,
   Ruler, RefreshCw, Truck, RotateCcw, Palette, Info, Sparkles,

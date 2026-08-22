@@ -68,6 +68,7 @@ interface Product {
   sizeVariants?: SizeVariant[];
   careInstructions?: string[];
   keyFeatures?: { title: string; description: string }[];
+  specifications?: Record<string, any>;
 }
 
 const PRESET_COLOR_CHART = [

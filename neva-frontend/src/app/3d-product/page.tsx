@@ -115,8 +115,8 @@ export default function ThreeDProductsPage() {
       );
     })
     .sort((a, b) => {
-      if (sortBy === 'price-low') return a.price - b.price;
-      if (sortBy === 'price-high') return b.price - a.price;
+      if (sortBy === 'price-low') return Number(a.price) - Number(b.price);
+      if (sortBy === 'price-high') return Number(b.price) - Number(a.price);
       if (sortBy === 'rating') return (b.rating || 0) - (a.rating || 0);
       return 0;
     });
