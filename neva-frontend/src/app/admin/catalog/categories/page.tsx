@@ -11,6 +11,7 @@ import {
   AlertTriangle
 } from 'lucide-react';
 import Toast from '../../../../components/ui/Toast';
+import { API_URL } from '../../../../lib/api';
 
 interface Category {
   id: string;
@@ -20,7 +21,7 @@ interface Category {
   status: 'active' | 'inactive';
 }
 
-const BACKEND_URL = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5050/api'}/categories`;
+const BACKEND_URL = `${API_URL}/categories`;
 
 export default function AdminCategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -191,7 +192,7 @@ export default function AdminCategoriesPage() {
     if (!categoryToDelete) return;
     const id = categoryToDelete.id;
     setDeletingId(id);
-    
+
     try {
       const response = await fetch(`${BACKEND_URL}/${id}`, {
         method: 'DELETE'
@@ -286,11 +287,10 @@ export default function AdminCategoriesPage() {
                   </tr>
                 ) : (
                   filteredCategories.map((category, index) => (
-                    <tr 
-                      key={category.id} 
-                      className={`hover:bg-zinc-50 transition-colors duration-150 ${
-                        deletingId === category.id ? 'opacity-40 pointer-events-none bg-red-50' : ''
-                      }`}
+                    <tr
+                      key={category.id}
+                      className={`hover:bg-zinc-50 transition-colors duration-150 ${deletingId === category.id ? 'opacity-40 pointer-events-none bg-red-50' : ''
+                        }`}
                     >
                       <td className="px-6 py-3.5 font-mono text-zinc-400 text-[11px] font-semibold">{index + 1}</td>
                       <td className="px-6 py-3.5">
@@ -301,11 +301,10 @@ export default function AdminCategoriesPage() {
                         <span className="block truncate">{category.description || '—'}</span>
                       </td>
                       <td className="px-6 py-3.5">
-                        <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold ${
-                          category.status === 'active' 
-                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' 
+                        <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold ${category.status === 'active'
+                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                             : 'bg-zinc-100 text-zinc-500 border border-zinc-200'
-                        }`}>
+                          }`}>
                           <span className={`h-1.5 w-1.5 rounded-full ${category.status === 'active' ? 'bg-emerald-500' : 'bg-zinc-400'}`} />
                           {category.status}
                         </span>
@@ -349,7 +348,7 @@ export default function AdminCategoriesPage() {
               <h3 className="text-base font-bold text-zinc-900">
                 {modalMode === 'create' ? 'Add New Category' : 'Edit Category'}
               </h3>
-              <button 
+              <button
                 onClick={() => setIsModalOpen(false)}
                 disabled={isSaving}
                 className="p-1 rounded-lg text-zinc-400 hover:text-zinc-650 hover:bg-zinc-50 transition disabled:opacity-30"
@@ -466,7 +465,7 @@ export default function AdminCategoriesPage() {
             <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-50 text-red-650 mb-4">
               <AlertTriangle className="h-6 w-6 text-red-600" />
             </div>
-            
+
             <h3 className="text-base font-bold text-zinc-900 mb-2">Delete Category</h3>
             <p className="text-xs text-zinc-500 mb-6 px-2">
               Are you sure you want to delete the category <span className="font-bold text-zinc-800">"{categoryToDelete.name}"</span>? This action cannot be undone.

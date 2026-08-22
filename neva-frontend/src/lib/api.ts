@@ -1,4 +1,4 @@
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5050/api';
+export const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5050/api';
 
 interface RequestOptions extends RequestInit {
   body?: any;
@@ -19,7 +19,7 @@ export async function apiClient(endpoint: string, options: RequestOptions = {}) 
     ...(options.body && { body: JSON.stringify(options.body) }),
   };
 
-  const response = await fetch(`${BASE_URL}${endpoint}`, config);
+  const response = await fetch(`${API_URL}${endpoint}`, config);
 
   let data;
   try {

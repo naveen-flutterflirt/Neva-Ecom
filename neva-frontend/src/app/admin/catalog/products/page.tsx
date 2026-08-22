@@ -90,7 +90,9 @@ const PRESET_COLOR_CHART = [
   { name: 'Deep Indigo', code: '#4338ca', priceAdjustment: 50 },
 ];
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5050/api';
+import { API_URL } from '../../../../lib/api';
+
+const API_BASE = API_URL;
 const PRODUCTS_API = `${API_BASE}/products`;
 const CATEGORIES_API = `${API_BASE}/categories`;
 
