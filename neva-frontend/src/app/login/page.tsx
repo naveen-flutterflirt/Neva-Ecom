@@ -1,11 +1,54 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Button from '../../components/ui/Button';
+import Toast from '../../components/ui/Toast';
+import { apiClient } from '../../lib/api';
 
 export default function LoginPage() {
   const router = useRouter();
+
+  const [emailOrNumber, setEmailOrNumber] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 3000);
+  };
+
+  const handleLogin = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!emailOrNumber.trim() || !password.trim()) {
+      showToast('❌ Email/contact number and password are required.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const resData = await apiClient('/auth/signin', {
+        method: 'POST',
+        body: {
+          emailOrNumber: emailOrNumber.trim(),
+          password: password,
+        },
+      });
+
+      showToast('✓ Sign-in successful! 🎉');
+      localStorage.setItem('neva-token', resData.token);
+
+      setTimeout(() => {
+        router.push('/');
+      }, 1500);
+    } catch (err: any) {
+      showToast(`❌ ${err.message || 'Connection error. Please try again.'}`);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <main
@@ -89,18 +132,18 @@ export default function LoginPage() {
                 <h1 className="text-3xl font-black tracking-tight text-zinc-900 dark:text-white">
                   Power your next build.
                 </h1>
-              <div className="mt-4 w-full overflow-hidden rounded-2xl">
-    <video
-        src="/yeti_idle.webm"
-        autoPlay
-        muted
-        loop
-        playsInline
-        className="h-[380px] w-full scale-130 object-contain"
-    />
-</div>
+                <div className="mt-4 w-full overflow-hidden rounded-2xl">
+                  <video
+                    src="/yeti_idle.webm"
+                    autoPlay
+                    muted
+                    loop
+                    playsInline
+                    className="h-[380px] w-full scale-130 object-contain"
+                  />
+                </div>
 
-              {/* <div className="relative z-10 space-y-4 text-sm text-zinc-600 dark:text-zinc-300">
+                {/* <div className="relative z-10 space-y-4 text-sm text-zinc-600 dark:text-zinc-300">
 
                 <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-700/80 dark:bg-zinc-900/70">
                   <p className="text-[10px] uppercase tracking-[0.24em] text-violet-600 dark:text-violet-300">
@@ -217,27 +260,12 @@ export default function LoginPage() {
                   sm:space-y-4
                   max-[320px]:space-y-2
                 "
-                onSubmit={(event) => event.preventDefault()}
+                onSubmit={handleLogin}
               >
 
                 {/* EMAIL OR CONTACT NUMBER */}
                 <div>
-                  <label
-                    htmlFor="loginIdentifier"
-                    className="
-                      mb-1.5
-                      block
-                      text-[9px]
-                      font-semibold
-                      uppercase
-                      tracking-[0.18em]
-                      text-zinc-500
-                      dark:text-zinc-400
-                      sm:mb-2
-                      sm:text-[10px]
-                      sm:tracking-[0.22em]
-                    "
-                  >
+                  <label htmlFor="loginIdentifier" className="form-label">
                     Email / Contact Number
                   </label>
 
@@ -247,58 +275,15 @@ export default function LoginPage() {
                     name="loginIdentifier"
                     autoComplete="username"
                     placeholder="abc@example.com / 9876543210"
-                    className="
-                      w-full
-                      rounded-xl
-                      border
-                      border-zinc-200
-                      bg-white
-                      px-3
-                      py-2.5
-                      text-xs
-                      text-zinc-900
-                      outline-none
-                      transition-all
-                      duration-200
-                      placeholder:text-zinc-400
-                      hover:border-zinc-300
-                      focus:border-violet-500
-                      focus:ring-2
-                      focus:ring-violet-500/20
-                      dark:border-zinc-700
-                      dark:bg-zinc-900/80
-                      dark:text-white
-                      dark:placeholder:text-zinc-500
-                      dark:hover:border-zinc-500
-                      dark:focus:border-cyan-400
-                      dark:focus:ring-cyan-500/30
-                      sm:rounded-2xl
-                      sm:px-4
-                      sm:py-3
-                      sm:text-sm
-                      max-[320px]:py-2
-                    "
+                    value={emailOrNumber}
+                    onChange={(e) => setEmailOrNumber(e.target.value)}
+                    className="form-input"
                   />
                 </div>
 
                 {/* PASSWORD */}
                 <div>
-                  <label
-                    htmlFor="password"
-                    className="
-                      mb-1.5
-                      block
-                      text-[9px]
-                      font-semibold
-                      uppercase
-                      tracking-[0.18em]
-                      text-zinc-500
-                      dark:text-zinc-400
-                      sm:mb-2
-                      sm:text-[10px]
-                      sm:tracking-[0.22em]
-                    "
-                  >
+                  <label htmlFor="password" className="form-label">
                     Password
                   </label>
 
@@ -308,37 +293,9 @@ export default function LoginPage() {
                     name="password"
                     autoComplete="current-password"
                     placeholder="Enter your password"
-                    className="
-                      w-full
-                      rounded-xl
-                      border
-                      border-zinc-200
-                      bg-white
-                      px-3
-                      py-2.5
-                      text-xs
-                      text-zinc-900
-                      outline-none
-                      transition-all
-                      duration-200
-                      placeholder:text-zinc-400
-                      hover:border-zinc-300
-                      focus:border-violet-500
-                      focus:ring-2
-                      focus:ring-violet-500/20
-                      dark:border-zinc-700
-                      dark:bg-zinc-900/80
-                      dark:text-white
-                      dark:placeholder:text-zinc-500
-                      dark:hover:border-zinc-500
-                      dark:focus:border-cyan-400
-                      dark:focus:ring-cyan-500/30
-                      sm:rounded-2xl
-                      sm:px-4
-                      sm:py-3
-                      sm:text-sm
-                      max-[320px]:py-2
-                    "
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="form-input"
                   />
                 </div>
 
@@ -399,18 +356,19 @@ export default function LoginPage() {
                 {/* LOGIN BUTTON */}
                 <Button
                   type="submit"
-                  style={{ cursor: 'pointer' }}
+                  disabled={loading}
+                  style={{ cursor: loading ? 'not-allowed' : 'pointer' }}
                   className="
-    w-full
-    text-xs
-    uppercase
-    tracking-[0.16em]
-    sm:text-sm
-    sm:tracking-[0.2em]
-    max-[320px]:text-[10px]
-  "
+                    w-full
+                    text-xs
+                    uppercase
+                    tracking-[0.16em]
+                    sm:text-sm
+                    sm:tracking-[0.2em]
+                    max-[320px]:text-[10px]
+                  "
                 >
-                  Login
+                  {loading ? 'Logging in...' : 'Login'}
                 </Button>
 
               </form>
@@ -475,6 +433,7 @@ export default function LoginPage() {
           </div>
         </div>
       </div>
+      <Toast message={toastMessage} />
     </main>
   );
 }

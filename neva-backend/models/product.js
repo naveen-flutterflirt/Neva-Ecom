@@ -19,7 +19,7 @@ const Product = sequelize.define(
         model: 'categories',
         key: 'id',
       },
-      onDelete: 'RESTRICT',
+      onDelete: 'CASCADE',
       onUpdate: 'CASCADE',
     },
 
@@ -120,6 +120,48 @@ const Product = sequelize.define(
           msg: "Status must be either 'draft', 'active', or 'out_of_stock'",
         },
       },
+    },
+
+    materialVariants: {
+      type: DataTypes.JSONB,
+      allowNull: true,
+      defaultValue: [],
+      field: 'material_variants',
+    },
+
+    colorOptions: {
+      type: DataTypes.JSONB,
+      allowNull: true,
+      defaultValue: [],
+      field: 'color_options',
+    },
+
+    sizeVariants: {
+      type: DataTypes.JSONB,
+      allowNull: true,
+      defaultValue: [],
+      field: 'size_variants',
+    },
+
+    careInstructions: {
+      type: DataTypes.JSONB,
+      allowNull: true,
+      defaultValue: [],
+      field: 'care_instructions',
+    },
+
+    keyFeatures: {
+      type: DataTypes.JSONB,
+      allowNull: true,
+      defaultValue: [],
+      field: 'key_features',
+    },
+
+    specifications: {
+      type: DataTypes.JSONB,
+      allowNull: true,
+      defaultValue: {},
+      field: 'specifications',
     },
   },
   {

@@ -60,6 +60,12 @@ const ProductImage = sequelize.define(
         }
       }
     },
+
+    color: {
+      type: DataTypes.STRING(50),
+      allowNull: true,
+      field: 'color',
+    },
   },
   {
     tableName: 'product_images',

@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
-import { 
-  Search, 
-  Eye, 
-  Trash2, 
+import React, { useEffect, useState } from 'react';
+import {
+  Search,
+  Eye,
+  Trash2,
   X,
   Check,
   AlertTriangle,
@@ -14,111 +14,40 @@ import {
   ChevronDown
 } from 'lucide-react';
 import Toast from '../../../components/ui/Toast';
+import { apiClient } from '../../../lib/api';
 
 interface PrintRequest {
   id: string;
+  backendId?: string;
   customerName: string;
   customerEmail: string;
   customerPhone: string;
   fileName: string;
   fileSize: string;
+  fileUrl?: string | null;
   material: string;
   color: string;
+  quality?: string;
+  height?: string;
   infill: number; // e.g. 20 for 20%
   quantity: number;
   notes: string;
   quotePrice: number | null;
   status: 'pending_review' | 'quote_sent' | 'in_production' | 'completed' | 'cancelled';
   createdAt: string;
+  frontImage?: string | null;
+  sideImage?: string | null;
+  backImage?: string | null;
 }
 
-const INITIAL_MOCK_REQUESTS: PrintRequest[] = [
-  {
-    id: 'PR-9031',
-    customerName: 'Aarav Mehta',
-    customerEmail: 'aarav.mehta@gmail.com',
-    customerPhone: '+91 98765 43210',
-    fileName: 'mechanical_gear_v2.stl',
-    fileSize: '14.2 MB',
-    material: 'PLA Tough',
-    color: 'Matte Black',
-    infill: 40,
-    quantity: 4,
-    notes: 'Please print using 0.12mm high detail layer height. Needs to handle mechanical load.',
-    quotePrice: null,
-    status: 'pending_review',
-    createdAt: '2026-08-19 10:30 AM'
-  },
-  {
-    id: 'PR-9032',
-    customerName: 'Sneha Rao',
-    customerEmail: 'sneha.rao@yahoo.com',
-    customerPhone: '+91 91234 56789',
-    fileName: 'architectural_dome_model.obj',
-    fileSize: '48.7 MB',
-    material: 'PETG',
-    color: 'Transparent Translucent',
-    infill: 15,
-    quantity: 1,
-    notes: 'No support structures on the outer dome if possible. It is a visual prototype.',
-    quotePrice: 3200,
-    status: 'quote_sent',
-    createdAt: '2026-08-18 04:15 PM'
-  },
-  {
-    id: 'PR-9033',
-    customerName: 'Rajesh Kumar',
-    customerEmail: 'rajesh.k@rediffmail.com',
-    customerPhone: '+91 88888 77777',
-    fileName: 'custom_phone_stand.stl',
-    fileSize: '3.1 MB',
-    material: 'ABS',
-    color: 'Red Glossy',
-    infill: 30,
-    quantity: 10,
-    notes: 'Red ABS color. Needs to be polished or acetone-smoothed if possible.',
-    quotePrice: 1500,
-    status: 'in_production',
-    createdAt: '2026-08-18 09:00 AM'
-  },
-  {
-    id: 'PR-9034',
-    customerName: 'Priya Sharma',
-    customerEmail: 'priya.sharma@outlook.com',
-    customerPhone: '+91 77777 66666',
-    fileName: 'cosplay_helmet_rear.stl',
-    fileSize: '102.5 MB',
-    material: 'PLA',
-    color: 'Gray Basic',
-    infill: 20,
-    quantity: 1,
-    notes: 'Do not scale. Dimensions must match exactly for cosplay fit.',
-    quotePrice: 5800,
-    status: 'completed',
-    createdAt: '2026-08-15 11:20 AM'
-  },
-  {
-    id: 'PR-9035',
-    customerName: 'Vikram Singh',
-    customerEmail: 'vikram.singh@corporate.in',
-    customerPhone: '+91 99999 88888',
-    fileName: 'enclosure_bracket.stl',
-    fileSize: '8.4 MB',
-    material: 'Nylon',
-    color: 'White',
-    infill: 100,
-    quantity: 20,
-    notes: 'High strength required. Please print using Nylon at 100% solid infill.',
-    quotePrice: null,
-    status: 'cancelled',
-    createdAt: '2026-08-14 02:45 PM'
-  }
-];
+
+const INITIAL_MOCK_REQUESTS: PrintRequest[] = [];
 
 export default function AdminCustomPrintPage() {
-  const [requests, setRequests] = useState<PrintRequest[]>(INITIAL_MOCK_REQUESTS);
+  const [requests, setRequests] = useState<PrintRequest[]>([]);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-  
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+
   // Filtering & Search
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<string>('all');
@@ -135,11 +64,68 @@ export default function AdminCustomPrintPage() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [requestToDelete, setRequestToDelete] = useState<PrintRequest | null>(null);
 
+  const fetchRequests = async () => {
+    try {
+      setIsLoading(true);
+      const res = await apiClient('/custom-print');
+      if (res && Array.isArray(res.data)) {
+        const mappedData: PrintRequest[] = res.data.map((item: any) => ({
+          id: item.requestId || item.id,
+          backendId: item.id,
+          customerName: item.customerName,
+          customerEmail: item.customerEmail,
+          customerPhone: item.customerPhone,
+          fileName: item.fileName,
+          fileSize: item.fileSize || 'N/A',
+          fileUrl: item.fileUrl || null,
+          material: item.material,
+          color: item.color,
+          quality: item.quality || item.height || '6 Inch',
+          height: item.height || item.quality || '6 Inch',
+          infill: item.infill || 20,
+          quantity: item.quantity || 1,
+          notes: item.notes || '',
+          frontImage: item.frontImage || null,
+          sideImage: item.sideImage || null,
+          backImage: item.backImage || null,
+          quotePrice: item.quotePrice ? parseFloat(item.quotePrice) : null,
+          status: item.status || 'pending_review',
+          createdAt: new Date(item.createdAt).toLocaleString(),
+        }));
+
+        setRequests(mappedData);
+      }
+    } catch (error) {
+      console.error('Error fetching custom print requests:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchRequests();
+  }, []);
+
   const showToast = (message: string) => {
     setToastMessage(message);
     setTimeout(() => {
       setToastMessage(null);
     }, 3000);
+  };
+
+  const handleDownloadFile = (fileUrl?: string | null, defaultName: string = 'file') => {
+    if (!fileUrl) {
+      showToast(`No file URL available to download for ${defaultName}.`);
+      return;
+    }
+    const link = document.createElement('a');
+    link.href = fileUrl;
+    link.download = defaultName;
+    link.target = '_blank';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showToast(`✓ Downloading ${defaultName}... 💾`);
   };
 
   // Status counters helper
@@ -149,41 +135,65 @@ export default function AdminCustomPrintPage() {
   };
 
   // Status update handler
-  const handleStatusChange = (id: string, newStatus: PrintRequest['status']) => {
-    if (newStatus === 'quote_sent') {
-      const targetReq = requests.find(r => r.id === id);
-      if (targetReq) {
-        setSelectedRequest(targetReq);
-        setInputPrice(targetReq.quotePrice?.toString() || '');
-        setIsQuoting(true);
-        setIsDetailOpen(true);
-        return;
-      }
+  const handleStatusChange = async (id: string, newStatus: PrintRequest['status']) => {
+    const targetReq = requests.find(r => r.id === id);
+    if (newStatus === 'quote_sent' && targetReq) {
+      setSelectedRequest(targetReq);
+      setInputPrice(targetReq.quotePrice?.toString() || '');
+      setIsQuoting(true);
+      setIsDetailOpen(true);
+      return;
     }
+
     setRequests(prev => prev.map(req => {
       if (req.id === id) {
         return { ...req, status: newStatus };
       }
       return req;
     }));
+
+    if (targetReq?.backendId) {
+      try {
+        await apiClient(`/custom-print/${targetReq.backendId}`, {
+          method: 'PUT',
+          body: { status: newStatus },
+        });
+      } catch (err) {
+        console.error('API update error:', err);
+      }
+    }
+
     showToast(`Status updated successfully! ⚡`);
   };
 
   // Quote submit handler
-  const handleSendQuote = (e: React.FormEvent) => {
+  const handleSendQuote = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedRequest || !inputPrice) return;
 
+    const parsedPrice = parseFloat(inputPrice);
+
     setRequests(prev => prev.map(req => {
       if (req.id === selectedRequest.id) {
-        return { 
-          ...req, 
-          quotePrice: parseFloat(inputPrice), 
-          status: 'quote_sent' 
+        return {
+          ...req,
+          quotePrice: parsedPrice,
+          status: 'quote_sent'
         };
       }
       return req;
     }));
+
+    if (selectedRequest.backendId) {
+      try {
+        await apiClient(`/custom-print/${selectedRequest.backendId}`, {
+          method: 'PUT',
+          body: { quotePrice: parsedPrice, status: 'quote_sent' },
+        });
+      } catch (err) {
+        console.error('API update quote error:', err);
+      }
+    }
 
     showToast(`Price quote of ₹${inputPrice} sent successfully! 🎉`);
     setIsQuoting(false);
@@ -193,22 +203,35 @@ export default function AdminCustomPrintPage() {
   };
 
   // Delete handler
-  const handleDeleteRequest = () => {
+  const handleDeleteRequest = async () => {
     if (!requestToDelete) return;
-    setRequests(prev => prev.filter(r => r.id !== requestToDelete.id));
-    showToast(`Request ${requestToDelete.id} deleted successfully! 🗑️`);
+
+    const target = requestToDelete;
+    setRequests(prev => prev.filter(r => r.id !== target.id));
+
+    if (target.backendId) {
+      try {
+        await apiClient(`/custom-print/${target.backendId}`, {
+          method: 'DELETE',
+        });
+      } catch (err) {
+        console.error('API delete error:', err);
+      }
+    }
+
+    showToast(`Request ${target.id} deleted successfully! 🗑️`);
     setIsDeleteModalOpen(false);
     setRequestToDelete(null);
   };
 
   // Filter requests
   const filteredRequests = requests.filter(req => {
-    const matchesSearch = 
+    const matchesSearch =
       req.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       req.customerEmail.toLowerCase().includes(searchQuery.toLowerCase()) ||
       req.fileName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       req.id.toLowerCase().includes(searchQuery.toLowerCase());
-    
+
     if (activeTab === 'all') return matchesSearch;
     return matchesSearch && req.status === activeTab;
   });
@@ -241,18 +264,16 @@ export default function AdminCustomPrintPage() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-3.5 py-2 text-xs font-bold rounded-xl transition-all duration-200 whitespace-nowrap ${
-                  isActive 
-                    ? 'bg-white text-zinc-950 shadow-sm border border-zinc-200/50' 
-                    : 'text-zinc-500 hover:text-zinc-800 hover:bg-white/40 border border-transparent'
-                }`}
+                className={`flex items-center gap-2 px-3.5 py-2 text-xs font-bold rounded-xl transition-all duration-200 whitespace-nowrap ${isActive
+                  ? 'bg-white text-zinc-950 shadow-sm border border-zinc-200/50'
+                  : 'text-zinc-500 hover:text-zinc-800 hover:bg-white/40 border border-transparent'
+                  }`}
               >
                 <span>{tab.label}</span>
-                <span className={`rounded-lg px-1.5 py-0.5 text-[10px] font-bold transition-all duration-200 ${
-                  isActive 
-                    ? 'bg-violet-650 text-white shadow-sm shadow-violet-500/10' 
-                    : 'bg-zinc-200 text-zinc-550'
-                }`}>
+                <span className={`rounded-lg px-1.5 py-0.5 text-[10px] font-bold transition-all duration-200 ${isActive
+                  ? 'bg-violet-650 text-white shadow-sm shadow-violet-500/10'
+                  : 'bg-zinc-200 text-zinc-550'
+                  }`}>
                   {count}
                 </span>
               </button>
@@ -288,6 +309,7 @@ export default function AdminCustomPrintPage() {
                 <th className="pl-2 pr-6 py-3">Request ID</th>
                 <th className="px-6 py-3">Customer</th>
                 <th className="px-6 py-3">3D File</th>
+                <th className="px-6 py-3">Images</th>
                 <th className="px-6 py-3">Specifications</th>
                 <th className="px-6 py-3 text-center">Quote</th>
                 <th className="px-6 py-3 text-center">Status</th>
@@ -297,7 +319,7 @@ export default function AdminCustomPrintPage() {
             <tbody className="divide-y divide-zinc-100 text-zinc-700">
               {filteredRequests.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-6 py-16 text-center text-zinc-400 text-sm">
+                  <td colSpan={9} className="px-6 py-16 text-center text-zinc-400 text-sm">
                     No requests found in this status category.
                   </td>
                 </tr>
@@ -321,6 +343,22 @@ export default function AdminCustomPrintPage() {
                       </div>
                     </td>
                     <td className="px-6 py-3.5 whitespace-nowrap">
+                      <div className="flex items-center gap-1">
+                        {[req.frontImage, req.sideImage, req.backImage].filter(Boolean).length > 0 ? (
+                          [req.frontImage, req.sideImage, req.backImage].filter(Boolean).map((img, idx) => (
+                            <img
+                              key={idx}
+                              src={img!}
+                              alt={`Ref ${idx + 1}`}
+                              className="h-7 w-7 rounded-md object-cover border border-zinc-200 shadow-xs"
+                            />
+                          ))
+                        ) : (
+                          <span className="text-[10px] text-zinc-400 italic">No images</span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-6 py-3.5 whitespace-nowrap">
                       <div className="flex items-center gap-1.5 text-xs">
                         <span className="font-semibold text-zinc-700 text-xs">{req.material}</span>
                         <span className="bg-violet-50 text-violet-750 border border-violet-100 rounded px-1.5 py-0.5 text-[10px] font-bold">
@@ -328,7 +366,7 @@ export default function AdminCustomPrintPage() {
                         </span>
                       </div>
                     </td>
-                    <td 
+                    <td
                       className="px-6 py-3.5 text-center whitespace-nowrap cursor-pointer hover:opacity-80 transition-opacity"
                       onClick={() => {
                         setSelectedRequest(req);
@@ -350,13 +388,12 @@ export default function AdminCustomPrintPage() {
                       <select
                         value={req.status}
                         onChange={(e) => handleStatusChange(req.id, e.target.value as any)}
-                        className={`text-[10px] font-bold rounded-full px-3 py-1 border cursor-pointer outline-none text-center bg-white ${
-                          req.status === 'pending_review' ? 'bg-orange-50 text-orange-700 border-orange-200' :
+                        className={`text-[10px] font-bold rounded-full px-3 py-1 border cursor-pointer outline-none text-center bg-white ${req.status === 'pending_review' ? 'bg-orange-50 text-orange-700 border-orange-200' :
                           req.status === 'quote_sent' ? 'bg-blue-50 text-blue-700 border-blue-200' :
-                          req.status === 'in_production' ? 'bg-violet-50 text-violet-700 border-violet-200' :
-                          req.status === 'completed' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
-                          'bg-zinc-100 text-zinc-500 border-zinc-200'
-                        }`}
+                            req.status === 'in_production' ? 'bg-violet-50 text-violet-700 border-violet-200' :
+                              req.status === 'completed' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                                'bg-zinc-100 text-zinc-500 border-zinc-200'
+                          }`}
                       >
                         <option value="pending_review">Pending Review</option>
                         <option value="quote_sent">Quote Sent</option>
@@ -376,6 +413,13 @@ export default function AdminCustomPrintPage() {
                           title="View Details"
                         >
                           <Eye className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          onClick={() => handleDownloadFile(req.fileUrl, req.fileName)}
+                          className="p-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-150 rounded-lg transition-colors"
+                          title="Download 3D Model"
+                        >
+                          <Download className="h-3.5 w-3.5" />
                         </button>
                         <button
                           onClick={() => {
@@ -406,7 +450,7 @@ export default function AdminCustomPrintPage() {
                 <Printer className="h-5 w-5 text-violet-600" />
                 POD Request - {selectedRequest.id}
               </h3>
-              <button 
+              <button
                 onClick={() => {
                   setIsDetailOpen(false);
                   setIsQuoting(false);
@@ -437,6 +481,39 @@ export default function AdminCustomPrintPage() {
                 </div>
               </div>
 
+              {/* Reference Images */}
+              <div className="border border-zinc-200 rounded-xl p-3 bg-zinc-50/40">
+                <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block mb-2">Uploaded Reference Images</span>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { label: 'Front', img: selectedRequest.frontImage },
+                    { label: 'Side', img: selectedRequest.sideImage },
+                    { label: 'Back/Top', img: selectedRequest.backImage },
+                  ].map((item, idx) => (
+                    <div key={idx} className="flex flex-col items-center group relative">
+                      <span className="text-[9px] font-bold text-zinc-400 mb-1">{item.label}</span>
+                      <div className="h-20 w-full rounded-lg border border-zinc-200 bg-white flex items-center justify-center overflow-hidden relative">
+                        {item.img ? (
+                          <>
+                            <img src={item.img} alt={item.label} className="h-full w-full object-contain p-1" />
+                            <button
+                              onClick={() => handleDownloadFile(item.img, `${selectedRequest.id}_${item.label.toLowerCase()}.jpg`)}
+                              className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-[10px] font-bold gap-1"
+                              title="Download Image"
+                            >
+                              <Download className="h-3.5 w-3.5" />
+                              Save
+                            </button>
+                          </>
+                        ) : (
+                          <span className="text-[9px] text-zinc-400 italic">None</span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
               {/* 3D STL file details */}
               <div className="border border-zinc-200 rounded-xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
@@ -449,11 +526,11 @@ export default function AdminCustomPrintPage() {
                   </div>
                 </div>
                 <button
-                  onClick={() => showToast('Mock STL file download triggered! 💾')}
-                  className="inline-flex items-center justify-center gap-1 bg-violet-600 hover:bg-violet-500 text-white rounded-lg px-2.5 py-1.5 text-[10px] font-bold transition shadow-sm w-full sm:w-auto"
+                  onClick={() => handleDownloadFile(selectedRequest.fileUrl, selectedRequest.fileName)}
+                  className="inline-flex items-center justify-center gap-1 bg-violet-600 hover:bg-violet-500 text-white rounded-lg px-3 py-1.5 text-xs font-bold transition shadow-sm w-full sm:w-auto"
                 >
-                  <Download className="h-3 w-3" />
-                  Download
+                  <Download className="h-3.5 w-3.5" />
+                  Download 3D Model
                 </button>
               </div>
 
@@ -468,10 +545,14 @@ export default function AdminCustomPrintPage() {
                   <span className="font-bold text-zinc-800">{selectedRequest.color}</span>
                 </div>
                 <div className="border border-zinc-150 rounded-xl p-3">
+                  <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider block mb-1">Height</span>
+                  <span className="font-bold text-zinc-800">{selectedRequest.height || selectedRequest.quality || '6 Inch'}</span>
+                </div>
+                <div className="border border-zinc-150 rounded-xl p-3">
                   <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider block mb-1">Infill Density</span>
                   <span className="font-bold text-zinc-800">{selectedRequest.infill}%</span>
                 </div>
-                <div className="border border-zinc-150 rounded-xl p-3">
+                <div className="border border-zinc-150 rounded-xl p-3 sm:col-span-2">
                   <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider block mb-1">Quantity Requested</span>
                   <span className="font-bold text-zinc-800">{selectedRequest.quantity} units</span>
                 </div>
@@ -566,7 +647,7 @@ export default function AdminCustomPrintPage() {
             <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-50 text-red-650 mb-4">
               <AlertTriangle className="h-6 w-6 text-red-650" />
             </div>
-            
+
             <h3 className="text-base font-bold text-zinc-900 mb-2">Delete Print Request</h3>
             <p className="text-xs text-zinc-500 mb-6 px-2">
               Are you sure you want to delete custom printing ticket <span className="font-bold text-zinc-800">"{requestToDelete.id}"</span>? This will permanently erase the order ticket.

@@ -127,7 +127,9 @@ export default function CartPage() {
                                         {/* Info Block */}
                                         <div className="flex-1 text-center sm:text-left">
                                             <span className="text-[10px] font-bold uppercase tracking-wider text-violet-400">
-                                                {item.product.category}
+                                                {typeof item.product.category === 'object' && item.product.category !== null
+                                                    ? (item.product.category as any).name || 'Product'
+                                                    : (item.product.category || 'Product')}
                                             </span>
                                             <h3 className="font-bold text-zinc-900 dark:text-white text-base mt-0.5 line-clamp-1">
                                                 {item.product.name}

@@ -126,8 +126,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             href="/admin"
             onClick={handleMobileLinkClick}
             className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${pathname === '/admin'
-                ? 'bg-violet-50 text-violet-700 border border-violet-100'
-                : 'hover:bg-zinc-50 hover:text-zinc-900 border border-transparent'
+              ? 'bg-violet-50 text-violet-700 border border-violet-100'
+              : 'hover:bg-zinc-50 hover:text-zinc-900 border border-transparent'
               }`}
           >
             <LayoutDashboard className="h-4.5 w-4.5" />
@@ -163,8 +163,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                         href={item.href}
                         onClick={handleMobileLinkClick}
                         className={`flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium transition-all ${isActive
-                            ? 'bg-violet-50/70 text-violet-700 font-semibold'
-                            : 'text-zinc-600 hover:text-zinc-950 hover:bg-zinc-50'
+                          ? 'bg-violet-50/70 text-violet-700 font-semibold'
+                          : 'text-zinc-600 hover:text-zinc-950 hover:bg-zinc-50'
                           }`}
                       >
                         <ItemIcon className={`h-3.5 w-3.5 ${isActive ? 'text-violet-600' : 'text-zinc-400'}`} />
@@ -188,8 +188,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             href="/admin/customers"
             onClick={handleMobileLinkClick}
             className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${pathname === '/admin/customers'
-                ? 'bg-violet-50 text-violet-700 border border-violet-100'
-                : 'hover:bg-zinc-50 hover:text-zinc-900 border border-transparent'
+              ? 'bg-violet-50 text-violet-700 border border-violet-100'
+              : 'hover:bg-zinc-50 hover:text-zinc-900 border border-transparent'
               }`}
           >
             <Users className="h-4.5 w-4.5 text-zinc-400" />

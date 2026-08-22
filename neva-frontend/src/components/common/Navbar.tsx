@@ -32,6 +32,14 @@ export default function Navbar() {
 
   const productsRef = useRef<HTMLDivElement>(null);
 
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
+
+  useEffect(() => {
+    const token = localStorage.getItem('neva-token');
+    setIsLoggedIn(!!token);
+  }, [pathname]);
+
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);
@@ -71,11 +79,11 @@ export default function Navbar() {
   const productCategories = [
     {
       label: '3D Products',
-      href: '/shop',
+      href: '/3d-product',
     },
     {
       label: 'IoT Products',
-      href: '/categories',
+      href: '/iot-product',
     },
   ];
 
@@ -105,8 +113,8 @@ export default function Navbar() {
   return (
     <nav
       className={`fixed top-0 left-0 z-50 w-full transition-all duration-300 ${isScrolled
-          ? 'bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md border-b border-zinc-200/50 dark:border-zinc-800/50 shadow-lg'
-          : 'bg-transparent border-b border-transparent'
+        ? 'bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md border-b border-zinc-200/50 dark:border-zinc-800/50 shadow-lg'
+        : 'bg-transparent border-b border-transparent'
         }`}
     >
       <div className="relative mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
@@ -133,23 +141,20 @@ export default function Navbar() {
           >
             {/* Products Trigger */}
             <div
-              className={`flex cursor-default items-center gap-1 text-sm font-medium transition-colors ${
-                isProductsActive
-                  ? 'text-white'
-                  : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white'
-              }`}
+              className={`flex cursor-default items-center gap-1 text-sm font-medium transition-colors ${isProductsActive
+                ? 'text-white'
+                : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white'
+                }`}
               aria-haspopup="menu"
             >
               Products
 
               <ChevronDown
-                className={`ml-0.5 h-3.5 w-3.5 stroke-[2.5] transition-transform duration-200 ${
-                  isProductsActive
-                    ? 'text-white'
-                    : 'text-zinc-500 dark:text-zinc-400'
-                } ${
-                  isProductsOpen ? 'rotate-180' : ''
-                }`}
+                className={`ml-0.5 h-3.5 w-3.5 stroke-[2.5] transition-transform duration-200 ${isProductsActive
+                  ? 'text-white'
+                  : 'text-zinc-500 dark:text-zinc-400'
+                  } ${isProductsOpen ? 'rotate-180' : ''
+                  }`}
               />
             </div>
 
@@ -159,19 +164,18 @@ export default function Navbar() {
             {/* Products Dropdown */}
             <div
               className={`absolute left-1/2 top-full z-50 w-56 -translate-x-1/2 rounded-2xl border border-zinc-200/70 bg-white/95 p-2 shadow-[0_18px_45px_rgba(15,23,42,0.16)] backdrop-blur-md dark:border-zinc-800/80 dark:bg-zinc-950/95 transition-all duration-200 ${isProductsOpen
-                  ? 'pointer-events-auto translate-y-3 opacity-100'
-                  : 'pointer-events-none translate-y-1 opacity-0'
+                ? 'pointer-events-auto translate-y-3 opacity-100'
+                : 'pointer-events-none translate-y-1 opacity-0'
                 }`}
             >
               {productCategories.map((item) => (
                 <Link
                   key={item.label}
                   href={item.href}
-                  className={`block rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
-                    isActive(item.href)
-                      ? 'bg-violet-50 text-violet-700 dark:bg-zinc-900 dark:text-violet-300'
-                      : 'text-zinc-700 hover:bg-violet-50 hover:text-violet-700 dark:text-zinc-300 dark:hover:bg-zinc-900 dark:hover:text-violet-300'
-                  }`}
+                  className={`block rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${isActive(item.href)
+                    ? 'bg-violet-50 text-violet-700 dark:bg-zinc-900 dark:text-violet-300'
+                    : 'text-zinc-700 hover:bg-violet-50 hover:text-violet-700 dark:text-zinc-300 dark:hover:bg-zinc-900 dark:hover:text-violet-300'
+                    }`}
                 >
                   {item.label}
                 </Link>
@@ -180,19 +184,18 @@ export default function Navbar() {
           </div>
 
           {/* Custom Products + About */}
-          {navLinks.map((link) => ( 
-  <Link 
-    key={link.label} 
-    href={link.href} 
-    className={`text-sm font-medium transition-colors ${ 
-      isActive(link.href) 
-        ? 'text-zinc-900 dark:text-white' 
-        : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white' 
-    }`} 
-  > 
-    {link.label} 
-  </Link> 
-))}
+          {navLinks.map((link) => (
+            <Link
+              key={link.label}
+              href={link.href}
+              className={`text-sm font-medium transition-colors ${isActive(link.href)
+                ? 'text-zinc-900 dark:text-white'
+                : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white'
+                }`}
+            >
+              {link.label}
+            </Link>
+          ))}
         </div>
 
         {/* Right Side Actions */}
@@ -234,14 +237,60 @@ export default function Navbar() {
             )}
           </Link>
 
-          {/* Login - Desktop Only */}
-          <Link
-            href="/login"
-            className="hidden shrink-0 p-2 text-zinc-600 transition-colors hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white md:block"
-            aria-label="Login"
-          >
-            <User className="h-5 w-5" />
-          </Link>
+          {/* User Profile / Login - Desktop Only */}
+          {isLoggedIn ? (
+            <div
+              className="relative hidden md:block"
+              onMouseEnter={() => setIsUserDropdownOpen(true)}
+              onMouseLeave={() => setIsUserDropdownOpen(false)}
+            >
+              <button
+                type="button"
+                className="shrink-0 p-2 text-zinc-600 transition-colors hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white"
+                aria-label="User Account"
+              >
+                <User className="h-5 w-5" />
+              </button>
+
+              {/* Invisible Hover Bridge */}
+              <div className="absolute right-0 top-full h-3 w-24" />
+
+              {/* User Dropdown */}
+              <div
+                className={`absolute right-0 top-full z-50 w-44 rounded-2xl border border-zinc-200/70 bg-white/95 p-2 shadow-[0_18px_45px_rgba(15,23,42,0.16)] backdrop-blur-md dark:border-zinc-800/80 dark:bg-zinc-950/95 transition-all duration-200 ${isUserDropdownOpen
+                  ? 'pointer-events-auto translate-y-3 opacity-100'
+                  : 'pointer-events-none translate-y-1 opacity-0'
+                  }`}
+              >
+                <Link
+                  href="/profile"
+                  className="block rounded-xl px-3 py-2.5 text-sm font-medium text-zinc-700 hover:bg-violet-50 hover:text-violet-755 dark:text-zinc-300 dark:hover:bg-zinc-900 dark:hover:text-violet-300 transition-colors"
+                >
+                  Profile
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => {
+                    localStorage.removeItem('neva-token');
+                    setIsLoggedIn(false);
+                    setIsUserDropdownOpen(false);
+                    window.location.reload();
+                  }}
+                  className="w-full text-left block rounded-xl px-3 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-950/30 dark:hover:text-red-300 transition-colors cursor-pointer"
+                >
+                  Logout
+                </button>
+              </div>
+            </div>
+          ) : (
+            <Link
+              href="/login"
+              className="hidden shrink-0 p-2 text-zinc-600 transition-colors hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white md:block"
+              aria-label="Login"
+            >
+              <User className="h-5 w-5" />
+            </Link>
+          )}
 
           {/* Mobile Menu Button */}
           <button
@@ -279,11 +328,10 @@ export default function Navbar() {
                 key={link.label}
                 href={link.href}
                 onClick={() => setIsMobileMenuOpen(false)}
-                className={`block text-sm font-medium py-1.5 transition-colors ${
-                  isActive(link.href)
-                    ? 'text-white'
-                    : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white'
-                }`}
+                className={`block text-sm font-medium py-1.5 transition-colors ${isActive(link.href)
+                  ? 'text-white'
+                  : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white'
+                  }`}
               >
                 {link.label}
               </Link>
@@ -296,24 +344,47 @@ export default function Navbar() {
               key={link.label}
               href={link.href}
               onClick={() => setIsMobileMenuOpen(false)}
-              className={`block text-sm font-medium py-1.5 border-b border-zinc-100 dark:border-zinc-900/50 transition-colors ${
-                isActive(link.href)
-                  ? 'text-white'
-                  : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white'
-              }`}
+              className={`block text-sm font-medium py-1.5 border-b border-zinc-100 dark:border-zinc-900/50 transition-colors ${isActive(link.href)
+                ? 'text-white'
+                : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white'
+                }`}
             >
               {link.label}
             </Link>
           ))}
 
-          {/* Profile */}
-          <Link
-            href="/login"
-            onClick={() => setIsMobileMenuOpen(false)}
-            className="block text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white py-1.5 border-b border-zinc-100 dark:border-zinc-900/50"
-          >
-            Profile
-          </Link>
+          {/* Mobile Profile / Login */}
+          {isLoggedIn ? (
+            <>
+              <Link
+                href="/profile"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="block text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white py-1.5 border-b border-zinc-100 dark:border-zinc-900/50"
+              >
+                Profile
+              </Link>
+              <button
+                type="button"
+                onClick={() => {
+                  localStorage.removeItem('neva-token');
+                  setIsLoggedIn(false);
+                  setIsMobileMenuOpen(false);
+                  window.location.reload();
+                }}
+                className="w-full text-left block text-sm font-medium text-red-600 hover:text-red-700 py-1.5 border-b border-zinc-100 dark:border-zinc-900/50 cursor-pointer"
+              >
+                Logout
+              </button>
+            </>
+          ) : (
+            <Link
+              href="/login"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="block text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white py-1.5 border-b border-zinc-100 dark:border-zinc-900/50"
+            >
+              Login
+            </Link>
+          )}
         </div>
       )}
     </nav>

@@ -166,6 +166,12 @@ class AuthController {
       return res.status(200).json({
         message: 'Sign-in successful',
         token,
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+        },
       });
     } catch (error) {
       console.error('Signin error:', error);
@@ -173,6 +179,22 @@ class AuthController {
         error: 'Internal Server Error',
         message: 'Something went wrong. Please try again later.',
       });
+    }
+  }
+
+  async getMe(req, res) {
+    try {
+      const user = await userRepository.findById(req.user.id);
+      if (!user) {
+        return res.status(404).json({ error: 'NotFound', message: 'User not found' });
+      }
+      return res.status(200).json({
+        success: true,
+        data: user,
+      });
+    } catch (error) {
+      console.error('Get profile error:', error);
+      return res.status(500).json({ error: 'Internal Server Error', message: error.message });
     }
   }
 }

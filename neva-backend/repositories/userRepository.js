@@ -17,6 +17,12 @@ class UserRepository {
     });
   }
 
+  async findById(id) {
+    return await User.findByPk(id, {
+      attributes: { exclude: ['password'] }
+    });
+  }
+
   async createUser(userData) {
     return await User.create(userData);
   }

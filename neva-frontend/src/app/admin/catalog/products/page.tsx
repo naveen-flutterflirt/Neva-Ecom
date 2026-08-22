@@ -1,11 +1,11 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { 
-  Plus, 
-  Search, 
-  Edit2, 
-  Trash2, 
+import {
+  Plus,
+  Search,
+  Edit2,
+  Trash2,
   X,
   Loader2,
   AlertTriangle,
@@ -30,6 +30,23 @@ interface ProductImage {
   mediaType: 'image' | 'video';
 }
 
+interface MaterialVariant {
+  name: string;
+  priceAdjustment: number;
+}
+
+interface ColorOption {
+  name: string;
+  code: string;
+  priceAdjustment: number;
+  imageUrl?: string;
+}
+
+interface SizeVariant {
+  name: string;
+  priceAdjustment: number;
+}
+
 interface Product {
   id: string;
   name: string;
@@ -46,7 +63,31 @@ interface Product {
     name: string;
   } | null;
   images: ProductImage[];
+  materialVariants?: MaterialVariant[];
+  colorOptions?: ColorOption[];
+  sizeVariants?: SizeVariant[];
+  careInstructions?: string[];
+  keyFeatures?: { title: string; description: string }[];
 }
+
+const PRESET_COLOR_CHART = [
+  { name: 'Onyx Black', code: '#121212', priceAdjustment: 0 },
+  { name: 'Signal White', code: '#ffffff', priceAdjustment: 0 },
+  { name: 'Lumina Violet', code: '#a855f7', priceAdjustment: 50 },
+  { name: 'Electric Cyan', code: '#22d3ee', priceAdjustment: 50 },
+  { name: 'Signal Pink', code: '#ec4899', priceAdjustment: 50 },
+  { name: 'Core Green', code: '#10b981', priceAdjustment: 0 },
+  { name: 'Nexus Blue', code: '#3b82f6', priceAdjustment: 0 },
+  { name: 'Fire Red', code: '#ef4444', priceAdjustment: 0 },
+  { name: 'Solar Yellow', code: '#eab308', priceAdjustment: 0 },
+  { name: 'Satin Orange', code: '#f97316', priceAdjustment: 0 },
+  { name: 'Titanium Silver', code: '#94a3b8', priceAdjustment: 100 },
+  { name: 'Muted Slate', code: '#64748b', priceAdjustment: 0 },
+  { name: 'Emerald Jade', code: '#059669', priceAdjustment: 50 },
+  { name: 'Gold Bronze', code: '#d97706', priceAdjustment: 150 },
+  { name: 'Matte Grey', code: '#475569', priceAdjustment: 0 },
+  { name: 'Deep Indigo', code: '#4338ca', priceAdjustment: 50 },
+];
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5050/api';
 const PRODUCTS_API = `${API_BASE}/products`;
@@ -57,6 +98,10 @@ export default function AdminProductsPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // Color Chart Modal
+  const [isColorChartOpen, setIsColorChartOpen] = useState(false);
+  const [activeColorIndex, setActiveColorIndex] = useState<number | null>(null);
 
   // Form states
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -75,6 +120,21 @@ export default function AdminProductsPage() {
   const [status, setStatus] = useState<'draft' | 'active' | 'out_of_stock'>('draft');
   const [autoSku, setAutoSku] = useState(true);
 
+  // Category-based Variant & Attributes States
+  const [materialVariants, setMaterialVariants] = useState<MaterialVariant[]>([]);
+  const [colorOptions, setColorOptions] = useState<ColorOption[]>([]);
+  const [colorImageFilesMap, setColorImageFilesMap] = useState<{ [key: number]: File }>({});
+  const [sizeVariants, setSizeVariants] = useState<SizeVariant[]>([]);
+  const [careInstructions, setCareInstructions] = useState<string[]>([]);
+  const [keyFeatures, setKeyFeatures] = useState<{ title: string; description: string }[]>([]);
+  const [specifications, setSpecifications] = useState<{
+    material?: string;
+    electronics?: string;
+    power?: string;
+    connectivity?: string;
+    dimensions?: string;
+  }>({});
+
   // Unified Media Upload States
   const [selectedImageFiles, setSelectedImageFiles] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
@@ -82,7 +142,7 @@ export default function AdminProductsPage() {
 
   const [selectedVideoFiles, setSelectedVideoFiles] = useState<File[]>([]);
   const [videoPreviews, setVideoPreviews] = useState<string[]>([]);
-  
+
   // Existing Media (for edit mode)
   const [existingMedia, setExistingMedia] = useState<ProductImage[]>([]);
   const [deletedImageIds, setDeletedImageIds] = useState<string[]>([]);
@@ -112,7 +172,7 @@ export default function AdminProductsPage() {
         fetch(PRODUCTS_API),
         fetch(CATEGORIES_API)
       ]);
-      
+
       if (prodRes.ok) {
         const prodData = await prodRes.json();
         setProducts(prodData.data || []);
@@ -225,6 +285,35 @@ export default function AdminProductsPage() {
     setExistingMedia([]);
     setDeletedImageIds([]);
     setPrimaryIndex(0);
+
+    setMaterialVariants([
+      { name: 'Tough PLA (Base)', priceAdjustment: 0 },
+      { name: 'PETG', priceAdjustment: 150 },
+      { name: 'ABS', priceAdjustment: 200 }
+    ]);
+    setColorOptions([
+      { name: 'Black', code: '#000000', priceAdjustment: 0 },
+      { name: 'Signal White', code: '#ffffff', priceAdjustment: 0 },
+      { name: 'Electric Cyan', code: '#22d3ee', priceAdjustment: 50 }
+    ]);
+    setSizeVariants([
+      { name: '4 Inch', priceAdjustment: 0 },
+      { name: '6 Inch', priceAdjustment: 100 },
+      { name: '8 Inch', priceAdjustment: 250 },
+      { name: '14 Inch', priceAdjustment: 500 }
+    ]);
+    setCareInstructions([
+      'Wipe exterior with a dry micro-fiber cloth. Avoid getting water on the facial display.',
+      'Ensure the inner moisture sensor is fully inserted into the soil for accurate readings.',
+      'Keep away from direct heat sources to protect the 3D-printed enclosure.'
+    ]);
+    setKeyFeatures([
+      { title: 'Interactive Emoji Face', description: 'Real-time emotion & status facial display screen' },
+      { title: 'Real-time Moisture Tracking', description: 'Capacitive soil moisture sensor integration' },
+      { title: 'App-controlled RGB Base', description: 'Wireless Bluetooth & Wi-Fi smart control' },
+      { title: 'Open-Source Firmware', description: 'ESP32-S3 fully customizable codebase' }
+    ]);
+
     setIsModalOpen(true);
   };
 
@@ -246,13 +335,65 @@ export default function AdminProductsPage() {
     setVideoPreviews([]);
     setExistingMedia(product.images || []);
     setDeletedImageIds([]);
-    
+
+    let parsedColorOpts: ColorOption[] = [];
+    if (product.colorOptions) {
+      if (typeof product.colorOptions === 'string') {
+        try { parsedColorOpts = JSON.parse(product.colorOptions); } catch (e) { parsedColorOpts = []; }
+      } else if (Array.isArray(product.colorOptions)) {
+        parsedColorOpts = product.colorOptions;
+      }
+    }
+    setColorOptions(parsedColorOpts);
+
+    let parsedMatOpts: MaterialVariant[] = [];
+    if (product.materialVariants) {
+      if (typeof product.materialVariants === 'string') {
+        try { parsedMatOpts = JSON.parse(product.materialVariants); } catch (e) { parsedMatOpts = []; }
+      } else if (Array.isArray(product.materialVariants)) {
+        parsedMatOpts = product.materialVariants;
+      }
+    }
+    setMaterialVariants(parsedMatOpts);
+
+    let parsedSizeOpts: SizeVariant[] = [];
+    if (product.sizeVariants) {
+      if (typeof product.sizeVariants === 'string') {
+        try { parsedSizeOpts = JSON.parse(product.sizeVariants); } catch (e) { parsedSizeOpts = []; }
+      } else if (Array.isArray(product.sizeVariants)) {
+        parsedSizeOpts = product.sizeVariants;
+      }
+    }
+    setSizeVariants(parsedSizeOpts);
+
+    // Safely parse JSON or array fields for careInstructions and keyFeatures
+    let parsedCare: string[] = [];
+    if (product.careInstructions) {
+      if (typeof product.careInstructions === 'string') {
+        try { parsedCare = JSON.parse(product.careInstructions); } catch (e) { parsedCare = []; }
+      } else if (Array.isArray(product.careInstructions)) {
+        parsedCare = product.careInstructions;
+      }
+    }
+    setCareInstructions(parsedCare);
+
+    let parsedFeatures: { title: string; description: string }[] = [];
+    if (product.keyFeatures) {
+      if (typeof product.keyFeatures === 'string') {
+        try { parsedFeatures = JSON.parse(product.keyFeatures); } catch (e) { parsedFeatures = []; }
+      } else if (Array.isArray(product.keyFeatures)) {
+        parsedFeatures = product.keyFeatures;
+      }
+    }
+    setKeyFeatures(parsedFeatures);
+    setSpecifications(product.specifications || {});
+
     // Find primary image index (defaulting null mediaType to image)
     const primaryIdx = (product.images || [])
       .filter(img => (img.mediaType || 'image') === 'image')
       .findIndex(img => img.isPrimary);
     setPrimaryIndex(primaryIdx >= 0 ? primaryIdx : 0);
-    
+
     setIsModalOpen(true);
   };
 
@@ -277,6 +418,14 @@ export default function AdminProductsPage() {
     formData.append('status', status);
     formData.append('primaryImageIndex', primaryIndex.toString());
 
+    // Append JSON Variant & Spec Fields
+    formData.append('materialVariants', JSON.stringify(materialVariants));
+    formData.append('colorOptions', JSON.stringify(colorOptions));
+    formData.append('sizeVariants', JSON.stringify(sizeVariants));
+    formData.append('careInstructions', JSON.stringify(careInstructions));
+    formData.append('keyFeatures', JSON.stringify(keyFeatures));
+    formData.append('specifications', JSON.stringify(specifications));
+
     // Append images
     selectedImageFiles.forEach((file) => {
       formData.append('images', file);
@@ -285,6 +434,12 @@ export default function AdminProductsPage() {
     // Append videos
     selectedVideoFiles.forEach((file) => {
       formData.append('videos', file);
+    });
+
+    // Append color option image files (uploaded to S3)
+    Object.entries(colorImageFilesMap).forEach(([colorIdxStr, file]) => {
+      formData.append('colorImages', file);
+      formData.append('colorImageIndices', colorIdxStr);
     });
 
     // Append deleted existing media IDs
@@ -420,18 +575,17 @@ export default function AdminProductsPage() {
                   filteredProducts.map((product, index) => {
                     const primaryImg = (product.images || []).find(img => img.isPrimary && (img.mediaType || 'image') === 'image') || (product.images || []).find(img => (img.mediaType || 'image') === 'image');
                     return (
-                      <tr 
+                      <tr
                         key={product.id}
-                        className={`hover:bg-zinc-50 transition-colors duration-150 ${
-                          deletingId === product.id ? 'opacity-40 pointer-events-none bg-red-50' : ''
-                        }`}
+                        className={`hover:bg-zinc-50 transition-colors duration-150 ${deletingId === product.id ? 'opacity-40 pointer-events-none bg-red-50' : ''
+                          }`}
                       >
                         <td className="px-6 py-3.5 font-mono text-zinc-400 text-[11px] font-semibold">{index + 1}</td>
                         <td className="px-6 py-3.5">
                           {primaryImg ? (
-                            <img 
-                              src={primaryImg.imageUrl} 
-                              alt={product.name} 
+                            <img
+                              src={primaryImg.imageUrl}
+                              alt={product.name}
                               className="h-9 w-9 rounded-lg object-cover border border-zinc-200 shadow-sm"
                             />
                           ) : (
@@ -467,15 +621,13 @@ export default function AdminProductsPage() {
                           </span>
                         </td>
                         <td className="px-6 py-3.5">
-                          <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold border ${
-                            product.status === 'active' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                          <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold border ${product.status === 'active' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
                             product.status === 'out_of_stock' ? 'bg-red-50 text-red-700 border-red-200' :
-                            'bg-zinc-100 text-zinc-500 border-zinc-200'
-                          }`}>
-                            <span className={`h-1.5 w-1.5 rounded-full ${
-                              product.status === 'active' ? 'bg-emerald-500' :
+                              'bg-zinc-100 text-zinc-500 border-zinc-200'
+                            }`}>
+                            <span className={`h-1.5 w-1.5 rounded-full ${product.status === 'active' ? 'bg-emerald-500' :
                               product.status === 'out_of_stock' ? 'bg-red-500' : 'bg-zinc-400'
-                            }`} />
+                              }`} />
                             {product.status.replace('_', ' ')}
                           </span>
                         </td>
@@ -512,12 +664,12 @@ export default function AdminProductsPage() {
       {/* Save Product Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center bg-zinc-950/40 backdrop-blur-sm p-4">
-          <div className="relative w-full max-w-2xl rounded-2xl bg-white border border-zinc-200 p-6 shadow-xl flex flex-col max-h-[90vh]">
+          <div className="relative w-full max-w-4xl rounded-2xl bg-white border border-zinc-200 p-6 sm:p-8 shadow-xl flex flex-col max-h-[90vh]">
             <div className="flex items-center justify-between pb-4 border-b border-zinc-100 mb-4 shrink-0">
               <h3 className="text-base font-bold text-zinc-900">
                 {modalMode === 'create' ? 'Upload New Product' : 'Edit Catalog Product'}
               </h3>
-              <button 
+              <button
                 onClick={() => setIsModalOpen(false)}
                 disabled={isSaving}
                 className="p-1 rounded-lg text-zinc-400 hover:text-zinc-650 hover:bg-zinc-50 transition disabled:opacity-30"
@@ -671,200 +823,477 @@ export default function AdminProductsPage() {
                 />
               </div>
 
-              
-  {/* Material Variants */}
-  <div className="space-y-2">
-    <label className="block text-[10px] font-semibold uppercase tracking-wider text-zinc-400">
-      Material Variants
-    </label>
-    <div className="space-y-1.5">
-      <div className="flex items-center justify-between bg-zinc-50 rounded-lg px-3 py-2 border border-zinc-100">
-        <span className="text-xs text-zinc-700">Tough PLA (base price)</span>
-        <span className="text-xs font-semibold text-zinc-500">0</span>
-      </div>
-      <div className="flex items-center justify-between bg-zinc-50 rounded-lg px-3 py-2 border border-zinc-100">
-        <span className="text-xs text-zinc-700">PETG</span>
-        <span className="text-xs font-semibold text-zinc-500">+150</span>
-      </div>
-      <div className="flex items-center justify-between bg-zinc-50 rounded-lg px-3 py-2 border border-zinc-100">
-        <span className="text-xs text-zinc-700">ABS</span>
-        <span className="text-xs font-semibold text-zinc-500">+200</span>
-      </div>
-      <button className="text-xs text-violet-600 font-medium hover:text-violet-700 transition-colors flex items-center gap-1">
-        <Plus className="h-3 w-3" />
-        Add Material
-      </button>
-    </div>
-  </div>
+              {/* 1. Material Variants Section */}
+              <div className="space-y-2 border border-zinc-200 rounded-2xl p-4 bg-zinc-50/60">
+                <div className="flex items-center justify-between">
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-zinc-600">
+                    Material Variants &amp; Price Adjustments
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setMaterialVariants(prev => [...prev, { name: 'New Material', priceAdjustment: 0 }])}
+                    className="text-xs text-violet-600 hover:text-violet-700 font-bold flex items-center gap-1"
+                  >
+                    <Plus className="h-3.5 w-3.5" /> Add Material
+                  </button>
+                </div>
+                <div className="space-y-2">
+                  {materialVariants.map((mat, idx) => (
+                    <div key={idx} className="flex items-center gap-2 bg-white p-2 rounded-xl border border-zinc-200 shadow-sm">
+                      <input
+                        type="text"
+                        value={mat.name}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setMaterialVariants(prev => prev.map((m, i) => i === idx ? { ...m, name: val } : m));
+                        }}
+                        placeholder="Material Name (e.g. PETG)"
+                        className="flex-1 rounded-lg border border-zinc-200 px-2.5 py-1.5 text-xs outline-none focus:border-violet-500"
+                      />
+                      <div className="flex items-center gap-1">
+                        <span className="text-[11px] text-zinc-400 font-semibold">+₹</span>
+                        <input
+                          type="number"
+                          value={mat.priceAdjustment}
+                          onChange={(e) => {
+                            const val = parseFloat(e.target.value) || 0;
+                            setMaterialVariants(prev => prev.map((m, i) => i === idx ? { ...m, priceAdjustment: val } : m));
+                          }}
+                          placeholder="0"
+                          className="w-20 rounded-lg border border-zinc-200 px-2 py-1.5 text-xs outline-none focus:border-violet-500 text-center font-mono font-bold"
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setMaterialVariants(prev => prev.filter((_, i) => i !== idx))}
+                        className="p-1.5 text-red-500 hover:text-red-700 transition"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
 
-  {/* Chipset / Processor */}
-  <div>
-    <label className="block text-[10px] font-semibold uppercase tracking-wider text-zinc-400 mb-1.5">
-      Chipset / Processor
-    </label>
-    <input
-      type="text"
-      placeholder="e.g. ESP32-S3"
-      className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs text-zinc-900 outline-none focus:border-violet-500 focus:bg-white"
-    />
-  </div>
+              {/* 2. Color Options Section */}
+              <div className="space-y-2 border border-zinc-200 rounded-2xl p-4 bg-zinc-50/60">
+                <div className="flex items-center justify-between">
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-zinc-600">
+                    Color Options
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveColorIndex(null);
+                        setIsColorChartOpen(true);
+                      }}
+                      className="text-xs text-violet-600 hover:text-violet-700 font-bold flex items-center gap-1 bg-violet-50 hover:bg-violet-100 px-2.5 py-1 rounded-lg border border-violet-200 transition shadow-sm"
+                    >
+                      <Plus className="h-3.5 w-3.5" /> Open Color Chart
+                    </button>
+                  </div>
+                </div>
+                <div className="space-y-2.5">
+                  {colorOptions.map((col, idx) => (
+                    <div key={idx} className="bg-white p-2.5 rounded-xl border border-zinc-200 shadow-sm space-y-2">
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="color"
+                          value={col.code}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setColorOptions(prev => prev.map((c, i) => i === idx ? { ...c, code: val } : c));
+                          }}
+                          className="h-7 w-7 rounded-lg cursor-pointer border border-zinc-200 p-0.5"
+                        />
+                        <input
+                          type="text"
+                          value={col.name}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setColorOptions(prev => prev.map((c, i) => i === idx ? { ...c, name: val } : c));
+                          }}
+                          placeholder="Color Name (e.g. Electric Cyan)"
+                          className="flex-1 rounded-lg border border-zinc-200 px-2.5 py-1.5 text-xs outline-none focus:border-violet-500 font-bold"
+                        />
+                        <input
+                          type="text"
+                          value={col.code}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setColorOptions(prev => prev.map((c, i) => i === idx ? { ...c, code: val } : c));
+                          }}
+                          placeholder="#000000"
+                          className="w-24 rounded-lg border border-zinc-200 px-2 py-1.5 text-xs font-mono outline-none focus:border-violet-500 uppercase"
+                        />
+                        <div className="flex items-center gap-1">
+                          <span className="text-[11px] text-zinc-400 font-semibold">+₹</span>
+                          <input
+                            type="number"
+                            value={col.priceAdjustment || 0}
+                            onChange={(e) => {
+                              const val = parseFloat(e.target.value) || 0;
+                              setColorOptions(prev => prev.map((c, i) => i === idx ? { ...c, priceAdjustment: val } : c));
+                            }}
+                            placeholder="0"
+                            className="w-20 rounded-lg border border-zinc-200 px-2 py-1.5 text-xs outline-none focus:border-violet-500 text-center font-mono font-bold"
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setColorOptions(prev => prev.filter((_, i) => i !== idx))}
+                          className="p-1.5 text-red-500 hover:text-red-700 transition"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
 
-  {/* Sensors */}
-  <div>
-    <label className="block text-[10px] font-semibold uppercase tracking-wider text-zinc-400 mb-1.5">
-      Sensors
-    </label>
-    <div className="flex items-center gap-2">
-      <span className="text-xs text-zinc-700">Temperature</span>
-      <button className="text-xs text-violet-600 font-medium hover:text-violet-700 transition-colors flex items-center gap-1">
-        <Plus className="h-3 w-3" />
-        Add sensor...
-      </button>
-    </div>
-  </div>
+                      {/* Color Variant Image File Upload & Selector */}
+                      <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-zinc-100">
+                        <span className="text-[11px] font-bold text-zinc-600 flex items-center gap-1 shrink-0">
+                          <ImageIcon className="h-3.5 w-3.5 text-violet-600" />
+                          Color Variant Image:
+                        </span>
 
-  {/* Display */}
-  <div>
-    <label className="block text-[10px] font-semibold uppercase tracking-wider text-zinc-400 mb-1.5">
-      Display
-    </label>
-    <input
-      type="text"
-      placeholder="e.g. 1.54 inch OLED"
-      className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs text-zinc-900 outline-none focus:border-violet-500 focus:bg-white"
-    />
-  </div>
+                        {/* File Upload Input Button */}
+                        <label className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-violet-50 hover:bg-violet-100 border border-violet-200 text-violet-700 text-xs font-bold cursor-pointer transition">
+                          <Upload className="h-3.5 w-3.5" />
+                          <span>Upload Image</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                const previewUrl = URL.createObjectURL(file);
+                                setColorOptions(prev => prev.map((c, i) => i === idx ? { ...c, imageUrl: previewUrl } : c));
+                                setColorImageFilesMap(prev => ({ ...prev, [idx]: file }));
+                              }
+                            }}
+                            className="hidden"
+                          />
+                        </label>
 
-  {/* Power Source */}
-  <div>
-    <label className="block text-[10px] font-semibold uppercase tracking-wider text-zinc-400 mb-1.5">
-      Power Source
-    </label>
-    <input
-      type="text"
-      placeholder="USB-C"
-      className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs text-zinc-900 outline-none focus:border-violet-500 focus:bg-white"
-    />
-  </div>
+                        {/* Select From Uploaded Product Gallery */}
+                        {imagePreviews.length > 0 && (
+                          <select
+                            value={col.imageUrl || ''}
+                            onChange={(e) => {
+                              const selectedUrl = e.target.value;
+                              setColorOptions(prev => prev.map((c, i) => i === idx ? { ...c, imageUrl: selectedUrl } : c));
+                            }}
+                            className="flex-1 min-w-[140px] rounded-lg border border-zinc-200 px-2 py-1 text-xs outline-none focus:border-violet-500 bg-white font-medium text-zinc-700"
+                          >
+                            <option value="">Choose from uploaded gallery...</option>
+                            {imagePreviews.map((url, imgIdx) => (
+                              <option key={imgIdx} value={url}>
+                                Gallery Image #{imgIdx + 1}
+                              </option>
+                            ))}
+                          </select>
+                        )}
 
-  {/* Voltage / Current */}
-  <div>
-    <label className="block text-[10px] font-semibold uppercase tracking-wider text-zinc-400 mb-1.5">
-      Voltage / Current
-    </label>
-    <input
-      type="text"
-      placeholder="e.g. 5V / 2A"
-      className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs text-zinc-900 outline-none focus:border-violet-500 focus:bg-white"
-    />
-  </div>
+                        {/* Image Preview Thumbnail & Remove Button */}
+                        {col.imageUrl ? (
+                          <div className="flex items-center gap-1.5 bg-zinc-50 border border-zinc-200 px-2 py-0.5 rounded-lg">
+                            <img src={col.imageUrl} alt="" className="h-6 w-6 rounded object-contain bg-white border border-zinc-200" />
+                            <span className="text-[10px] font-semibold text-zinc-600 max-w-[90px] truncate">Image Selected</span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setColorOptions(prev => prev.map((c, i) => i === idx ? { ...c, imageUrl: '' } : c));
+                                setColorImageFilesMap(prev => {
+                                  const copy = { ...prev };
+                                  delete copy[idx];
+                                  return copy;
+                                });
+                              }}
+                              className="text-zinc-400 hover:text-red-500 transition ml-0.5"
+                              title="Remove image"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </div>
+                        ) : (
+                          <span className="text-[10px] text-zinc-400 italic">No image uploaded</span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
 
-  {/* Connectivity Type */}
-  <div>
-    <label className="block text-[10px] font-semibold uppercase tracking-wider text-zinc-400 mb-1.5">
-      Connectivity Type
-    </label>
-    <div className="flex flex-wrap gap-2">
-      {['Wi-Fi', 'Bluetooth', 'Zigbee', 'Z-Wave', 'LoRa'].map((type) => (
-        <button
-          key={type}
-          className="text-xs px-3 py-1.5 rounded-lg border border-zinc-200 bg-zinc-50 text-zinc-700 hover:border-violet-400 hover:bg-violet-50 transition-colors"
-        >
-          {type}
-        </button>
-      ))}
-    </div>
-  </div>
+              {/* Category Helper */}
+              {(() => {
+                const selectedCategory = categories.find(c => c.id === categoryId);
+                const isIotCategory = selectedCategory
+                  ? selectedCategory.slug.toLowerCase().includes('iot') || selectedCategory.name.toLowerCase().includes('iot')
+                  : false;
 
-  {/* Wi-Fi Band */}
-  <div>
-    <label className="block text-[10px] font-semibold uppercase tracking-wider text-zinc-400 mb-1.5">
-      Wi-Fi Band
-    </label>
-    <input
-      type="text"
-      placeholder="Dual-band"
-      className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs text-zinc-900 outline-none focus:border-violet-500 focus:bg-white"
-    />
-  </div>
+                return (
+                  <>
+                    {!isIotCategory ? (
+                      <>
+                        {/* 3D Product: Size Variants Section */}
+                        <div className="space-y-2 border border-zinc-200 rounded-2xl p-4 bg-zinc-50/60">
+                          <div className="flex items-center justify-between">
+                            <label className="block text-[10px] font-bold uppercase tracking-wider text-zinc-600">
+                              Size Variants &amp; Price Adjustments
+                            </label>
+                            <button
+                              type="button"
+                              onClick={() => setSizeVariants(prev => [...prev, { name: 'New Size', priceAdjustment: 0 }])}
+                              className="text-xs text-violet-600 hover:text-violet-700 font-bold flex items-center gap-1"
+                            >
+                              <Plus className="h-3.5 w-3.5" /> Add Size
+                            </button>
+                          </div>
+                          <div className="space-y-2">
+                            {sizeVariants.map((sz, idx) => (
+                              <div key={idx} className="flex items-center gap-2 bg-white p-2 rounded-xl border border-zinc-200 shadow-sm">
+                                <input
+                                  type="text"
+                                  value={sz.name}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    setSizeVariants(prev => prev.map((s, i) => i === idx ? { ...s, name: val } : s));
+                                  }}
+                                  placeholder="Size Name (e.g. 8 Inch)"
+                                  className="flex-1 rounded-lg border border-zinc-200 px-2.5 py-1.5 text-xs outline-none focus:border-violet-500"
+                                />
+                                <div className="flex items-center gap-1">
+                                  <span className="text-[11px] text-zinc-400 font-semibold">+₹</span>
+                                  <input
+                                    type="number"
+                                    value={sz.priceAdjustment}
+                                    onChange={(e) => {
+                                      const val = parseFloat(e.target.value) || 0;
+                                      setSizeVariants(prev => prev.map((s, i) => i === idx ? { ...s, priceAdjustment: val } : s));
+                                    }}
+                                    placeholder="0"
+                                    className="w-20 rounded-lg border border-zinc-200 px-2 py-1.5 text-xs outline-none focus:border-violet-500 text-center font-mono font-bold"
+                                  />
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => setSizeVariants(prev => prev.filter((_, i) => i !== idx))}
+                                  className="p-1.5 text-red-500 hover:text-red-700 transition"
+                                >
+                                  <X className="h-3.5 w-3.5" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
 
-  {/* Bluetooth Version */}
-  <div>
-    <label className="block text-[10px] font-semibold uppercase tracking-wider text-zinc-400 mb-1.5">
-      Bluetooth Version
-    </label>
-    <input
-      type="text"
-      placeholder="5.2 LE"
-      className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs text-zinc-900 outline-none focus:border-violet-500 focus:bg-white"
-    />
-  </div>
+                        {/* 3D Product: Key Features & Care Cards */}
+                        <div className="space-y-2 border border-zinc-200 rounded-2xl p-4 bg-zinc-50/60">
+                          <div className="flex items-center justify-between">
+                            <label className="block text-[10px] font-bold uppercase tracking-wider text-zinc-600">
+                              Key Features &amp; Care Cards
+                            </label>
+                            <button
+                              type="button"
+                              onClick={() => setKeyFeatures(prev => [...prev, { title: 'New Feature', description: 'Feature description...' }])}
+                              className="text-xs text-violet-600 hover:text-violet-700 font-bold flex items-center gap-1"
+                            >
+                              <Plus className="h-3.5 w-3.5" /> Add Feature Card
+                            </button>
+                          </div>
+                          <div className="space-y-3">
+                            {keyFeatures.map((feat, idx) => (
+                              <div key={idx} className="bg-white p-3 rounded-xl border border-zinc-200 shadow-sm space-y-2">
+                                <div className="flex items-center justify-between gap-2">
+                                  <input
+                                    type="text"
+                                    value={feat.title}
+                                    onChange={(e) => {
+                                      const val = e.target.value;
+                                      setKeyFeatures(prev => prev.map((item, i) => i === idx ? { ...item, title: val } : item));
+                                    }}
+                                    placeholder="Title (e.g. Preserve Vibrancy)"
+                                    className="flex-1 rounded-lg border border-zinc-200 px-2.5 py-1.5 text-xs font-bold outline-none focus:border-violet-500"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => setKeyFeatures(prev => prev.filter((_, i) => i !== idx))}
+                                    className="p-1.5 text-red-500 hover:text-red-700 transition"
+                                  >
+                                    <X className="h-3.5 w-3.5" />
+                                  </button>
+                                </div>
+                                <textarea
+                                  value={feat.description}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    setKeyFeatures(prev => prev.map((item, i) => i === idx ? { ...item, description: val } : item));
+                                  }}
+                                  placeholder="Feature description..."
+                                  rows={2}
+                                  className="w-full rounded-lg border border-zinc-200 px-2.5 py-1.5 text-xs outline-none focus:border-violet-500 resize-none text-zinc-650"
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        {/* IoT Product: Care Instructions Section */}
+                        <div className="space-y-2 border border-zinc-200 rounded-2xl p-4 bg-zinc-50/60">
+                          <div className="flex items-center justify-between">
+                            <label className="block text-[10px] font-bold uppercase tracking-wider text-zinc-600">
+                              Care Instructions
+                            </label>
+                            <button
+                              type="button"
+                              onClick={() => setCareInstructions(prev => [...prev, 'New care instruction statement.'])}
+                              className="text-xs text-violet-600 hover:text-violet-700 font-bold flex items-center gap-1"
+                            >
+                              <Plus className="h-3.5 w-3.5" /> Add Instruction
+                            </button>
+                          </div>
+                          <div className="space-y-2">
+                            {careInstructions.map((inst, idx) => (
+                              <div key={idx} className="flex items-center gap-2 bg-white p-2 rounded-xl border border-zinc-200 shadow-sm">
+                                <span className="text-zinc-400 text-xs font-bold font-mono pl-1">•</span>
+                                <input
+                                  type="text"
+                                  value={inst}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    setCareInstructions(prev => prev.map((item, i) => i === idx ? val : item));
+                                  }}
+                                  placeholder="e.g. Wipe clean with dry cloth"
+                                  className="flex-1 rounded-lg border border-zinc-200 px-2.5 py-1.5 text-xs outline-none focus:border-violet-500"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => setCareInstructions(prev => prev.filter((_, i) => i !== idx))}
+                                  className="p-1.5 text-red-500 hover:text-red-700 transition"
+                                >
+                                  <X className="h-3.5 w-3.5" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
 
-  {/* Dimensions */}
-  <div>
-    <label className="block text-[10px] font-semibold uppercase tracking-wider text-zinc-400 mb-1.5">
-      Dimensions
-    </label>
-    <div className="grid grid-cols-3 gap-2">
-      <div>
-        <input
-          type="text"
-          placeholder="Length"
-          className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs text-zinc-900 outline-none focus:border-violet-500 focus:bg-white"
-        />
-      </div>
-      <div>
-        <input
-          type="text"
-          placeholder="Width"
-          className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs text-zinc-900 outline-none focus:border-violet-500 focus:bg-white"
-        />
-      </div>
-      <div>
-        <input
-          type="text"
-          placeholder="Height"
-          className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs text-zinc-900 outline-none focus:border-violet-500 focus:bg-white"
-        />
-      </div>
-    </div>
-    <span className="text-[10px] text-zinc-400 mt-1 block">mm</span>
-  </div>
+                        {/* IoT Product: Key Features Cards */}
+                        <div className="space-y-2 border border-zinc-200 rounded-2xl p-4 bg-zinc-50/60">
+                          <div className="flex items-center justify-between">
+                            <label className="block text-[10px] font-bold uppercase tracking-wider text-zinc-600">
+                              Key Features Cards
+                            </label>
+                            <button
+                              type="button"
+                              onClick={() => setKeyFeatures(prev => [...prev, { title: 'New Feature', description: 'Feature description...' }])}
+                              className="text-xs text-violet-600 hover:text-violet-700 font-bold flex items-center gap-1"
+                            >
+                              <Plus className="h-3.5 w-3.5" /> Add Feature Card
+                            </button>
+                          </div>
+                          <div className="space-y-3">
+                            {keyFeatures.map((feat, idx) => (
+                              <div key={idx} className="bg-white p-3 rounded-xl border border-zinc-200 shadow-sm space-y-2">
+                                <div className="flex items-center justify-between gap-2">
+                                  <input
+                                    type="text"
+                                    value={feat.title}
+                                    onChange={(e) => {
+                                      const val = e.target.value;
+                                      setKeyFeatures(prev => prev.map((item, i) => i === idx ? { ...item, title: val } : item));
+                                    }}
+                                    placeholder="Title (e.g. Interactive Display)"
+                                    className="flex-1 rounded-lg border border-zinc-200 px-2.5 py-1.5 text-xs font-bold outline-none focus:border-violet-500"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => setKeyFeatures(prev => prev.filter((_, i) => i !== idx))}
+                                    className="p-1.5 text-red-500 hover:text-red-700 transition"
+                                  >
+                                    <X className="h-3.5 w-3.5" />
+                                  </button>
+                                </div>
+                                <textarea
+                                  value={feat.description}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    setKeyFeatures(prev => prev.map((item, i) => i === idx ? { ...item, description: val } : item));
+                                  }}
+                                  placeholder="Feature description..."
+                                  rows={2}
+                                  className="w-full rounded-lg border border-zinc-200 px-2.5 py-1.5 text-xs outline-none focus:border-violet-500 resize-none text-zinc-650"
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
 
-  {/* Key Features */}
-  <div>
-    <label className="block text-[10px] font-semibold uppercase tracking-wider text-zinc-400 mb-1.5">
-      Key Features
-    </label>
-    <div className="space-y-1.5">
-      <div className="flex items-center gap-2 bg-zinc-50 rounded-lg px-3 py-2 border border-zinc-100">
-        <span className="text-xs text-zinc-700">Seamless App Control</span>
-      </div>
-      <div className="flex items-center gap-2 bg-zinc-50 rounded-lg px-3 py-2 border border-zinc-100">
-        <span className="text-xs text-zinc-700">Ultra-long Battery Life</span>
-      </div>
-      <button className="text-xs text-violet-600 font-medium hover:text-violet-700 transition-colors flex items-center gap-1">
-        <Plus className="h-3 w-3" />
-        Add Feature
-      </button>
-    </div>
-  </div>
-
-  {/* Care Instructions */}
-  <div>
-    <label className="block text-[10px] font-semibold uppercase tracking-wider text-zinc-400 mb-1.5">
-      Care Instructions
-    </label>
-    <div className="space-y-1.5">
-      <div className="flex items-center gap-2 bg-zinc-50 rounded-lg px-3 py-2 border border-zinc-100">
-        <span className="text-xs text-zinc-700">- Wipe clean with a dry cloth.</span>
-      </div>
-      <button className="text-xs text-violet-600 font-medium hover:text-violet-700 transition-colors flex items-center gap-1">
-        <Plus className="h-3 w-3" />
-        Add instruction...
-      </button>
-    </div>
-  </div>
+                        {/* IoT Product: Technical Specifications Grid */}
+                        <div className="space-y-3 border border-zinc-200 rounded-2xl p-4 bg-zinc-50/60">
+                          <label className="block text-[10px] font-bold uppercase tracking-wider text-zinc-600">
+                            Product Technical Specifications (IoT / Hardware)
+                          </label>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                            <div>
+                              <label className="text-[10px] font-bold text-zinc-400 block mb-1">Material</label>
+                              <input
+                                type="text"
+                                value={specifications.material || ''}
+                                onChange={(e) => setSpecifications(prev => ({ ...prev, material: e.target.value }))}
+                                placeholder="e.g. Tough PLA / PETG"
+                                className="w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-xs outline-none focus:border-violet-500"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-[10px] font-bold text-zinc-400 block mb-1">Electronics</label>
+                              <input
+                                type="text"
+                                value={specifications.electronics || ''}
+                                onChange={(e) => setSpecifications(prev => ({ ...prev, electronics: e.target.value }))}
+                                placeholder="e.g. ESP32-S3, OLED Display"
+                                className="w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-xs outline-none focus:border-violet-500"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-[10px] font-bold text-zinc-400 block mb-1">Power</label>
+                              <input
+                                type="text"
+                                value={specifications.power || ''}
+                                onChange={(e) => setSpecifications(prev => ({ ...prev, power: e.target.value }))}
+                                placeholder="e.g. USB-C 5V / 2A"
+                                className="w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-xs outline-none focus:border-violet-500"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-[10px] font-bold text-zinc-400 block mb-1">Connectivity</label>
+                              <input
+                                type="text"
+                                value={specifications.connectivity || ''}
+                                onChange={(e) => setSpecifications(prev => ({ ...prev, connectivity: e.target.value }))}
+                                placeholder="e.g. Wi-Fi 2.4GHz, Bluetooth 5.2"
+                                className="w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-xs outline-none focus:border-violet-500"
+                              />
+                            </div>
+                            <div className="sm:col-span-2">
+                              <label className="text-[10px] font-bold text-zinc-400 block mb-1">Dimensions</label>
+                              <input
+                                type="text"
+                                value={specifications.dimensions || ''}
+                                onChange={(e) => setSpecifications(prev => ({ ...prev, dimensions: e.target.value }))}
+                                placeholder="e.g. 100 x 50 x 20 mm"
+                                className="w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-xs outline-none focus:border-violet-500"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </>
+                );
+              })()}
 
               {/* AWS S3 Product Media Upload Section */}
               <div className="space-y-4">
@@ -873,7 +1302,7 @@ export default function AdminProductsPage() {
                   <label className="block text-[10px] font-semibold uppercase tracking-wider text-zinc-400">
                     Product Media (Images & Videos - Max 5MB per file)
                   </label>
-                  <div 
+                  <div
                     onClick={() => fileInputRef.current?.click()}
                     className="border-2 border-dashed border-zinc-200 rounded-2xl p-6 text-center cursor-pointer hover:bg-zinc-50 transition-all flex flex-col items-center justify-center gap-2"
                   >
@@ -1027,7 +1456,7 @@ export default function AdminProductsPage() {
             <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-50 text-red-650 mb-4">
               <AlertTriangle className="h-6 w-6 text-red-650" />
             </div>
-            
+
             <h3 className="text-base font-bold text-zinc-900 mb-2">Delete Catalog Product</h3>
             <p className="text-xs text-zinc-500 mb-6 px-2">
               Are you sure you want to delete the product <span className="font-bold text-zinc-800">"{productToDelete.name}"</span>? This will permanently delete its records and all associated images stored in S3.
@@ -1057,6 +1486,64 @@ export default function AdminProductsPage() {
                 ) : (
                   'Yes, Delete'
                 )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Color Palette Chart Modal Overlay */}
+      {isColorChartOpen && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => setIsColorChartOpen(false)}>
+          <div className="relative max-w-lg w-full bg-white dark:bg-[#12131a] rounded-2xl p-6 border border-zinc-200 dark:border-zinc-800 shadow-2xl space-y-5" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800 pb-3">
+              <div>
+                <h3 className="text-base font-bold text-zinc-900 dark:text-white">Filament &amp; Material Color Chart</h3>
+                <p className="text-xs text-zinc-500">Click any color swatch to add to product color options.</p>
+              </div>
+              <button
+                onClick={() => setIsColorChartOpen(false)}
+                className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-700 dark:hover:text-white transition"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 max-h-[60vh] overflow-y-auto p-1">
+              {PRESET_COLOR_CHART.map((c) => (
+                <button
+                  key={c.name}
+                  type="button"
+                  onClick={() => {
+                    if (activeColorIndex !== null) {
+                      setColorOptions(prev => prev.map((item, idx) => idx === activeColorIndex ? { name: c.name, code: c.code, priceAdjustment: c.priceAdjustment || 0 } : item));
+                    } else {
+                      setColorOptions(prev => [...prev, { name: c.name, code: c.code, priceAdjustment: c.priceAdjustment || 0 }]);
+                    }
+                    showToast(`Added ${c.name} (+₹${c.priceAdjustment || 0}) to product colors!`);
+                    setIsColorChartOpen(false);
+                  }}
+                  className="flex items-center gap-2.5 p-2 rounded-xl border border-zinc-200 dark:border-zinc-700/60 bg-zinc-50 dark:bg-zinc-900 hover:border-violet-500 dark:hover:border-violet-400 hover:shadow-sm transition-all text-left group"
+                >
+                  <span
+                    className="h-7 w-7 rounded-lg border border-zinc-300 dark:border-zinc-700 shrink-0 shadow-sm transition-transform group-hover:scale-105"
+                    style={{ backgroundColor: c.code }}
+                  />
+                  <div className="overflow-hidden">
+                    <span className="text-[11px] font-bold text-zinc-800 dark:text-zinc-200 block truncate">{c.name}</span>
+                    <span className="text-[9px] font-mono text-zinc-400 uppercase block">{c.code}</span>
+                  </div>
+                </button>
+              ))}
+            </div>
+
+            <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setIsColorChartOpen(false)}
+                className="px-4 py-2 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-xl text-xs font-semibold hover:bg-zinc-200 transition"
+              >
+                Close Chart
               </button>
             </div>
           </div>

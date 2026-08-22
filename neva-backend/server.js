@@ -5,16 +5,19 @@ const config = require('./config');
 const app = express();
 const PORT = config.port;
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 const authRoutes = require('./routes/authRoutes');
 const categoryRoutes = require('./routes/categoryRoutes');
 const productRoutes = require('./routes/productRoutes');
+const customPrintRoutes = require('./routes/customPrintRoutes');
 
 
 app.use('/api/auth', authRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/products', productRoutes);
+app.use('/api/custom-print', customPrintRoutes);
 
 const startServer = async () => {
   try {

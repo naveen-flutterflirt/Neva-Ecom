@@ -3,13 +3,25 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Button from '../../components/ui/Button';
+import Toast from '../../components/ui/Toast';
+import { apiClient } from '../../lib/api';
 
 export default function SignupPage() {
   const router = useRouter();
 
+  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('');
   const [contactNumber, setContactNumber] = useState('');
   const [whatsappNumber, setWhatsappNumber] = useState('');
   const [sameAsContact, setSameAsContact] = useState(false);
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 3000);
+  };
 
   const handleSameAsContact = (checked: boolean) => {
     setSameAsContact(checked);
@@ -24,6 +36,62 @@ export default function SignupPage() {
 
     if (sameAsContact) {
       setWhatsappNumber(value);
+    }
+  };
+
+  const handleSignup = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!fullName.trim() || !email.trim() || !contactNumber.trim() || !whatsappNumber.trim() || !password.trim()) {
+      showToast('❌ All fields are required.');
+      return;
+    }
+
+    // Phone validation
+    const phoneRegex = /^[6-9]\d{9}$/;
+    if (!phoneRegex.test(contactNumber.trim()) || !phoneRegex.test(whatsappNumber.trim())) {
+      showToast('❌ Contact & WhatsApp numbers must be valid 10-digit mobile numbers.');
+      return;
+    }
+
+    if (password.length < 8) {
+      showToast('❌ Password must be at least 8 characters long.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await apiClient('/auth/signup', {
+        method: 'POST',
+        body: {
+          name: fullName.trim(),
+          email: email.trim(),
+          contactNumber: contactNumber.trim(),
+          whatsappNumber: whatsappNumber.trim(),
+          password: password,
+        },
+      });
+
+      showToast('✓ Registration successful! Logging in... 🎉');
+      
+      // Auto-login after successful registration
+      const signinRes = await apiClient('/auth/signin', {
+        method: 'POST',
+        body: {
+          emailOrNumber: email.trim(),
+          password: password,
+        },
+      });
+
+      localStorage.setItem('neva-token', signinRes.token);
+      showToast('✓ Logged in successfully! 🎉');
+      
+      setTimeout(() => {
+        router.push('/');
+      }, 1500);
+    } catch (err: any) {
+      showToast(`❌ ${err.message || 'Connection error. Please try again.'}`);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -156,7 +224,7 @@ export default function SignupPage() {
               {/* FORM */}
               <form
                 className="space-y-4"
-                onSubmit={(event) => event.preventDefault()}
+                onSubmit={handleSignup}
               >
 
                 {/* NAME + EMAIL */}
@@ -164,10 +232,7 @@ export default function SignupPage() {
 
                   {/* FULL NAME */}
                   <div>
-                    <label
-                      htmlFor="fullName"
-                      className="mb-2 block text-[10px] font-semibold uppercase tracking-[0.22em] text-zinc-500 dark:text-zinc-400"
-                    >
+                    <label htmlFor="fullName" className="form-label">
                       Full Name
                     </label>
 
@@ -177,35 +242,15 @@ export default function SignupPage() {
                       name="fullName"
                       autoComplete="name"
                       placeholder="John Doe"
-                      className="
-                        w-full rounded-2xl
-                        border border-zinc-200
-                        bg-white
-                        px-4 py-3
-                        text-sm text-zinc-900
-                        outline-none
-                        transition-all duration-200
-                        placeholder:text-zinc-400
-                        hover:border-zinc-300
-                        focus:border-cyan-500
-                        focus:ring-2 focus:ring-cyan-500/20
-                        dark:border-zinc-700
-                        dark:bg-zinc-900/80
-                        dark:text-white
-                        dark:placeholder:text-zinc-500
-                        dark:hover:border-zinc-500
-                        dark:focus:border-cyan-400
-                        dark:focus:ring-cyan-500/30
-                      "
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      className="form-input"
                     />
                   </div>
 
                   {/* EMAIL */}
                   <div>
-                    <label
-                      htmlFor="email"
-                      className="mb-2 block text-[10px] font-semibold uppercase tracking-[0.22em] text-zinc-500 dark:text-zinc-400"
-                    >
+                    <label htmlFor="email" className="form-label">
                       Email
                     </label>
 
@@ -215,26 +260,9 @@ export default function SignupPage() {
                       name="email"
                       autoComplete="email"
                       placeholder="you@example.com"
-                      className="
-                        w-full rounded-2xl
-                        border border-zinc-200
-                        bg-white
-                        px-4 py-3
-                        text-sm text-zinc-900
-                        outline-none
-                        transition-all duration-200
-                        placeholder:text-zinc-400
-                        hover:border-zinc-300
-                        focus:border-cyan-500
-                        focus:ring-2 focus:ring-cyan-500/20
-                        dark:border-zinc-700
-                        dark:bg-zinc-900/80
-                        dark:text-white
-                        dark:placeholder:text-zinc-500
-                        dark:hover:border-zinc-500
-                        dark:focus:border-cyan-400
-                        dark:focus:ring-cyan-500/30
-                      "
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="form-input"
                     />
                   </div>
 
@@ -245,10 +273,7 @@ export default function SignupPage() {
 
                   {/* CONTACT NUMBER */}
                   <div>
-                    <label
-                      htmlFor="contactNumber"
-                      className="mb-2 block text-[10px] font-semibold uppercase tracking-[0.22em] text-zinc-500 dark:text-zinc-400"
-                    >
+                    <label htmlFor="contactNumber" className="form-label">
                       Contact Number
                     </label>
 
@@ -262,35 +287,13 @@ export default function SignupPage() {
                       onChange={(event) =>
                         handleContactChange(event.target.value)
                       }
-                      className="
-                        w-full rounded-2xl
-                        border border-zinc-200
-                        bg-white
-                        px-4 py-3
-                        text-sm text-zinc-900
-                        outline-none
-                        transition-all duration-200
-                        placeholder:text-zinc-400
-                        hover:border-zinc-300
-                        focus:border-cyan-500
-                        focus:ring-2 focus:ring-cyan-500/20
-                        dark:border-zinc-700
-                        dark:bg-zinc-900/80
-                        dark:text-white
-                        dark:placeholder:text-zinc-500
-                        dark:hover:border-zinc-500
-                        dark:focus:border-cyan-400
-                        dark:focus:ring-cyan-500/30
-                      "
+                      className="form-input"
                     />
                   </div>
 
                   {/* WHATSAPP */}
                   <div>
-                    <label
-                      htmlFor="whatsappNumber"
-                      className="mb-2 block text-[10px] font-semibold uppercase tracking-[0.22em] text-zinc-500 dark:text-zinc-400"
-                    >
+                    <label htmlFor="whatsappNumber" className="form-label">
                       WhatsApp Number
                     </label>
 
@@ -305,28 +308,7 @@ export default function SignupPage() {
                       onChange={(event) =>
                         setWhatsappNumber(event.target.value)
                       }
-                      className="
-                        w-full rounded-2xl
-                        border border-zinc-200
-                        bg-white
-                        px-4 py-3
-                        text-sm text-zinc-900
-                        outline-none
-                        transition-all duration-200
-                        placeholder:text-zinc-400
-                        hover:border-zinc-300
-                        focus:border-cyan-500
-                        focus:ring-2 focus:ring-cyan-500/20
-                        disabled:cursor-not-allowed
-                        disabled:opacity-60
-                        dark:border-zinc-700
-                        dark:bg-zinc-900/80
-                        dark:text-white
-                        dark:placeholder:text-zinc-500
-                        dark:hover:border-zinc-500
-                        dark:focus:border-cyan-400
-                        dark:focus:ring-cyan-500/30
-                      "
+                      className="form-input disabled:cursor-not-allowed disabled:opacity-60"
                     />
 
                     <label className="mt-2 flex cursor-pointer items-center gap-2 text-[11px] text-zinc-500 dark:text-zinc-400">
@@ -357,10 +339,7 @@ export default function SignupPage() {
 
                 {/* PASSWORD */}
                 <div>
-                  <label
-                    htmlFor="password"
-                    className="mb-2 block text-[10px] font-semibold uppercase tracking-[0.22em] text-zinc-500 dark:text-zinc-400"
-                  >
+                  <label htmlFor="password" className="form-label">
                     Password
                   </label>
 
@@ -370,42 +349,26 @@ export default function SignupPage() {
                     name="password"
                     autoComplete="new-password"
                     placeholder="Create a password"
-                    className="
-                      w-full rounded-2xl
-                      border border-zinc-200
-                      bg-white
-                      px-4 py-3
-                      text-sm text-zinc-900
-                      outline-none
-                      transition-all duration-200
-                      placeholder:text-zinc-400
-                      hover:border-zinc-300
-                      focus:border-cyan-500
-                      focus:ring-2 focus:ring-cyan-500/20
-                      dark:border-zinc-700
-                      dark:bg-zinc-900/80
-                      dark:text-white
-                      dark:placeholder:text-zinc-500
-                      dark:hover:border-zinc-500
-                      dark:focus:border-cyan-400
-                      dark:focus:ring-cyan-500/30
-                    "
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="form-input"
                   />
                 </div>
 
                 {/* CREATE ACCOUNT */}
                 <Button
                   type="submit"
-                  style={{ cursor: 'pointer' }}
+                  disabled={loading}
+                  style={{ cursor: loading ? 'not-allowed' : 'pointer' }}
                   className="
-    mt-1
-    w-full
-    text-sm
-    uppercase
-    tracking-[0.2em]
-  "
+                    mt-1
+                    w-full
+                    text-sm
+                    uppercase
+                    tracking-[0.2em]
+                  "
                 >
-                  Create Account
+                  {loading ? 'Creating Account...' : 'Create Account'}
                 </Button>
 
               </form>
@@ -428,6 +391,7 @@ export default function SignupPage() {
           </div>
         </div>
       </div>
+      <Toast message={toastMessage} />
     </main>
   );
 }

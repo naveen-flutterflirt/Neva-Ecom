@@ -14,7 +14,7 @@ class ProductRepository {
         {
           model: ProductImage,
           as: 'images',
-          attributes: ['id', 'imageUrl', 'isPrimary', 'sortOrder', 'mediaType'],
+          attributes: ['id', 'imageUrl', 'isPrimary', 'sortOrder', 'mediaType', 'color'],
         },
       ],
       order: [['createdAt', 'DESC']],
@@ -32,7 +32,7 @@ class ProductRepository {
         {
           model: ProductImage,
           as: 'images',
-          attributes: ['id', 'imageUrl', 'isPrimary', 'sortOrder', 'mediaType'],
+          attributes: ['id', 'imageUrl', 'isPrimary', 'sortOrder', 'mediaType', 'color'],
         },
       ],
     });
@@ -50,7 +50,7 @@ class ProductRepository {
         {
           model: ProductImage,
           as: 'images',
-          attributes: ['id', 'imageUrl', 'isPrimary', 'sortOrder', 'mediaType'],
+          attributes: ['id', 'imageUrl', 'isPrimary', 'sortOrder', 'mediaType', 'color'],
         },
       ],
     });

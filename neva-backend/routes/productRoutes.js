@@ -14,7 +14,8 @@ const upload = multer({
 
 const mediaUpload = upload.fields([
   { name: 'images' },
-  { name: 'videos' }
+  { name: 'videos' },
+  { name: 'colorImages' }
 ]);
 
 router.get('/', productController.getProducts);

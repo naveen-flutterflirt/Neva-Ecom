@@ -47,13 +47,31 @@ const deleteFromS3 = async (imageUrl) => {
   }
 };
 
+// Helper to safely parse JSON field from request body
+const parseJSONField = (val, fallback = []) => {
+  if (!val) return fallback;
+  if (typeof val === 'object') return val;
+  try {
+    return JSON.parse(val);
+  } catch (e) {
+    return fallback;
+  }
+};
+
+// Helper to format product data
+const formatProduct = (product) => {
+  if (!product) return null;
+  return product.toJSON ? product.toJSON() : product;
+};
+
 class ProductController {
   async getProducts(req, res) {
     try {
       const products = await productRepository.findAll();
+      const formattedProducts = (products || []).map(formatProduct);
       return res.status(200).json({
         success: true,
-        data: products,
+        data: formattedProducts,
       });
     } catch (error) {
       return res.status(500).json({
@@ -76,7 +94,7 @@ class ProductController {
       }
       return res.status(200).json({
         success: true,
-        data: product,
+        data: formatProduct(product),
       });
     } catch (error) {
       return res.status(500).json({
@@ -89,7 +107,23 @@ class ProductController {
 
   async createProduct(req, res) {
     try {
-      const { name, categoryId, sku, description, price, discountPrice, stock, status, primaryImageIndex } = req.body;
+      const {
+        name,
+        categoryId,
+        sku,
+        description,
+        price,
+        discountPrice,
+        stock,
+        status,
+        primaryImageIndex,
+        materialVariants,
+        colorOptions,
+        sizeVariants,
+        careInstructions,
+        keyFeatures,
+        specifications,
+      } = req.body;
       const images = req.files && req.files['images'] ? req.files['images'] : [];
       const videos = req.files && req.files['videos'] ? req.files['videos'] : [];
 
@@ -131,6 +165,12 @@ class ProductController {
         stock: stock || 0,
         status: status || 'draft',
         slug,
+        materialVariants: parseJSONField(materialVariants, []),
+        colorOptions: parseJSONField(colorOptions, []),
+        sizeVariants: parseJSONField(sizeVariants, []),
+        careInstructions: parseJSONField(careInstructions, []),
+        keyFeatures: parseJSONField(keyFeatures, []),
+        specifications: parseJSONField(specifications, {}),
       });
 
       // Upload files to S3
@@ -161,9 +201,33 @@ class ProductController {
         });
       }
 
-      if (mediaToSave.length > 0) {
-        await productRepository.createImages(mediaToSave);
+      // Handle Color Option Specific Image uploads to AWS S3
+      const colorImages = req.files && req.files['colorImages'] ? req.files['colorImages'] : [];
+      const colorImageIndices = parseJSONField(req.body.colorImageIndices, []);
+      let parsedColorOptions = parseJSONField(colorOptions, []);
+
+      for (let i = 0; i < colorImages.length; i++) {
+        const fileUrl = await uploadToS3(colorImages[i]);
+        const targetIdx = colorImageIndices[i] !== undefined ? parseInt(colorImageIndices[i], 10) : i;
+        if (parsedColorOptions[targetIdx]) {
+          parsedColorOptions[targetIdx].imageUrl = fileUrl;
+        }
+        mediaToSave.push({
+          productId: product.id,
+          imageUrl: fileUrl,
+          isPrimary: false,
+          sortOrder: images.length + videos.length + i,
+          mediaType: 'image',
+          color: parsedColorOptions[targetIdx] ? parsedColorOptions[targetIdx].name : null,
+        });
       }
+
+      if (colorImages.length > 0) {
+        await productRepository.update(product.id, { colorOptions: parsedColorOptions });
+      }
+
+      // Save media records
+      await productRepository.addImages(mediaToSave);
 
       const freshProduct = await productRepository.findById(product.id);
 
@@ -184,7 +248,24 @@ class ProductController {
   async updateProduct(req, res) {
     try {
       const { id } = req.params;
-      const { name, categoryId, sku, description, price, discountPrice, stock, status, primaryImageIndex, deletedImageIds } = req.body;
+      const {
+        name,
+        categoryId,
+        sku,
+        description,
+        price,
+        discountPrice,
+        stock,
+        status,
+        primaryImageIndex,
+        deletedImageIds,
+        materialVariants,
+        colorOptions,
+        sizeVariants,
+        careInstructions,
+        keyFeatures,
+        specifications,
+      } = req.body;
       const images = req.files && req.files['images'] ? req.files['images'] : [];
       const videos = req.files && req.files['videos'] ? req.files['videos'] : [];
 
@@ -220,6 +301,13 @@ class ProductController {
       if (stock !== undefined) updateData.stock = stock;
       if (status) updateData.status = status;
 
+      if (materialVariants !== undefined) updateData.materialVariants = parseJSONField(materialVariants, []);
+      if (colorOptions !== undefined) updateData.colorOptions = parseJSONField(colorOptions, []);
+      if (sizeVariants !== undefined) updateData.sizeVariants = parseJSONField(sizeVariants, []);
+      if (careInstructions !== undefined) updateData.careInstructions = parseJSONField(careInstructions, []);
+      if (keyFeatures !== undefined) updateData.keyFeatures = parseJSONField(keyFeatures, []);
+      if (specifications !== undefined) updateData.specifications = parseJSONField(specifications, {});
+
       await productRepository.update(id, updateData);
 
       // Handle Media Deletions
@@ -230,6 +318,20 @@ class ProductController {
           if (imgObj) {
             await deleteFromS3(imgObj.imageUrl);
             await productRepository.deleteImage(imgId);
+          }
+        }
+      }
+
+      // Automatically cleanup images associated with color options that were deleted
+      if (colorOptions !== undefined && product.images) {
+        const remainingColorNames = (updateData.colorOptions || []).map(c => (c.name || '').toLowerCase().trim());
+        for (const imgObj of product.images) {
+          if (imgObj.color && imgObj.color.trim() !== '') {
+            const isColorStillPresent = remainingColorNames.includes(imgObj.color.toLowerCase().trim());
+            if (!isColorStillPresent) {
+              await deleteFromS3(imgObj.imageUrl);
+              await productRepository.deleteImage(imgObj.id);
+            }
           }
         }
       }
@@ -262,6 +364,31 @@ class ProductController {
         });
       }
 
+      // Handle Color Option Specific Image uploads to AWS S3
+      const colorImages = req.files && req.files['colorImages'] ? req.files['colorImages'] : [];
+      const colorImageIndices = parseJSONField(req.body.colorImageIndices, []);
+      let updatedColorOpts = updateData.colorOptions !== undefined ? updateData.colorOptions : (product.colorOptions || []);
+
+      for (let i = 0; i < colorImages.length; i++) {
+        const fileUrl = await uploadToS3(colorImages[i]);
+        const targetIdx = colorImageIndices[i] !== undefined ? parseInt(colorImageIndices[i], 10) : i;
+        if (updatedColorOpts[targetIdx]) {
+          updatedColorOpts[targetIdx].imageUrl = fileUrl;
+        }
+        newMedia.push({
+          productId: id,
+          imageUrl: fileUrl,
+          isPrimary: false,
+          sortOrder: startSortOrder + images.length + videos.length + i,
+          mediaType: 'image',
+          color: updatedColorOpts[targetIdx] ? updatedColorOpts[targetIdx].name : null,
+        });
+      }
+
+      if (colorImages.length > 0) {
+        await productRepository.update(id, { colorOptions: updatedColorOpts });
+      }
+
       if (newMedia.length > 0) {
         await productRepository.createImages(newMedia);
       }
@@ -282,7 +409,7 @@ class ProductController {
       return res.status(200).json({
         success: true,
         message: 'Product updated successfully',
-        data: finalProduct,
+        data: formatProduct(finalProduct),
       });
     } catch (error) {
       return res.status(500).json({
