@@ -11,6 +11,8 @@ import {
   AlertTriangle
 } from 'lucide-react';
 import Toast from '../../../../components/ui/Toast';
+import Pagination from '../../../../components/ui/Pagination';
+import { TableSkeletonRows } from '../../../../components/ui/Skeleton';
 import { API_URL } from '../../../../lib/api';
 
 interface Category {
@@ -214,7 +216,14 @@ export default function AdminCategoriesPage() {
     }
   };
 
-  // Filtering list
+  // Filters & Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(8);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
+
   const filteredCategories = categories.filter(category => {
     const query = searchQuery.toLowerCase();
     return (
@@ -223,6 +232,11 @@ export default function AdminCategoriesPage() {
       (category.description && category.description.toLowerCase().includes(query))
     );
   });
+
+  const paginatedCategories = filteredCategories.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   return (
     <div className="space-y-6">
@@ -254,45 +268,42 @@ export default function AdminCategoriesPage() {
       </div>
 
       {/* Main Content Area */}
-      {loading && categories.length === 0 ? (
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="h-8 w-8 animate-spin text-violet-600" />
+      <div className="rounded-2xl border border-zinc-200 bg-white overflow-hidden shadow-sm">
+        {/* Table header row */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-100">
+          <p className="text-sm font-semibold text-zinc-700">
+            {filteredCategories.length} {filteredCategories.length === 1 ? 'category' : 'categories'} found
+          </p>
         </div>
-      ) : (
-        <div className="rounded-2xl border border-zinc-200 bg-white overflow-hidden shadow-sm">
-          {/* Table header row */}
-          <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-100">
-            <p className="text-sm font-semibold text-zinc-700">
-              {filteredCategories.length} {filteredCategories.length === 1 ? 'category' : 'categories'} found
-            </p>
-          </div>
-          <div className="overflow-x-auto scrollbar-none">
-            <table className="w-full text-left border-collapse text-xs">
-              <thead>
-                <tr className="border-b border-zinc-100 bg-zinc-50 text-[11px] font-bold uppercase tracking-wider text-zinc-400">
-                  <th className="px-6 py-3 w-14">No</th>
-                  <th className="px-6 py-3">Name</th>
-                  <th className="px-6 py-3">Slug</th>
-                  <th className="px-6 py-3">Description</th>
-                  <th className="px-6 py-3">Status</th>
-                  <th className="px-6 py-3 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-zinc-100 text-zinc-700">
-                {filteredCategories.length === 0 ? (
+        <div className="overflow-x-auto scrollbar-none">
+          <table className="w-full text-left border-collapse text-xs">
+            <thead>
+              <tr className="border-b border-zinc-100 bg-zinc-50 text-[11px] font-bold uppercase tracking-wider text-zinc-400">
+                <th className="px-6 py-3 w-14">No</th>
+                <th className="px-6 py-3">Name</th>
+                <th className="px-6 py-3">Slug</th>
+                <th className="px-6 py-3">Description</th>
+                <th className="px-6 py-3">Status</th>
+                <th className="px-6 py-3 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-zinc-100 text-zinc-700">
+              {loading ? (
+                <TableSkeletonRows rows={5} cols={6} />
+              ) : filteredCategories.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="px-6 py-12 text-center text-zinc-400">
                       No categories found. Click "Add Category" to get started.
                     </td>
                   </tr>
                 ) : (
-                  filteredCategories.map((category, index) => (
+                  paginatedCategories.map((category, index) => (
                     <tr
                       key={category.id}
                       className={`hover:bg-zinc-50 transition-colors duration-150 ${deletingId === category.id ? 'opacity-40 pointer-events-none bg-red-50' : ''
                         }`}
                     >
-                      <td className="px-6 py-3.5 font-mono text-zinc-400 text-[11px] font-semibold">{index + 1}</td>
+                      <td className="px-6 py-3.5 font-mono text-zinc-400 text-[11px] font-semibold">{(currentPage - 1) * itemsPerPage + index + 1}</td>
                       <td className="px-6 py-3.5">
                         <span className="font-semibold text-zinc-900 text-xs">{category.name}</span>
                       </td>
@@ -337,8 +348,16 @@ export default function AdminCategoriesPage() {
               </tbody>
             </table>
           </div>
+
+          {/* Table Pagination Bar */}
+          <Pagination
+            currentPage={currentPage}
+            totalItems={filteredCategories.length}
+            itemsPerPage={itemsPerPage}
+            onPageChange={setCurrentPage}
+            onItemsPerPageChange={setItemsPerPage}
+          />
         </div>
-      )}
 
       {/* CRUD Form Modal */}
       {isModalOpen && (

@@ -142,6 +142,14 @@ export default function ProductInfoPage() {
 
   useEffect(() => {
     const token = localStorage.getItem('neva-token');
+    if (!token) {
+      showToast('🔒 Please Sign In or Create an Account to configure Custom Products!');
+      setTimeout(() => {
+        router.push('/login');
+      }, 1500);
+      return;
+    }
+
     if (token) {
       apiClient('/auth/me')
         .then((res) => {
@@ -155,7 +163,7 @@ export default function ProductInfoPage() {
         })
         .catch(() => {});
     }
-  }, []);
+  }, [router]);
 
   useEffect(() => {
     return () => {
@@ -327,6 +335,15 @@ export default function ProductInfoPage() {
 
   // Step wizard controls
   const handleNextStep = (currentStep: string) => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('neva-token') : null;
+    if (!token) {
+      showToast('🔒 Please Sign In or Create an Account to configure Custom Products!');
+      setTimeout(() => {
+        router.push('/login');
+      }, 1500);
+      return;
+    }
+
     if (currentStep === 'product-info') {
       if (!referenceFile) {
         showToast('Please upload a 3D print model file first.');
@@ -346,6 +363,14 @@ export default function ProductInfoPage() {
 
   // Submit custom print
   const handleSubmitRequest = async () => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('neva-token') : null;
+    if (!token) {
+      showToast('🔒 Please Sign In or Create an Account to submit Custom Print Requests!');
+      setTimeout(() => {
+        router.push('/login');
+      }, 1500);
+      return;
+    }
     try {
       setIsSubmitting(true);
       const payload = {

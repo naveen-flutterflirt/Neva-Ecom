@@ -14,6 +14,7 @@ import {
   ChevronDown
 } from 'lucide-react';
 import Toast from '../../../components/ui/Toast';
+import { TableSkeletonRows } from '../../../components/ui/Skeleton';
 import { apiClient } from '../../../lib/api';
 
 interface PrintRequest {
@@ -43,14 +44,22 @@ interface PrintRequest {
 
 const INITIAL_MOCK_REQUESTS: PrintRequest[] = [];
 
+import Pagination from '../../../components/ui/Pagination';
+
 export default function AdminCustomPrintPage() {
   const [requests, setRequests] = useState<PrintRequest[]>([]);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  // Filtering & Search
+  // Filtering, Search & Pagination
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<string>('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(8);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, activeTab]);
 
   // Detail Modal State
   const [selectedRequest, setSelectedRequest] = useState<PrintRequest | null>(null);
@@ -236,6 +245,11 @@ export default function AdminCustomPrintPage() {
     return matchesSearch && req.status === activeTab;
   });
 
+  const paginatedRequests = filteredRequests.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -317,16 +331,18 @@ export default function AdminCustomPrintPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-100 text-zinc-700">
-              {filteredRequests.length === 0 ? (
+              {isLoading ? (
+                <TableSkeletonRows rows={6} cols={9} />
+              ) : filteredRequests.length === 0 ? (
                 <tr>
                   <td colSpan={9} className="px-6 py-16 text-center text-zinc-400 text-sm">
                     No requests found in this status category.
                   </td>
                 </tr>
               ) : (
-                filteredRequests.map((req, index) => (
+                paginatedRequests.map((req, index) => (
                   <tr key={req.id} className="hover:bg-zinc-50 transition-colors duration-150">
-                    <td className="pl-6 pr-2 py-3.5 font-mono text-zinc-400 text-[11px] font-semibold whitespace-nowrap">{index + 1}</td>
+                    <td className="pl-6 pr-2 py-3.5 font-mono text-zinc-400 text-[11px] font-semibold whitespace-nowrap">{(currentPage - 1) * itemsPerPage + index + 1}</td>
                     <td className="pl-2 pr-6 py-3.5 whitespace-nowrap">
                       <span className="font-bold text-violet-700 text-xs bg-violet-50 px-2 py-0.5 rounded-md border border-violet-100 whitespace-nowrap">{req.id}</span>
                     </td>
@@ -439,6 +455,15 @@ export default function AdminCustomPrintPage() {
             </tbody>
           </table>
         </div>
+
+        {/* Table Pagination Bar */}
+        <Pagination
+          currentPage={currentPage}
+          totalItems={filteredRequests.length}
+          itemsPerPage={itemsPerPage}
+          onPageChange={setCurrentPage}
+          onItemsPerPageChange={setItemsPerPage}
+        />
       </div>
 
       {/* Ticket Details & Price Quoting Modal */}

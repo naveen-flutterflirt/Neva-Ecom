@@ -15,6 +15,8 @@ import {
   Video as VideoIcon
 } from 'lucide-react';
 import Toast from '../../../../components/ui/Toast';
+import Pagination from '../../../../components/ui/Pagination';
+import { TableSkeletonRows } from '../../../../components/ui/Skeleton';
 
 interface Category {
   id: string;
@@ -501,7 +503,14 @@ export default function AdminProductsPage() {
     }
   };
 
-  // Filters
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(8);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
+
   const filteredProducts = products.filter((prod) => {
     const query = searchQuery.toLowerCase();
     return (
@@ -510,6 +519,11 @@ export default function AdminProductsPage() {
       (prod.description && prod.description.toLowerCase().includes(query))
     );
   });
+
+  const paginatedProducts = filteredProducts.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   return (
     <div className="space-y-6">
@@ -541,41 +555,38 @@ export default function AdminProductsPage() {
       </div>
 
       {/* Main Grid table view */}
-      {loading ? (
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="h-8 w-8 animate-spin text-violet-600" />
+      <div className="rounded-2xl border border-zinc-200 bg-white overflow-hidden shadow-sm">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-100">
+          <p className="text-sm font-semibold text-zinc-700">
+            {filteredProducts.length} {filteredProducts.length === 1 ? 'product' : 'products'} found
+          </p>
         </div>
-      ) : (
-        <div className="rounded-2xl border border-zinc-200 bg-white overflow-hidden shadow-sm">
-          <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-100">
-            <p className="text-sm font-semibold text-zinc-700">
-              {filteredProducts.length} {filteredProducts.length === 1 ? 'product' : 'products'} found
-            </p>
-          </div>
-          <div className="overflow-x-auto scrollbar-none">
-            <table className="w-full text-left border-collapse text-xs">
-              <thead>
-                <tr className="border-b border-zinc-100 bg-zinc-50 text-[11px] font-bold uppercase tracking-wider text-zinc-400">
-                  <th className="px-6 py-3 w-14">No</th>
-                  <th className="px-6 py-3 w-16">Image</th>
-                  <th className="px-6 py-3">Product Name</th>
-                  <th className="px-6 py-3">SKU</th>
-                  <th className="px-6 py-3">Category</th>
-                  <th className="px-6 py-3">Price</th>
-                  <th className="px-6 py-3">Stock</th>
-                  <th className="px-6 py-3">Status</th>
-                  <th className="px-6 py-3 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-zinc-100 text-zinc-700">
-                {filteredProducts.length === 0 ? (
+        <div className="overflow-x-auto scrollbar-none">
+          <table className="w-full text-left border-collapse text-xs">
+            <thead>
+              <tr className="border-b border-zinc-100 bg-zinc-50 text-[11px] font-bold uppercase tracking-wider text-zinc-400">
+                <th className="px-6 py-3 w-14">No</th>
+                <th className="px-6 py-3 w-16">Image</th>
+                <th className="px-6 py-3">Product Name</th>
+                <th className="px-6 py-3">SKU</th>
+                <th className="px-6 py-3">Category</th>
+                <th className="px-6 py-3">Price</th>
+                <th className="px-6 py-3">Stock</th>
+                <th className="px-6 py-3">Status</th>
+                <th className="px-6 py-3 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-zinc-100 text-zinc-700">
+              {loading ? (
+                <TableSkeletonRows rows={6} cols={9} />
+              ) : filteredProducts.length === 0 ? (
                   <tr>
                     <td colSpan={9} className="px-6 py-12 text-center text-zinc-400">
                       No products found. Click "Add Product" to create one.
                     </td>
                   </tr>
                 ) : (
-                  filteredProducts.map((product, index) => {
+                  paginatedProducts.map((product, index) => {
                     const primaryImg = (product.images || []).find(img => img.isPrimary && (img.mediaType || 'image') === 'image') || (product.images || []).find(img => (img.mediaType || 'image') === 'image');
                     return (
                       <tr
@@ -583,7 +594,7 @@ export default function AdminProductsPage() {
                         className={`hover:bg-zinc-50 transition-colors duration-150 ${deletingId === product.id ? 'opacity-40 pointer-events-none bg-red-50' : ''
                           }`}
                       >
-                        <td className="px-6 py-3.5 font-mono text-zinc-400 text-[11px] font-semibold">{index + 1}</td>
+                        <td className="px-6 py-3.5 font-mono text-zinc-400 text-[11px] font-semibold">{(currentPage - 1) * itemsPerPage + index + 1}</td>
                         <td className="px-6 py-3.5">
                           {primaryImg ? (
                             <img
@@ -661,8 +672,16 @@ export default function AdminProductsPage() {
               </tbody>
             </table>
           </div>
+
+          {/* Table Pagination Bar */}
+          <Pagination
+            currentPage={currentPage}
+            totalItems={filteredProducts.length}
+            itemsPerPage={itemsPerPage}
+            onPageChange={setCurrentPage}
+            onItemsPerPageChange={setItemsPerPage}
+          />
         </div>
-      )}
 
       {/* Save Product Modal */}
       {isModalOpen && (

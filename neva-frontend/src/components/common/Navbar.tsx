@@ -13,11 +13,13 @@ import {
   Moon,
   ChevronDown,
 } from 'lucide-react';
-import { useAppSelector } from '../../store';
+import { useAppDispatch, useAppSelector } from '../../store';
+import { clearCart, hydrateCart } from '../../store/cartSlice';
 import { useTheme } from '../providers/ThemeProvider';
 
 export default function Navbar() {
   const pathname = usePathname();
+  const dispatch = useAppDispatch();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProductsOpen, setIsProductsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -35,10 +37,44 @@ export default function Navbar() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
 
+  const handleLogout = () => {
+    if (typeof window !== 'undefined') {
+      if (cartItems && cartItems.length > 0) {
+        localStorage.setItem('neva-saved-user-cart', JSON.stringify(cartItems));
+      }
+      localStorage.removeItem('neva-token');
+      localStorage.removeItem('neva-user');
+      localStorage.removeItem('neva-cart');
+      localStorage.removeItem('neva-saved-addresses');
+    }
+    dispatch(clearCart());
+    setIsLoggedIn(false);
+    setIsUserDropdownOpen(false);
+    setIsMobileMenuOpen(false);
+    window.location.href = '/';
+  };
+
   useEffect(() => {
     const token = localStorage.getItem('neva-token');
-    setIsLoggedIn(!!token);
-  }, [pathname]);
+    const hasToken = !!token;
+    setIsLoggedIn(hasToken);
+
+    if (hasToken) {
+      const savedUserCart = localStorage.getItem('neva-saved-user-cart');
+      if (savedUserCart) {
+        try {
+          const parsed = JSON.parse(savedUserCart);
+          if (Array.isArray(parsed)) {
+            dispatch(hydrateCart(parsed));
+          }
+        } catch (e) {
+          console.error('Failed to parse saved user cart:', e);
+        }
+      }
+    } else {
+      dispatch(clearCart());
+    }
+  }, [dispatch]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -270,12 +306,7 @@ export default function Navbar() {
                 </Link>
                 <button
                   type="button"
-                  onClick={() => {
-                    localStorage.removeItem('neva-token');
-                    setIsLoggedIn(false);
-                    setIsUserDropdownOpen(false);
-                    window.location.reload();
-                  }}
+                  onClick={handleLogout}
                   className="w-full text-left block rounded-xl px-3 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-950/30 dark:hover:text-red-300 transition-colors cursor-pointer"
                 >
                   Logout
@@ -365,12 +396,7 @@ export default function Navbar() {
               </Link>
               <button
                 type="button"
-                onClick={() => {
-                  localStorage.removeItem('neva-token');
-                  setIsLoggedIn(false);
-                  setIsMobileMenuOpen(false);
-                  window.location.reload();
-                }}
+                onClick={handleLogout}
                 className="w-full text-left block text-sm font-medium text-red-600 hover:text-red-700 py-1.5 border-b border-zinc-100 dark:border-zinc-900/50 cursor-pointer"
               >
                 Logout

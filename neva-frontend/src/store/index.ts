@@ -11,7 +11,12 @@ export const store = configureStore({
 store.subscribe(() => {
     if (typeof window !== 'undefined') {
         try {
-            localStorage.setItem('neva-cart', JSON.stringify(store.getState().cart));
+            const cartState = store.getState().cart;
+            localStorage.setItem('neva-cart', JSON.stringify(cartState));
+            const token = localStorage.getItem('neva-token');
+            if (token) {
+                localStorage.setItem('neva-saved-user-cart', JSON.stringify(cartState.items));
+            }
         } catch (error) {
             console.error('Failed to save cart to localStorage:', error);
         }

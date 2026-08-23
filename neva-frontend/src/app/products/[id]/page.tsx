@@ -17,6 +17,7 @@ import { useAppDispatch, useAppSelector } from '../../../store';
 import { addToCart } from '../../../store/cartSlice';
 
 export default function DynamicProductDetailsPage() {
+  const router = useRouter();
   const dispatch = useAppDispatch();
   const cartItems = useAppSelector((state) => state.cart.items);
   const [product, setProduct] = useState<Product | null>(null);
@@ -184,7 +185,7 @@ export default function DynamicProductDetailsPage() {
 
   const handleAddToCart = () => {
     try {
-      const isAlreadyInCart = cartItems.some((item) => item.product.id === product.id);
+      const isAlreadyInCart = cartItems.some((item) => String(item.product.id) === String(product.id));
       if (isAlreadyInCart) {
         showToast(`⚠️ "${product.name}" is already added to your cart!`);
         return false;
@@ -205,7 +206,16 @@ export default function DynamicProductDetailsPage() {
   };
 
   const handleBuyNow = () => {
-    const isAlreadyInCart = cartItems.some((item) => item.product.id === product.id);
+    const token = typeof window !== 'undefined' ? localStorage.getItem('neva-token') : null;
+    if (!token) {
+      showToast('🔒 Please Sign In or Create an Account to proceed with Buy Now!');
+      setTimeout(() => {
+        router.push('/login');
+      }, 1500);
+      return;
+    }
+
+    const isAlreadyInCart = cartItems.some((item) => String(item.product.id) === String(product.id));
     if (!isAlreadyInCart) {
       dispatch(addToCart({
         product: {
@@ -215,7 +225,7 @@ export default function DynamicProductDetailsPage() {
         quantity: 1,
       }));
     }
-    window.location.href = '/checkout';
+    router.push('/checkout');
   };
 
   return (

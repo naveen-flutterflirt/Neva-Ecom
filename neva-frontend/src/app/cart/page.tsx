@@ -1,272 +1,398 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShoppingBag, ArrowLeft, Trash2, Plus, Minus, CreditCard, Sparkles, AlertCircle } from 'lucide-react';
+import {
+  ShoppingBag, ArrowLeft, Trash2, Plus, Minus, CreditCard,
+  Sparkles, AlertCircle, ArrowRight, ShieldCheck, Tag, X, Check, Truck
+} from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { useAppDispatch, useAppSelector } from '../../store';
 import { removeFromCart, updateQuantity, clearCart } from '../../store/cartSlice';
 import Toast from '../../components/ui/Toast';
+import { Skeleton } from '../../components/ui/Skeleton';
 
 export default function CartPage() {
-    const dispatch = useAppDispatch();
-    const cartItems = useAppSelector((state) => state.cart.items);
-    const [couponCode, setCouponCode] = useState('');
-    const [appliedDiscount, setAppliedDiscount] = useState(0); // in percentage
-    const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const router = useRouter();
+  const dispatch = useAppDispatch();
+  const cartItems = useAppSelector((state) => state.cart.items);
 
-    const showToast = (message: string) => {
-        setToastMessage(message);
-        setTimeout(() => {
-            setToastMessage(null);
-        }, 3000);
-    };
+  const [isMounted, setIsMounted] = useState(false);
+  const [couponCode, setCouponCode] = useState('');
+  const [appliedDiscount, setAppliedDiscount] = useState(0); // percentage
+  const [appliedCouponName, setAppliedCouponName] = useState('');
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-    const handleApplyCoupon = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (couponCode.toUpperCase() === 'NIVAIOT') {
-            setAppliedDiscount(10);
-            showToast('10% Discount applied successfully! ⚡');
-        } else {
-            showToast('Invalid Coupon Code! ❌');
-        }
-    };
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
-    // Calculate invoice totals
-    const subtotal = cartItems.reduce((acc, item) => acc + Number(item.product.price) * item.quantity, 0);
-    const discountAmount = Math.round((subtotal * appliedDiscount) / 100);
-    const shipping = subtotal > 1500 || subtotal === 0 ? 0 : 99;
-    const gst = Math.round((subtotal - discountAmount) * 0.18);
-    const orderTotal = subtotal - discountAmount + shipping + gst;
+  const showToast = (message: string) => {
+    setToastMessage(message);
+    setTimeout(() => {
+      setToastMessage(null);
+    }, 3000);
+  };
 
-    const handleRemoveFromCart = (id: string, name: string) => {
-        dispatch(removeFromCart(id));
-        showToast(`${name} deleted from Cart! 🗑️`);
-    };
+  const handleApplyCoupon = (e: React.FormEvent) => {
+    e.preventDefault();
+    const code = couponCode.trim().toUpperCase();
+    if (!code) return;
 
-    const handleClearCart = () => {
-        dispatch(clearCart());
-        showToast('All products deleted from Cart! 🗑️');
-    };
+    if (code === 'NEVA10' || code === 'WELCOME10' || code === 'NIVAIOT') {
+      setAppliedDiscount(10);
+      setAppliedCouponName(code);
+      showToast('🎉 10% Discount Coupon Applied Successfully!');
+    } else if (code === 'NEVA15' || code === 'FESTIVE15') {
+      setAppliedDiscount(15);
+      setAppliedCouponName(code);
+      showToast('✨ 15% OFF Special Coupon Applied!');
+    } else {
+      showToast('❌ Invalid Coupon Code. Try NEVA10');
+    }
+  };
 
-    const handleCheckout = () => {
-        showToast('Processing order checkout... 🚀');
-        setTimeout(() => {
-            dispatch(clearCart());
-            showToast('Order placed successfully! Thank you. 🎉');
-        }, 2000);
-    };
+  const handleRemoveCoupon = () => {
+    setAppliedDiscount(0);
+    setAppliedCouponName('');
+    setCouponCode('');
+    showToast('Coupon removed');
+  };
 
-    return (
-        <div className="relative min-h-screen bg-transparent pt-28 pb-20 text-zinc-900 dark:text-zinc-50 overflow-hidden">
-            {/* Ambient background styling */}
-            <div className="pointer-events-none absolute -left-[10%] top-[10%] h-[350px] w-[350px] rounded-full bg-violet-600/5 blur-[100px]" />
-            <div className="pointer-events-none absolute -right-[10%] bottom-[10%] h-[350px] w-[350px] rounded-full bg-pink-500/5 blur-[100px]" />
+  // Calculate invoice totals
+  const subtotal = cartItems.reduce((acc, item) => acc + Number(item.product.price) * item.quantity, 0);
+  const discountAmount = Math.round((subtotal * appliedDiscount) / 100);
+  const freeShippingThreshold = 1499;
+  const shippingFee = subtotal >= freeShippingThreshold || subtotal === 0 ? 0 : 99;
+  const gstTax = Math.round((subtotal - discountAmount) * 0.18);
+  const grandTotal = Math.max(0, subtotal - discountAmount + shippingFee + gstTax);
+  const neededForFreeShipping = Math.max(0, freeShippingThreshold - subtotal);
+  const freeShippingProgress = Math.min(100, Math.round((subtotal / freeShippingThreshold) * 100));
 
-            <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                {/* Header Back Button */}
-                <div className="mb-10 flex items-center justify-between">
-                    <Link href="/" className="inline-flex items-center gap-2 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white text-sm font-semibold transition-colors">
-                        <ArrowLeft className="h-4 w-4" />
-                        Back to Shopping
-                    </Link>
-                    <h1 className="text-2xl font-black uppercase tracking-wider text-zinc-900 dark:text-white">Your Cart</h1>
-                </div>
+  const handleRemoveFromCart = (id: string, name: string) => {
+    dispatch(removeFromCart(id));
+    showToast(`Removed "${name}" from cart`);
+  };
 
-                <AnimatePresence mode="wait">
-                    {cartItems.length === 0 ? (
-                        /* Empty state */
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -20 }}
-                            className="flex flex-col items-center justify-center border border-zinc-200 dark:border-zinc-800/80 bg-white/30 dark:bg-zinc-900/10 backdrop-blur-md rounded-3xl p-16 text-center max-w-2xl mx-auto shadow-2xl"
+  const handleClearCart = () => {
+    dispatch(clearCart());
+    showToast('Cart cleared completely!');
+  };
+
+  const handleCheckout = () => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('neva-token') : null;
+    if (!token) {
+      showToast('🔒 Please Sign In or Create an Account to proceed with Checkout!');
+      setTimeout(() => {
+        router.push('/login');
+      }, 1500);
+      return;
+    }
+    router.push('/checkout');
+  };
+
+  return (
+    <main className="min-h-screen bg-zinc-50/70 dark:bg-[#07080d] text-zinc-900 dark:text-zinc-100 pt-20 pb-28 sm:pb-20 font-sans selection:bg-purple-500 selection:text-white transition-colors duration-200">
+      {/* Toast Notification */}
+      <Toast message={toastMessage} />
+
+      {/* Ambient Glow Effects */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0 hidden dark:block">
+        <div className="absolute top-1/4 left-1/3 w-[450px] h-[450px] bg-purple-600/10 rounded-full blur-[140px]" />
+        <div className="absolute bottom-10 right-1/4 w-[400px] h-[400px] bg-indigo-600/10 rounded-full blur-[140px]" />
+      </div>
+
+      <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-6">
+
+        {/* Top Header Bar */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-200/80 dark:border-zinc-800/80 pb-4">
+          <div className="flex items-center gap-3">
+            <Link
+              href="/"
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-xs font-semibold text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white transition shadow-xs"
+            >
+              <ArrowLeft className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400" />
+              Back to Store
+            </Link>
+            <h1 className="text-xl sm:text-2xl font-black tracking-tight text-zinc-900 dark:text-white flex items-center gap-2">
+              <ShoppingBag className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+              Shopping Cart
+            </h1>
+          </div>
+
+          {isMounted && cartItems.length > 0 && (
+            <div className="flex items-center gap-3">
+              <span className="text-xs font-bold text-zinc-500 dark:text-zinc-400">
+                {cartItems.reduce((a, b) => a + b.quantity, 0)} Items Selected
+              </span>
+              <button
+                onClick={handleClearCart}
+                className="text-xs font-extrabold text-red-600 hover:text-red-700 dark:text-red-400 hover:underline cursor-pointer"
+              >
+                Clear Cart
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Hydration Guard / Loading Skeleton or Cart Contents */}
+        {!isMounted ? (
+          <div className="py-6 space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+              <div className="lg:col-span-8 space-y-4">
+                <Skeleton className="h-24 w-full rounded-2xl" />
+                <Skeleton className="h-24 w-full rounded-2xl" />
+              </div>
+              <div className="lg:col-span-4 space-y-4">
+                <Skeleton className="h-64 w-full rounded-3xl" />
+              </div>
+            </div>
+          </div>
+        ) : cartItems.length === 0 ? (
+          /* Empty Cart State */
+          <motion.div
+            initial={{ opacity: 0, scale: 0.96 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white dark:bg-[#0c0d14] rounded-3xl border border-zinc-200 dark:border-zinc-800 p-8 sm:p-12 text-center max-w-xl mx-auto space-y-5 shadow-xl my-8"
+          >
+            <div className="h-20 w-20 bg-purple-100 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 rounded-full flex items-center justify-center mx-auto border border-purple-200 dark:border-purple-800/50 shadow-inner">
+              <ShoppingBag className="h-10 w-10" />
+            </div>
+            <div className="space-y-2">
+              <h2 className="text-2xl font-black text-zinc-900 dark:text-white">Your Shopping Cart is Empty</h2>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 max-w-sm mx-auto leading-relaxed">
+                You haven't added any products to your cart yet. Discover our premium 3D Printed Models and Smart IoT Electronics!
+              </p>
+            </div>
+            <div className="flex flex-wrap justify-center gap-3 pt-2">
+              <Link
+                href="/3d-product"
+                className="px-6 py-3 rounded-xl bg-purple-600 text-white font-bold text-xs hover:bg-purple-700 transition shadow-lg shadow-purple-600/25"
+              >
+                Browse 3D Products
+              </Link>
+              <Link
+                href="/iot-product"
+                className="px-6 py-3 rounded-xl bg-zinc-900 dark:bg-zinc-800 text-white font-bold text-xs hover:bg-zinc-800 transition"
+              >
+                Explore Smart IoT
+              </Link>
+            </div>
+          </motion.div>
+        ) : (
+          /* Active Cart Grid split layout */
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-start">
+
+            {/* Left Column: Ultra-Sleek Product Items List (8 Cols) */}
+            <div className="lg:col-span-8 space-y-3.5">
+
+
+
+              {/* Cart Product Item Cards */}
+              <AnimatePresence>
+                {cartItems.map((item) => {
+                  const categoryLabel = typeof item.product.category === 'object' && item.product.category !== null
+                    ? (item.product.category as any).name || 'Store Item'
+                    : (item.product.category || 'Store Item');
+
+                  const itemPrice = Number(item.product.price);
+                  const itemTotal = itemPrice * item.quantity;
+                  const itemImg = item.product.image || (item.product.images && item.product.images[0]?.imageUrl) || 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=120&q=80';
+
+                  return (
+                    <motion.div
+                      key={item.product.id}
+                      layout
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95 }}
+                      className="bg-white dark:bg-[#0c0d14]/90 p-4 rounded-2xl sm:rounded-3xl border border-zinc-200/90 dark:border-zinc-800/80 shadow-xs backdrop-blur-xl transition hover:border-purple-300 dark:hover:border-purple-900/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                    >
+                      {/* Left: Thumbnail & Details */}
+                      <div className="flex items-center gap-3.5 min-w-0 flex-1">
+                        <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-xl overflow-hidden bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shrink-0">
+                          <img
+                            src={itemImg}
+                            alt={item.product.name}
+                            className="h-full w-full object-cover"
+                          />
+                        </div>
+
+                        <div className="space-y-1 min-w-0 flex-1">
+                          <span className="text-[10px] font-extrabold uppercase tracking-wider text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/40 px-2 py-0.5 rounded border border-purple-100 dark:border-purple-800/40 inline-block">
+                            {categoryLabel}
+                          </span>
+                          <h3 className="font-extrabold text-xs sm:text-sm text-zinc-900 dark:text-white truncate">
+                            {item.product.name}
+                          </h3>
+                          <p className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400 font-mono">
+                            Unit Price: ₹{itemPrice.toLocaleString('en-IN')}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Right: Quantity Stepper, Item Total & Delete */}
+                      <div className="flex items-center justify-between sm:justify-end gap-4 pt-2 sm:pt-0 border-t sm:border-t-0 border-zinc-100 dark:border-zinc-800/60 shrink-0">
+                        {/* Stepper */}
+                        <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-900 p-1 rounded-xl border border-zinc-200 dark:border-zinc-800">
+                          <button
+                            type="button"
+                            onClick={() => dispatch(updateQuantity({ id: item.product.id, quantity: item.quantity - 1 }))}
+                            className="h-7 w-7 rounded-lg bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 flex items-center justify-center transition shadow-xs cursor-pointer"
+                          >
+                            <Minus className="h-3 w-3" />
+                          </button>
+                          <span className="w-7 text-center font-extrabold text-xs text-zinc-900 dark:text-white font-mono">
+                            {item.quantity}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => dispatch(updateQuantity({ id: item.product.id, quantity: item.quantity + 1 }))}
+                            className="h-7 w-7 rounded-lg bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 flex items-center justify-center transition shadow-xs cursor-pointer"
+                          >
+                            <Plus className="h-3 w-3" />
+                          </button>
+                        </div>
+
+                        {/* Item Total */}
+                        <div className="text-right min-w-[85px]">
+                          <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-wider block">Item Total</span>
+                          <span className="text-sm sm:text-base font-black text-purple-600 dark:text-purple-400 font-mono">
+                            ₹{itemTotal.toLocaleString('en-IN')}
+                          </span>
+                        </div>
+
+                        {/* Delete Icon */}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveFromCart(item.product.id, item.product.name)}
+                          className="text-zinc-400 hover:text-red-500 p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/40 transition cursor-pointer"
+                          title="Delete Item"
                         >
-                            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-450 dark:text-zinc-500 mb-6">
-                                <ShoppingBag className="h-8 w-8" />
-                            </div>
-                            <h2 className="text-xl font-bold text-zinc-800 dark:text-zinc-200 mb-2">Shopping Cart is Empty</h2>
-                            <p className="text-zinc-500 text-sm max-w-sm mb-8">
-                                Looks like you haven't added anything to your cart yet. Explore our latest PLA Filaments and Smart IoT modules!
-                            </p>
-                            <Link
-                                href="/"
-                                className="rounded-xl bg-violet-600 hover:bg-violet-500 active:scale-95 text-white font-bold text-sm px-8 py-3.5 transition-all duration-200 shadow-lg shadow-violet-600/10"
-                            >
-                                Shop New Arrivals
-                            </Link>
-                        </motion.div>
-                    ) : (
-                        /* Active Items List & Invoice Grid split panel */
-                        <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start"
-                        >
-                            {/* Left: Cart Items List */}
-                            <div className="lg:col-span-8 space-y-4">
-                                {cartItems.map((item) => (
-                                    <motion.div
-                                        key={item.product.id}
-                                        layout
-                                        initial={{ opacity: 0, y: 15 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        exit={{ opacity: 0, x: -100 }}
-                                        className="flex flex-col sm:flex-row items-center gap-5 border border-zinc-200 dark:border-zinc-800 bg-white/40 dark:bg-zinc-900/20 p-5 rounded-2xl backdrop-blur-sm"
-                                    >
-                                        {/* Product Thumbnail */}
-                                        <div className="h-20 w-24 rounded-xl overflow-hidden bg-zinc-100 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 flex-shrink-0">
-                                            <img
-                                                src={item.product.image}
-                                                alt={item.product.name}
-                                                className="h-full w-full object-cover"
-                                            />
-                                        </div>
-
-                                        {/* Info Block */}
-                                        <div className="flex-1 text-center sm:text-left">
-                                            <span className="text-[10px] font-bold uppercase tracking-wider text-violet-400">
-                                                {typeof item.product.category === 'object' && item.product.category !== null
-                                                    ? (item.product.category as any).name || 'Product'
-                                                    : (item.product.category || 'Product')}
-                                            </span>
-                                            <h3 className="font-bold text-zinc-900 dark:text-white text-base mt-0.5 line-clamp-1">
-                                                {item.product.name}
-                                            </h3>
-                                            <span className="text-zinc-600 dark:text-zinc-400 font-medium text-xs">
-                                                Unit Price: ₹{item.product.price}
-                                            </span>
-                                        </div>
-
-                                        {/* Quantity Selector */}
-                                        <div className="flex items-center border border-zinc-200 dark:border-zinc-850 bg-zinc-100/40 dark:bg-zinc-950/40 rounded-xl px-2 py-1">
-                                            <button
-                                                onClick={() => dispatch(updateQuantity({ id: item.product.id, quantity: item.quantity - 1 }))}
-                                                className="h-8 w-8 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white flex items-center justify-center transition-colors"
-                                                aria-label="Decrease quantity"
-                                            >
-                                                <Minus className="h-3.5 w-3.5" />
-                                            </button>
-                                            <span className="px-3 font-bold text-sm w-6 text-center">{item.quantity}</span>
-                                            <button
-                                                onClick={() => dispatch(updateQuantity({ id: item.product.id, quantity: item.quantity + 1 }))}
-                                                className="h-8 w-8 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white flex items-center justify-center transition-colors"
-                                                aria-label="Increase quantity"
-                                            >
-                                                <Plus className="h-3.5 w-3.5" />
-                                            </button>
-                                        </div>
-
-                                        {/* Total Product Price */}
-                                        <div className="text-right min-w-[70px] hidden sm:block">
-                                            <span className="text-zinc-500 text-[10px] font-bold uppercase tracking-wider block">Total</span>
-                                            <span className="font-black text-zinc-900 dark:text-white text-base">₹{Number(item.product.price) * item.quantity}</span>
-                                        </div>
-
-                                        {/* Remove Action */}
-                                        <button
-                                            onClick={() => handleRemoveFromCart(item.product.id, item.product.name)}
-                                            className="p-2 text-zinc-400 dark:text-zinc-500 hover:text-rose-500 transition-colors self-center rounded-xl hover:bg-rose-500/10"
-                                            aria-label="Remove item"
-                                        >
-                                            <Trash2 className="h-4.5 w-4.5" />
-                                        </button>
-                                    </motion.div>
-                                ))}
-
-                                {/* Clear Cart and Coupon Panel */}
-                                <div className="pt-4 flex flex-col sm:flex-row gap-4 items-center justify-between">
-                                    <button
-                                        onClick={handleClearCart}
-                                        className="text-xs font-bold uppercase tracking-wider text-zinc-500 hover:text-rose-550 transition-colors"
-                                    >
-                                        Clear Cart List
-                                    </button>
-
-                                    <form onSubmit={handleApplyCoupon} className="flex gap-2 w-full sm:w-auto">
-                                        <input
-                                            type="text"
-                                            placeholder="Promo Code NIVAIOT"
-                                            value={couponCode}
-                                            onChange={(e) => setCouponCode(e.target.value)}
-                                            className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white/40 dark:bg-zinc-900/40 text-zinc-900 dark:text-white px-4 py-2.5 text-xs font-semibold focus:outline-none focus:border-violet-500/50 w-full sm:w-44 placeholder-zinc-400 dark:placeholder-zinc-600"
-                                        />
-                                        <button
-                                            type="submit"
-                                            className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-900 px-4 py-2.5 text-xs font-bold text-zinc-750 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-all active:scale-95 cursor-pointer"
-                                        >
-                                            Apply
-                                        </button>
-                                    </form>
-                                </div>
-                            </div>
-
-                            {/* Right: Checkout Pricing Panel */}
-                            <div className="lg:col-span-4">
-                                <div className="border border-zinc-200 dark:border-zinc-800/80 bg-white/40 dark:bg-zinc-900/20 backdrop-blur-md p-6 rounded-3xl shadow-2xl">
-                                    <h3 className="text-base font-bold text-zinc-900 dark:text-white mb-5 uppercase tracking-wider border-b border-zinc-200 dark:border-zinc-850 pb-3 flex items-center gap-2">
-                                        <CreditCard className="h-4.5 w-4.5 text-violet-400" />
-                                        Order Summary
-                                    </h3>
-
-                                    {/* Breakdown items */}
-                                    <div className="space-y-3.5 text-sm mb-6 pb-6 border-b border-zinc-200 dark:border-zinc-850">
-                                        <div className="flex justify-between text-zinc-650 dark:text-zinc-400 font-medium">
-                                            <span>Subtotal</span>
-                                            <span className="text-zinc-800 dark:text-zinc-200">₹{subtotal}</span>
-                                        </div>
-
-                                        {appliedDiscount > 0 && (
-                                            <div className="flex justify-between text-emerald-600 dark:text-emerald-400 font-semibold">
-                                                <span className="flex items-center gap-1">
-                                                    <Sparkles className="h-3.5 w-3.5 fill-emerald-600 dark:fill-emerald-400" />
-                                                    Discount ({appliedDiscount}%)
-                                                </span>
-                                                <span>-₹{discountAmount}</span>
-                                            </div>
-                                        )}
-
-                                        <div className="flex justify-between text-zinc-650 dark:text-zinc-400 font-medium">
-                                            <span>Shipping Charges</span>
-                                            <span className="text-zinc-800 dark:text-zinc-200">{shipping === 0 ? 'FREE' : `₹${shipping}`}</span>
-                                        </div>
-
-                                        <div className="flex justify-between text-zinc-650 dark:text-zinc-400 font-medium">
-                                            <span>GST (18% tax)</span>
-                                            <span className="text-zinc-800 dark:text-zinc-200">₹{gst}</span>
-                                        </div>
-                                    </div>
-
-                                    {/* Net total amount */}
-                                    <div className="flex justify-between items-baseline mb-8">
-                                        <span className="text-sm font-bold uppercase text-zinc-500 dark:text-zinc-400">Total Payable</span>
-                                        <span className="text-2xl font-black text-zinc-900 dark:text-white">₹{orderTotal}</span>
-                                    </div>
-
-                                    {/* Checkout Trigger */}
-                                    <button
-                                        onClick={handleCheckout}
-                                        className="w-full flex items-center justify-center gap-2 rounded-xl bg-violet-600 hover:bg-violet-500 active:scale-95 text-white font-bold text-sm py-4 transition-all duration-200 shadow-lg shadow-violet-600/10 cursor-pointer"
-                                    >
-                                        Place Your Order
-                                    </button>
-
-                                    {shipping > 0 && (
-                                        <p className="mt-4 text-[10px] text-zinc-400 dark:text-zinc-500 font-medium leading-relaxed flex gap-1 items-start">
-                                            <AlertCircle className="h-3 w-3 text-zinc-400 dark:text-zinc-500 flex-shrink-0 mt-0.5" />
-                                            Add products worth ₹{1500 - subtotal} more to receive Free Shipping across India!
-                                        </p>
-                                    )}
-                                </div>
-                            </div>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </AnimatePresence>
             </div>
 
-            {/* Global success/error toasts */}
-            <Toast message={toastMessage} />
-        </div>
-    );
+            {/* Right Column: Order Summary & Price Breakdown (4 Cols) */}
+            <div className="lg:col-span-4 space-y-5 lg:sticky lg:top-24">
+
+              <div className="bg-white dark:bg-[#0c0d14]/90 p-5 sm:p-6 rounded-3xl border border-zinc-200/90 dark:border-zinc-800/80 shadow-md backdrop-blur-xl space-y-5">
+                <h2 className="text-xs sm:text-sm font-extrabold text-zinc-900 dark:text-white uppercase tracking-wider pb-3 border-b border-zinc-100 dark:border-zinc-800/80 flex items-center gap-2">
+                  <CreditCard className="h-4 w-4 text-purple-600" />
+                  PRICE DETAILS
+                </h2>
+
+                {/* Promo Coupon Section */}
+                <div className="space-y-2">
+                  <span className="text-[11px] font-bold text-zinc-700 dark:text-zinc-300 flex items-center gap-1">
+                    <Tag className="h-3.5 w-3.5 text-purple-600" /> Promo Code / Coupon
+                  </span>
+
+                  {appliedCouponName ? (
+                    <div className="flex items-center justify-between bg-purple-50 dark:bg-purple-950/40 p-2.5 rounded-xl border border-purple-200 dark:border-purple-800 text-xs font-bold text-purple-700 dark:text-purple-300">
+                      <span>🏷️ {appliedCouponName} (-{appliedDiscount}%)</span>
+                      <button type="button" onClick={handleRemoveCoupon} className="text-zinc-400 hover:text-red-500 cursor-pointer">
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <form onSubmit={handleApplyCoupon} className="flex gap-2">
+                      <input
+                        type="text"
+                        value={couponCode}
+                        onChange={(e) => setCouponCode(e.target.value)}
+                        placeholder="Try NEVA10 or WELCOME10"
+                        className="flex-1 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/60 px-3 py-2 text-xs font-bold outline-none focus:border-purple-500 uppercase"
+                      />
+                      <button
+                        type="submit"
+                        className="px-4 py-2 rounded-xl bg-purple-600 text-white font-bold text-xs hover:bg-purple-700 transition cursor-pointer"
+                      >
+                        Apply
+                      </button>
+                    </form>
+                  )}
+                </div>
+
+                {/* Price Breakdown */}
+                <div className="space-y-2.5 text-xs">
+                  <div className="flex justify-between text-zinc-600 dark:text-zinc-400 font-medium">
+                    <span>Price ({cartItems.length} items)</span>
+                    <span className="font-mono text-zinc-900 dark:text-white">₹{subtotal.toLocaleString('en-IN')}</span>
+                  </div>
+
+                  {appliedDiscount > 0 && (
+                    <div className="flex justify-between text-emerald-600 font-bold">
+                      <span>Coupon Discount ({appliedDiscount}%)</span>
+                      <span className="font-mono">-₹{discountAmount.toLocaleString('en-IN')}</span>
+                    </div>
+                  )}
+
+                  <div className="flex justify-between text-zinc-600 dark:text-zinc-400 font-medium">
+                    <span>Delivery Charges</span>
+                    {shippingFee === 0 ? (
+                      <span className="text-emerald-600 font-bold uppercase text-[10px] bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded">FREE Delivery</span>
+                    ) : (
+                      <span className="font-mono text-zinc-900 dark:text-white">₹{shippingFee}</span>
+                    )}
+                  </div>
+
+                  <div className="flex justify-between text-zinc-500 dark:text-zinc-400 text-[11px]">
+                    <span>Estimated GST (18%)</span>
+                    <span className="font-mono">₹{gstTax.toLocaleString('en-IN')}</span>
+                  </div>
+
+                  <div className="pt-3 border-t border-zinc-200 dark:border-zinc-800 flex justify-between items-center text-sm font-extrabold text-zinc-900 dark:text-white">
+                    <span>Total Amount</span>
+                    <span className="text-lg font-mono text-purple-600 dark:text-purple-400">
+                      ₹{grandTotal.toLocaleString('en-IN')}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Desktop Checkout Button */}
+                <button
+                  type="button"
+                  onClick={handleCheckout}
+                  className="w-full py-3.5 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white font-extrabold text-sm transition shadow-lg shadow-purple-600/25 flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  PROCEED TO CHECKOUT <ArrowRight className="h-4 w-4" />
+                </button>
+
+                <div className="flex items-center justify-center gap-1.5 text-[10px] font-bold text-zinc-400 dark:text-zinc-500 pt-1">
+                  <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" />
+                  100% Safe &amp; Secure Payments
+                </div>
+              </div>
+
+            </div>
+
+            {/* Mobile Sticky Bottom Action Bar (Flipkart Style) */}
+            <div className="sm:hidden fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-zinc-950 border-t border-zinc-200 dark:border-zinc-800 p-3 flex items-center justify-between shadow-2xl backdrop-blur-xl">
+              <div>
+                <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block">Total Amount</span>
+                <span className="text-base font-extrabold text-purple-600 dark:text-purple-400 font-mono">
+                  ₹{grandTotal.toLocaleString('en-IN')}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={handleCheckout}
+                className="px-6 py-3 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-extrabold text-xs shadow-md shadow-purple-600/30 flex items-center gap-1.5 cursor-pointer"
+              >
+                CHECKOUT NOW <ArrowRight className="h-4 w-4" />
+              </button>
+            </div>
+
+          </div>
+        )}
+      </div>
+    </main>
+  );
 }

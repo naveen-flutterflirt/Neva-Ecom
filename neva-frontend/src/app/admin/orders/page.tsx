@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Search, 
   Eye, 
@@ -11,9 +11,11 @@ import {
   Download,
   Calendar,
   CreditCard,
-  User
+  User,
+  Loader2
 } from 'lucide-react';
 import Toast from '../../../components/ui/Toast';
+import { TableSkeletonRows } from '../../../components/ui/Skeleton';
 
 interface OrderItem {
   name: string;
@@ -33,109 +35,26 @@ interface Order {
   createdAt: string;
 }
 
-const INITIAL_MOCK_ORDERS: Order[] = [
-  {
-    id: 'ORD-1081',
-    customerName: 'Rohit Sharma',
-    customerEmail: 'rohit.sharma@gmail.com',
-    shippingAddress: 'Flat 405, Green Glen Layout, Bellandur, Bangalore - 560103',
-    items: [
-      { name: 'PLA Filament Tough Matte Black', price: 999, quantity: 2 },
-      { name: 'Custom Printed Mechanical Gear (STL)', price: 1500, quantity: 1 }
-    ],
-    totalAmount: 3498,
-    paymentStatus: 'paid',
-    status: 'confirmed',
-    createdAt: '2026-08-20 10:15 AM'
-  },
-  {
-    id: 'ORD-1082',
-    customerName: 'Aditi Patel',
-    customerEmail: 'aditi.patel@yahoo.com',
-    shippingAddress: 'B-12, Sector 4, HSR Layout, Bangalore - 560102',
-    items: [
-      { name: 'PETG Translucent Red Filament', price: 1100, quantity: 3 }
-    ],
-    totalAmount: 3300,
-    paymentStatus: 'pending',
-    status: 'pending_payment',
-    createdAt: '2026-08-19 03:40 PM'
-  },
-  {
-    id: 'ORD-1083',
-    customerName: 'Amit Verma',
-    customerEmail: 'amit.verma@outlook.com',
-    shippingAddress: '42, Park Avenue Road, Indiranagar, Bangalore - 560038',
-    items: [
-      { name: 'ABS Premium White Filament', price: 1250, quantity: 4 },
-      { name: 'Custom Cosplay Mask Prototype (OBJ)', price: 4200, quantity: 1 }
-    ],
-    totalAmount: 9200,
-    paymentStatus: 'paid',
-    status: 'in_production',
-    createdAt: '2026-08-19 09:10 AM'
-  },
-  {
-    id: 'ORD-1084',
-    customerName: 'Kavita Iyer',
-    customerEmail: 'kavita.iyer@gmail.com',
-    shippingAddress: 'Villa 9, Prestige Ferns, Koramangala, Bangalore - 560034',
-    items: [
-      { name: 'PLA Tough Gray Filament', price: 999, quantity: 1 }
-    ],
-    totalAmount: 999,
-    paymentStatus: 'paid',
-    status: 'ready_to_ship',
-    createdAt: '2026-08-18 11:55 AM'
-  },
-  {
-    id: 'ORD-1085',
-    customerName: 'Sanjay Nair',
-    customerEmail: 'sanjay.nair@corporate.in',
-    shippingAddress: 'Block C-903, Purva Riviera, Marathahalli, Bangalore - 560037',
-    items: [
-      { name: 'Nylon Extra Strength Black Filament', price: 1800, quantity: 5 }
-    ],
-    totalAmount: 9000,
-    paymentStatus: 'paid',
-    status: 'shipped',
-    createdAt: '2026-08-17 02:30 PM'
-  },
-  {
-    id: 'ORD-1086',
-    customerName: 'Meera Deshmukh',
-    customerEmail: 'meera.d@rediffmail.com',
-    shippingAddress: 'Penthouse A, Sobha Rose, Whitefield, Bangalore - 560066',
-    items: [
-      { name: 'PLA Filament Glossy Gold', price: 1200, quantity: 2 }
-    ],
-    totalAmount: 2400,
-    paymentStatus: 'paid',
-    status: 'delivered',
-    createdAt: '2026-08-15 04:12 PM'
-  },
-  {
-    id: 'ORD-1087',
-    customerName: 'Vikram Joshi',
-    customerEmail: 'vikram.j@gmail.com',
-    shippingAddress: '15, 2nd Main, Malleshwaram, Bangalore - 560003',
-    items: [
-      { name: 'Resin Basic Translucent Blue', price: 2900, quantity: 1 }
-    ],
-    totalAmount: 2900,
-    paymentStatus: 'failed',
-    status: 'cancelled',
-    createdAt: '2026-08-14 11:00 AM'
-  }
-];
+const INITIAL_MOCK_ORDERS: Order[] = [];
+
+import { apiClient } from '../../../lib/api';
+
+import Pagination from '../../../components/ui/Pagination';
 
 export default function AdminOrdersPage() {
-  const [orders, setOrders] = useState<Order[]>(INITIAL_MOCK_ORDERS);
+  const [orders, setOrders] = useState<Order[]>([]);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-  
-  // Search & Filters
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Search, Filters & Pagination
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<string>('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(8);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, activeTab]);
 
   // Detail Modal States
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
@@ -144,6 +63,41 @@ export default function AdminOrdersPage() {
   // Delete Confirmation States
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [orderToDelete, setOrderToDelete] = useState<Order | null>(null);
+
+  const fetchLiveOrders = async () => {
+    try {
+      setIsLoading(true);
+      const res = await apiClient('/orders');
+      if (res.success && Array.isArray(res.data) && res.data.length > 0) {
+        const mappedOrders: Order[] = res.data.map((o: any) => ({
+          id: o.orderNumber || o.id,
+          customerName: o.customerName || 'Customer',
+          customerEmail: o.customerEmail || 'n/a',
+          shippingAddress: o.shippingAddress || 'n/a',
+          items: Array.isArray(o.items)
+            ? o.items.map((it: any) => ({
+                name: it.productName || 'Product',
+                price: Number(it.unitPrice || 0),
+                quantity: Number(it.quantity || 1),
+              }))
+            : [],
+          totalAmount: Number(o.totalAmount || 0),
+          paymentStatus: o.paymentStatus || 'pending',
+          status: o.orderStatus === 'pending' ? 'confirmed' : o.orderStatus,
+          createdAt: new Date(o.createdAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }),
+        }));
+        setOrders(mappedOrders);
+      }
+    } catch (err) {
+      console.warn('Failed to fetch live orders (using mock orders):', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchLiveOrders();
+  }, []);
 
   const showToast = (message: string) => {
     setToastMessage(message);
@@ -159,14 +113,24 @@ export default function AdminOrdersPage() {
   };
 
   // Handle order status transition
-  const handleStatusChange = (id: string, newStatus: Order['status']) => {
+  const handleStatusChange = async (id: string, newStatus: Order['status']) => {
     setOrders(prev => prev.map(order => {
       if (order.id === id) {
         return { ...order, status: newStatus };
       }
       return order;
     }));
-    showToast(`Order status updated successfully! ⚡`);
+
+    try {
+      await apiClient(`/orders/${id}/status`, {
+        method: 'PUT',
+        body: { orderStatus: newStatus }
+      });
+      showToast(`Order status updated to "${newStatus}" in database! ⚡`);
+    } catch (err: any) {
+      console.error('Failed to sync status with database:', err);
+      showToast(`Order status updated locally! ⚡`);
+    }
   };
 
   // Delete order handler
@@ -196,6 +160,11 @@ export default function AdminOrdersPage() {
     if (activeTab === 'all') return matchesSearch;
     return matchesSearch && order.status === activeTab;
   });
+
+  const paginatedOrders = filteredOrders.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   return (
     <div className="space-y-6">
@@ -280,16 +249,18 @@ export default function AdminOrdersPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-100 text-zinc-700">
-              {filteredOrders.length === 0 ? (
+              {isLoading ? (
+                <TableSkeletonRows rows={6} cols={7} />
+              ) : filteredOrders.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="px-6 py-16 text-center text-zinc-400 text-sm">
                     No orders found in this status category.
                   </td>
                 </tr>
               ) : (
-                filteredOrders.map((order, index) => (
+                paginatedOrders.map((order, index) => (
                   <tr key={order.id} className="hover:bg-zinc-50 transition-colors duration-150">
-                    <td className="pl-6 pr-2 py-3.5 font-mono text-zinc-400 text-[11px] font-semibold whitespace-nowrap">{index + 1}</td>
+                    <td className="pl-6 pr-2 py-3.5 font-mono text-zinc-400 text-[11px] font-semibold whitespace-nowrap">{(currentPage - 1) * itemsPerPage + index + 1}</td>
                     <td className="pl-2 pr-6 py-3.5 whitespace-nowrap">
                       <span className="font-bold text-violet-700 text-xs bg-violet-50 px-2 py-0.5 rounded-md border border-violet-100 whitespace-nowrap">{order.id}</span>
                     </td>
@@ -369,6 +340,15 @@ export default function AdminOrdersPage() {
             </tbody>
           </table>
         </div>
+
+        {/* Table Pagination Bar */}
+        <Pagination
+          currentPage={currentPage}
+          totalItems={filteredOrders.length}
+          itemsPerPage={itemsPerPage}
+          onPageChange={setCurrentPage}
+          onItemsPerPageChange={setItemsPerPage}
+        />
       </div>
 
       {/* Order Details & Billing Modal */}

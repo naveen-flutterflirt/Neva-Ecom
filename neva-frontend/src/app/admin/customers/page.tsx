@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Search, 
   Eye, 
@@ -11,9 +11,36 @@ import {
   Mail,
   Phone,
   MapPin,
-  DollarSign
+  DollarSign,
+  Loader2,
+  Package,
+  CheckCircle2,
+  Clock
 } from 'lucide-react';
 import Toast from '../../../components/ui/Toast';
+import { TableSkeletonRows } from '../../../components/ui/Skeleton';
+import { apiClient } from '../../../lib/api';
+import Pagination from '../../../components/ui/Pagination';
+
+interface CustomerOrderItem {
+  id: string;
+  productId: string;
+  productName: string;
+  productImage?: string;
+  quantity: number;
+  unitPrice: number;
+  totalPrice: number;
+}
+
+interface CustomerOrder {
+  id: string;
+  orderNumber: string;
+  totalAmount: number;
+  orderStatus: string;
+  paymentStatus: string;
+  createdAt: string;
+  items: CustomerOrderItem[];
+}
 
 interface Customer {
   id: string;
@@ -25,80 +52,13 @@ interface Customer {
   totalOrders: number;
   totalSpent: number;
   status: 'active' | 'blocked';
+  orders: CustomerOrder[];
 }
 
-const INITIAL_MOCK_CUSTOMERS: Customer[] = [
-  {
-    id: 'CST-4821',
-    name: 'Rohit Sharma',
-    email: 'rohit.sharma@gmail.com',
-    phone: '+91 98765 43210',
-    shippingAddress: 'Flat 405, Green Glen Layout, Bellandur, Bangalore - 560103',
-    joinDate: '2026-05-12',
-    totalOrders: 4,
-    totalSpent: 12450,
-    status: 'active'
-  },
-  {
-    id: 'CST-4822',
-    name: 'Aditi Patel',
-    email: 'aditi.patel@yahoo.com',
-    phone: '+91 91234 56789',
-    shippingAddress: 'B-12, Sector 4, HSR Layout, Bangalore - 560102',
-    joinDate: '2026-06-18',
-    totalOrders: 2,
-    totalSpent: 5900,
-    status: 'active'
-  },
-  {
-    id: 'CST-4823',
-    name: 'Amit Verma',
-    email: 'amit.verma@outlook.com',
-    phone: '+91 88888 77777',
-    shippingAddress: '42, Park Avenue Road, Indiranagar, Bangalore - 560038',
-    joinDate: '2026-02-10',
-    totalOrders: 12,
-    totalSpent: 34200,
-    status: 'active'
-  },
-  {
-    id: 'CST-4824',
-    name: 'Kavita Iyer',
-    email: 'kavita.iyer@gmail.com',
-    phone: '+91 77777 66666',
-    shippingAddress: 'Villa 9, Prestige Ferns, Koramangala, Bangalore - 560034',
-    joinDate: '2026-07-01',
-    totalOrders: 1,
-    totalSpent: 999,
-    status: 'active'
-  },
-  {
-    id: 'CST-4825',
-    name: 'Sanjay Nair',
-    email: 'sanjay.nair@corporate.in',
-    phone: '+91 99999 88888',
-    shippingAddress: 'Block C-903, Purva Riviera, Marathahalli, Bangalore - 560037',
-    joinDate: '2026-01-15',
-    totalOrders: 8,
-    totalSpent: 22800,
-    status: 'active'
-  },
-  {
-    id: 'CST-4826',
-    name: 'Vikram Joshi',
-    email: 'vikram.j@gmail.com',
-    phone: '+91 81234 56789',
-    shippingAddress: '15, 2nd Main, Malleshwaram, Bangalore - 560003',
-    joinDate: '2026-04-20',
-    totalOrders: 0,
-    totalSpent: 0,
-    status: 'blocked'
-  }
-];
-
 export default function AdminCustomersPage() {
-  const [customers, setCustomers] = useState<Customer[]>(INITIAL_MOCK_CUSTOMERS);
+  const [customers, setCustomers] = useState<Customer[]>([]);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   
   // Search & Filter
   const [searchQuery, setSearchQuery] = useState('');
@@ -114,6 +74,65 @@ export default function AdminCustomersPage() {
     }, 3000);
   };
 
+  const fetchLiveCustomers = async () => {
+    try {
+      setIsLoading(true);
+      const res = await apiClient('/auth/customers');
+      if (res.success && Array.isArray(res.data)) {
+        const mapped: Customer[] = res.data.map((c: any) => {
+          const userOrders: CustomerOrder[] = Array.isArray(c.orders)
+            ? c.orders.map((o: any) => ({
+                id: o.id,
+                orderNumber: o.orderNumber || o.id,
+                totalAmount: Number(o.totalAmount || 0),
+                orderStatus: o.orderStatus || 'pending',
+                paymentStatus: o.paymentStatus || 'pending',
+                createdAt: new Date(o.createdAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }),
+                items: Array.isArray(o.items)
+                  ? o.items.map((it: any) => ({
+                      id: it.id,
+                      productId: it.productId,
+                      productName: it.productName || 'Product',
+                      productImage: it.productImage || '',
+                      quantity: Number(it.quantity || 1),
+                      unitPrice: Number(it.unitPrice || 0),
+                      totalPrice: Number(it.totalPrice || 0),
+                    }))
+                  : [],
+              }))
+            : [];
+
+          const lastShippingAddr = userOrders.length > 0 && userOrders[0] 
+            ? (c.orders[0].shippingAddress || 'No address saved') 
+            : 'No address saved';
+
+          return {
+            id: c.id,
+            name: c.name || 'Customer',
+            email: c.email || 'N/A',
+            phone: c.phone || c.whatsappNumber || 'N/A',
+            shippingAddress: lastShippingAddr,
+            joinDate: new Date(c.createdAt).toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' }),
+            totalOrders: c.totalOrders || userOrders.length,
+            totalSpent: Number(c.totalSpent || 0),
+            status: 'active',
+            orders: userOrders,
+          };
+        });
+
+        setCustomers(mapped);
+      }
+    } catch (err) {
+      console.warn('Failed to fetch customers API:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchLiveCustomers();
+  }, []);
+
   // Toggle user status active/blocked
   const handleStatusChange = (id: string, newStatus: Customer['status']) => {
     setCustomers(prev => prev.map(c => {
@@ -125,7 +144,14 @@ export default function AdminCustomersPage() {
     showToast(`Customer account status updated successfully! ⚡`);
   };
 
-  // Filter list
+  // Filter list & Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(8);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
+
   const filteredCustomers = customers.filter(c => {
     return (
       c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -135,15 +161,20 @@ export default function AdminCustomersPage() {
     );
   });
 
+  const paginatedCustomers = filteredCustomers.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div>
         <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-zinc-900 flex items-center gap-2">
           <User className="h-7 w-7 text-violet-650" />
-          Customers Directory
+          Customers Directory & Order History
         </h1>
-        <p className="mt-1 text-sm text-zinc-500">Monitor active user profiles, track transaction histories, and manage block lists.</p>
+        <p className="mt-1 text-sm text-zinc-500">Monitor active database user profiles, view purchased products & order transaction details.</p>
       </div>
 
       {/* Search and Filters */}
@@ -180,18 +211,20 @@ export default function AdminCustomersPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-100 text-zinc-700">
-              {filteredCustomers.length === 0 ? (
+              {isLoading ? (
+                <TableSkeletonRows rows={6} cols={8} />
+              ) : filteredCustomers.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="px-6 py-16 text-center text-zinc-400 text-sm">
-                    No customers found matches your search parameters.
+                    No customers found matching your search parameters.
                   </td>
                 </tr>
               ) : (
-                filteredCustomers.map((c, index) => (
+                paginatedCustomers.map((c, index) => (
                   <tr key={c.id} className="hover:bg-zinc-50 transition-colors duration-150">
-                    <td className="pl-6 pr-2 py-3.5 font-mono text-zinc-400 text-[11px] font-semibold whitespace-nowrap">{index + 1}</td>
+                    <td className="pl-6 pr-2 py-3.5 font-mono text-zinc-400 text-[11px] font-semibold whitespace-nowrap">{(currentPage - 1) * itemsPerPage + index + 1}</td>
                     <td className="pl-2 pr-6 py-3.5 whitespace-nowrap">
-                      <span className="font-bold text-violet-700 text-xs bg-violet-50 px-2 py-0.5 rounded-md border border-violet-100 whitespace-nowrap">{c.id}</span>
+                      <span className="font-bold text-violet-700 text-xs bg-violet-50 px-2 py-0.5 rounded-md border border-violet-100 whitespace-nowrap font-mono">{c.id.substring(0, 12)}</span>
                     </td>
                     <td className="px-6 py-3.5 whitespace-nowrap">
                       <div className="flex items-center gap-3">
@@ -204,14 +237,14 @@ export default function AdminCustomersPage() {
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-3.5 whitespace-nowrap">
+                    <td className="px-6 py-3.5 whitespace-nowrap font-mono">
                       <span className="text-zinc-650 text-xs font-semibold">{c.phone}</span>
                     </td>
                     <td className="px-6 py-3.5 text-center whitespace-nowrap">
-                      <span className="text-zinc-900 font-bold text-xs">{c.totalOrders} orders</span>
+                      <span className="text-zinc-900 font-bold text-xs bg-purple-50 text-purple-700 px-2 py-0.5 rounded-full border border-purple-100">{c.totalOrders} orders</span>
                     </td>
                     <td className="px-6 py-3.5 text-center whitespace-nowrap">
-                      <span className="text-zinc-900 font-bold text-xs">₹{c.totalSpent}</span>
+                      <span className="text-zinc-900 font-bold text-xs font-mono">₹{c.totalSpent.toLocaleString()}</span>
                     </td>
                     <td className="px-6 py-3.5 text-center whitespace-nowrap">
                       <select
@@ -233,10 +266,10 @@ export default function AdminCustomersPage() {
                             setSelectedCustomer(c);
                             setIsDetailOpen(true);
                           }}
-                          className="p-1.5 bg-violet-50 text-violet-700 hover:bg-violet-100 border border-violet-150 rounded-lg transition-colors"
-                          title="View Details"
+                          className="p-1.5 bg-violet-50 text-violet-700 hover:bg-violet-100 border border-violet-150 rounded-lg transition-colors flex items-center gap-1 font-bold text-xs px-2.5"
+                          title="View Details & Purchased Orders"
                         >
-                          <Eye className="h-3.5 w-3.5" />
+                          <Eye className="h-3.5 w-3.5" /> View Orders
                         </button>
                       </div>
                     </td>
@@ -246,16 +279,25 @@ export default function AdminCustomersPage() {
             </tbody>
           </table>
         </div>
+
+        {/* Table Pagination Bar */}
+        <Pagination
+          currentPage={currentPage}
+          totalItems={filteredCustomers.length}
+          itemsPerPage={itemsPerPage}
+          onPageChange={setCurrentPage}
+          onItemsPerPageChange={setItemsPerPage}
+        />
       </div>
 
-      {/* Customer Details Modal */}
+      {/* Customer Details & Purchased Orders Modal */}
       {isDetailOpen && selectedCustomer && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center bg-zinc-950/40 backdrop-blur-sm p-4">
-          <div className="relative w-full max-w-lg rounded-2xl bg-white border border-zinc-200 p-6 shadow-xl flex flex-col max-h-[90vh]">
+          <div className="relative w-full max-w-2xl rounded-2xl bg-white border border-zinc-200 p-6 shadow-xl flex flex-col max-h-[90vh]">
             <div className="flex items-center justify-between pb-4 border-b border-zinc-100 mb-4 shrink-0">
-              <h3 className="text-base font-bold text-zinc-900 flex items-center gap-1.5">
+              <h3 className="text-base font-bold text-zinc-900 flex items-center gap-2">
                 <User className="h-5 w-5 text-violet-650" />
-                Customer Audit Profile - {selectedCustomer.id}
+                Customer Profile &amp; Purchased Orders
               </h3>
               <button 
                 onClick={() => setIsDetailOpen(false)}
@@ -267,66 +309,107 @@ export default function AdminCustomersPage() {
 
             <div className="overflow-y-auto space-y-4 pr-1 flex-1 pb-2 scrollbar-thin">
               {/* Account Meta Card */}
-              <div className="flex items-center gap-3 bg-zinc-50 border border-zinc-150 p-4 rounded-xl">
-                <div className="h-12 w-12 rounded-full bg-violet-100 border border-violet-200 text-violet-700 font-extrabold flex items-center justify-center text-sm uppercase">
-                  {selectedCustomer.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+              <div className="flex items-center justify-between bg-zinc-50 border border-zinc-150 p-4 rounded-xl">
+                <div className="flex items-center gap-3">
+                  <div className="h-12 w-12 rounded-full bg-purple-100 border border-purple-200 text-purple-700 font-extrabold flex items-center justify-center text-sm uppercase">
+                    {selectedCustomer.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h4 className="text-sm font-bold text-zinc-900 truncate">{selectedCustomer.name}</h4>
+                    <p className="text-xs text-zinc-500 truncate mt-0.5">{selectedCustomer.email}</p>
+                  </div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <h4 className="text-sm font-bold text-zinc-900 truncate">{selectedCustomer.name}</h4>
-                  <p className="text-xs text-zinc-400 truncate mt-0.5 flex items-center gap-1">
-                    <span className={`h-2 w-2 rounded-full ${selectedCustomer.status === 'active' ? 'bg-emerald-500' : 'bg-red-500'}`} />
-                    Account is {selectedCustomer.status}
-                  </p>
+                <div className="text-right">
+                  <span className="text-[10px] text-zinc-400 font-bold uppercase block">Total Spent</span>
+                  <span className="text-base font-mono font-extrabold text-purple-600">₹{selectedCustomer.totalSpent.toLocaleString()}</span>
                 </div>
               </div>
 
               {/* Contact Information */}
-              <div className="border border-zinc-200 rounded-xl p-3.5 space-y-3">
-                <span className="text-[10px] font-bold text-zinc-450 uppercase tracking-wider block border-b border-zinc-150 pb-1">Contact Channels</span>
-                <div className="text-xs font-semibold text-zinc-800 space-y-2">
-                  <div className="flex items-center gap-2">
-                    <Mail className="h-4 w-4 text-zinc-400" />
-                    <span>{selectedCustomer.email}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Phone className="h-4 w-4 text-zinc-400" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                <div className="border border-zinc-200 rounded-xl p-3 space-y-2">
+                  <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block">Phone / WhatsApp</span>
+                  <div className="flex items-center gap-2 text-zinc-800 font-semibold font-mono">
+                    <Phone className="h-3.5 w-3.5 text-zinc-400" />
                     <span>{selectedCustomer.phone}</span>
                   </div>
-                  <div className="flex items-start gap-2">
-                    <MapPin className="h-4 w-4 text-zinc-400 mt-0.5 shrink-0" />
-                    <p className="text-zinc-650 leading-relaxed font-medium">{selectedCustomer.shippingAddress}</p>
+                </div>
+                <div className="border border-zinc-200 rounded-xl p-3 space-y-2">
+                  <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block">Member Since</span>
+                  <div className="flex items-center gap-2 text-zinc-800 font-semibold">
+                    <Calendar className="h-3.5 w-3.5 text-zinc-400" />
+                    <span>{selectedCustomer.joinDate}</span>
                   </div>
                 </div>
               </div>
 
-              {/* Transactions stats */}
-              <div className="grid grid-cols-2 gap-3 text-xs">
-                <div className="border border-zinc-155 rounded-xl p-3 flex items-center gap-2">
-                  <ShoppingBag className="h-4 w-4 text-zinc-400" />
-                  <div>
-                    <span className="text-[9px] text-zinc-400 font-bold uppercase block">Orders Placed</span>
-                    <span className="font-bold text-zinc-800">{selectedCustomer.totalOrders} orders</span>
+              {/* Purchased Orders & Products Breakdown Section */}
+              <div className="space-y-3 pt-2">
+                <h4 className="text-xs font-black text-zinc-900 uppercase tracking-wider flex items-center justify-between border-b border-zinc-200 pb-2">
+                  <span className="flex items-center gap-1.5">
+                    <ShoppingBag className="h-4 w-4 text-purple-600" />
+                    Placed Orders History ({selectedCustomer.orders.length})
+                  </span>
+                  <span className="text-purple-600 font-mono font-bold text-xs">{selectedCustomer.totalOrders} Orders Total</span>
+                </h4>
+
+                {selectedCustomer.orders.length === 0 ? (
+                  <div className="p-8 text-center bg-zinc-50 border border-zinc-150 rounded-xl space-y-2">
+                    <Package className="h-8 w-8 text-zinc-300 mx-auto" />
+                    <p className="text-xs font-bold text-zinc-500">No orders placed by this customer yet.</p>
                   </div>
-                </div>
-                <div className="border border-zinc-155 rounded-xl p-3 flex items-center gap-2">
-                  <DollarSign className="h-4 w-4 text-zinc-400" />
-                  <div>
-                    <span className="text-[9px] text-zinc-400 font-bold uppercase block">Total Spent</span>
-                    <span className="font-bold text-zinc-850">₹{selectedCustomer.totalSpent}</span>
+                ) : (
+                  <div className="space-y-3">
+                    {selectedCustomer.orders.map((ord) => (
+                      <div key={ord.id} className="border border-zinc-200 rounded-2xl p-4 space-y-3 bg-zinc-50/50 hover:bg-zinc-50 transition">
+                        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-200/80 pb-2">
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono font-bold text-xs bg-purple-100 text-purple-800 px-2 py-0.5 rounded-md border border-purple-200">
+                              {ord.orderNumber}
+                            </span>
+                            <span className="text-[11px] text-zinc-400 font-semibold">{ord.createdAt}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full ${
+                              ord.paymentStatus === 'paid' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-800'
+                            }`}>
+                              {ord.paymentStatus}
+                            </span>
+                            <span className="font-mono text-xs font-extrabold text-zinc-900">₹{ord.totalAmount.toLocaleString()}</span>
+                          </div>
+                        </div>
+
+                        {/* Products List for this order */}
+                        <div className="space-y-2">
+                          <span className="text-[10px] font-extrabold text-zinc-400 uppercase tracking-wider block">Products Purchased ({ord.items.length}):</span>
+                          <div className="divide-y divide-zinc-200/60 bg-white rounded-xl border border-zinc-200/80 p-2 space-y-1">
+                            {ord.items.map((item, idx) => (
+                              <div key={idx} className="flex items-center justify-between gap-3 pt-1 pb-1 text-xs">
+                                <div className="flex items-center gap-2.5 min-w-0">
+                                  {item.productImage ? (
+                                    <img src={item.productImage} alt={item.productName} className="h-8 w-8 rounded-lg object-contain bg-zinc-50 border border-zinc-200 shrink-0" />
+                                  ) : (
+                                    <div className="h-8 w-8 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center shrink-0 border border-purple-100">
+                                      <Package className="h-4 w-4" />
+                                    </div>
+                                  )}
+                                  <span className="font-bold text-zinc-900 truncate">{item.productName}</span>
+                                </div>
+                                <div className="text-right shrink-0">
+                                  <span className="text-zinc-500 font-mono text-[11px]">Qty: <strong className="text-zinc-900 font-bold">{item.quantity}</strong></span>
+                                  <span className="font-mono font-bold text-zinc-900 ml-3">₹{item.totalPrice.toLocaleString()}</span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                      </div>
+                    ))}
                   </div>
-                </div>
+                )}
               </div>
 
-              {/* Date Joined */}
-              <div className="border border-zinc-150 rounded-xl p-3.5 flex items-center justify-between bg-zinc-50/50">
-                <div className="flex items-center gap-2 text-xs">
-                  <Calendar className="h-4 w-4 text-zinc-400" />
-                  <div>
-                    <span className="text-[9px] text-zinc-400 font-bold uppercase block">Member Since</span>
-                    <span className="font-semibold text-zinc-700">{selectedCustomer.joinDate}</span>
-                  </div>
-                </div>
-              </div>
             </div>
 
             <div className="pt-4 border-t border-zinc-100 flex items-center justify-end gap-2 shrink-0">

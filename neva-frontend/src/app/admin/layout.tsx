@@ -112,7 +112,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </Link>
         <button
           onClick={() => setIsMobileOpen(false)}
-          className="md:hidden text-zinc-500 hover:text-zinc-800"
+          className="lg:hidden text-zinc-500 hover:text-zinc-800"
         >
           <X className="h-5 w-5" />
         </button>
@@ -223,15 +223,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   return (
     <div className="fixed inset-0 z-[60] flex bg-zinc-50 text-zinc-800 overflow-hidden">
       {/* Desktop Sidebar */}
-      <aside className={`hidden md:block shrink-0 transition-all duration-300 ${isSidebarOpen ? 'w-64' : 'w-0'}`}>
+      <aside className={`hidden lg:block shrink-0 transition-all duration-300 ${isSidebarOpen ? 'w-64' : 'w-0'}`}>
         <div className="h-full w-64 overflow-hidden">
           <SidebarContent />
         </div>
       </aside>
 
-      {/* Mobile Drawer */}
+      {/* Mobile & Tablet Drawer */}
       {isMobileOpen && (
-        <div className="fixed inset-0 z-50 flex md:hidden bg-zinc-950/30 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex lg:hidden bg-zinc-950/30 backdrop-blur-sm">
           <div className="w-64 h-full shrink-0">
             <SidebarContent />
           </div>
@@ -246,7 +246,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           {!isSidebarOpen && (
             <button
               onClick={() => setIsSidebarOpen(true)}
-              className="hidden md:flex h-9 w-9 items-center justify-center rounded-xl bg-white border border-zinc-200 text-zinc-500 hover:text-zinc-850 shadow-sm transition-all hover:bg-zinc-50"
+              className="hidden lg:flex h-9 w-9 items-center justify-center rounded-xl bg-white border border-zinc-200 text-zinc-500 hover:text-zinc-850 shadow-sm transition-all hover:bg-zinc-50"
               title="Open Sidebar"
             >
               <Menu className="h-5 w-5" />
@@ -254,7 +254,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           )}
           <button
             onClick={() => setIsMobileOpen(true)}
-            className="flex md:hidden h-9 w-9 items-center justify-center rounded-xl bg-white border border-zinc-200 text-zinc-500 hover:text-zinc-850 shadow-sm transition-all hover:bg-zinc-50"
+            className="flex lg:hidden h-9 w-9 items-center justify-center rounded-xl bg-white border border-zinc-200 text-zinc-500 hover:text-zinc-850 shadow-sm transition-all hover:bg-zinc-50"
             title="Open Menu"
           >
             <Menu className="h-5 w-5" />

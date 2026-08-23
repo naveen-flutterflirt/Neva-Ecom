@@ -53,3 +53,20 @@ body {
 @utility form-label {
     @apply mb-2 block text-[10px] font-semibold uppercase tracking-[0.22em] text-zinc-500 dark:text-zinc-400;
 }
+
+/* Global Interactive Cursor Pointer Rule */
+button,
+a,
+select,
+summary,
+[role="button"],
+label[for],
+input[type="checkbox"],
+input[type="radio"],
+input[type="submit"],
+input[type="button"],
+input[type="file"]::file-selector-button,
+.cursor-pointer-all button,
+.cursor-pointer-all a {
+    cursor: pointer !important;
+}

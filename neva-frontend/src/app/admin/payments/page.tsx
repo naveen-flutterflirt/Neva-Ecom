@@ -1,6 +1,5 @@
 'use client';
 
-import React, { useState } from 'react';
 import { 
   Search, 
   Eye, 
@@ -11,13 +10,17 @@ import {
   AlertCircle,
   FileText,
   User,
-  ShieldCheck
+  ShieldCheck,
+  Loader2
 } from 'lucide-react';
 import Toast from '../../../components/ui/Toast';
+import { TableSkeletonRows } from '../../../components/ui/Skeleton';
+import Pagination from '../../../components/ui/Pagination';
 
 interface Transaction {
   id: string;
   orderId: string;
+  razorpayOrderId?: string;
   customerName: string;
   customerEmail: string;
   paymentMethod: string;
@@ -27,79 +30,16 @@ interface Transaction {
   createdAt: string;
 }
 
-const INITIAL_MOCK_TRANSACTIONS: Transaction[] = [
-  {
-    id: 'TXN-8201',
-    orderId: 'ORD-1081',
-    customerName: 'Rohit Sharma',
-    customerEmail: 'rohit.sharma@gmail.com',
-    paymentMethod: 'UPI (PhonePe)',
-    amount: 3498,
-    status: 'successful',
-    gatewayRef: 'pay_G8y29Ks1ldJq',
-    createdAt: '2026-08-20 10:16 AM'
-  },
-  {
-    id: 'TXN-8202',
-    orderId: 'ORD-1082',
-    customerName: 'Aditi Patel',
-    customerEmail: 'aditi.patel@yahoo.com',
-    paymentMethod: 'Netbanking (HDFC)',
-    amount: 3300,
-    status: 'successful',
-    gatewayRef: 'pay_H2z81Lx9pdKq',
-    createdAt: '2026-08-19 03:42 PM'
-  },
-  {
-    id: 'TXN-8203',
-    orderId: 'ORD-1083',
-    customerName: 'Amit Verma',
-    customerEmail: 'amit.verma@outlook.com',
-    paymentMethod: 'Credit Card (Visa)',
-    amount: 9200,
-    status: 'successful',
-    gatewayRef: 'pay_K7a22Js4ldMq',
-    createdAt: '2026-08-19 09:12 AM'
-  },
-  {
-    id: 'TXN-8204',
-    orderId: 'ORD-1085',
-    customerName: 'Sanjay Nair',
-    customerEmail: 'sanjay.nair@corporate.in',
-    paymentMethod: 'UPI (Google Pay)',
-    amount: 9000,
-    status: 'successful',
-    gatewayRef: 'pay_N9b10Ps6ldOq',
-    createdAt: '2026-08-17 02:32 PM'
-  },
-  {
-    id: 'TXN-8205',
-    orderId: 'ORD-1087',
-    customerName: 'Vikram Joshi',
-    customerEmail: 'vikram.j@gmail.com',
-    paymentMethod: 'Debit Card (Mastercard)',
-    amount: 2900,
-    status: 'failed',
-    gatewayRef: 'pay_J4x89Ls3ldKq_failed',
-    createdAt: '2026-08-14 11:02 AM'
-  },
-  {
-    id: 'TXN-8206',
-    orderId: 'ORD-1086',
-    customerName: 'Meera Deshmukh',
-    customerEmail: 'meera.d@rediffmail.com',
-    paymentMethod: 'UPI (Paytm)',
-    amount: 2400,
-    status: 'refunded',
-    gatewayRef: 'ref_M3d88Ps2ldLq',
-    createdAt: '2026-08-16 02:15 PM'
-  }
-];
+const INITIAL_MOCK_TRANSACTIONS: Transaction[] = [];
+
+import React, { useState, useEffect } from 'react';
+import { apiClient } from '../../../lib/api';
 
 export default function AdminPaymentsPage() {
-  const [transactions, setTransactions] = useState<Transaction[]>(INITIAL_MOCK_TRANSACTIONS);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-  
+  const [isLoading, setIsLoading] = useState(false);
+
   // Search & Filters
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<string>('all');
@@ -107,6 +47,44 @@ export default function AdminPaymentsPage() {
   // Detail Modal States
   const [selectedTxn, setSelectedTxn] = useState<Transaction | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
+
+  const fetchLivePayments = async () => {
+    try {
+      setIsLoading(true);
+      const res = await apiClient('/orders');
+      if (res.success && Array.isArray(res.data) && res.data.length > 0) {
+        const mappedTxns: Transaction[] = res.data.map((o: any, idx: number) => {
+          let txStatus: 'successful' | 'failed' | 'refunded' = 'successful';
+          if (o.paymentStatus === 'failed') txStatus = 'failed';
+          else if (o.paymentStatus === 'refunded') txStatus = 'refunded';
+          else if (o.paymentStatus === 'paid' || o.paymentStatus === 'Paid via Razorpay' || o.paymentMethod === 'cod') txStatus = 'successful';
+
+          return {
+            id: o.razorpayPaymentId || `TXN-${1000 + idx}`,
+            orderId: o.orderNumber || o.id,
+            razorpayOrderId: o.razorpayOrderId || undefined,
+            customerName: o.customerName || 'Customer',
+            customerEmail: o.customerEmail || 'n/a',
+            paymentMethod: (o.paymentMethod || 'UPI').toUpperCase(),
+            amount: Number(o.totalAmount || 0),
+            status: txStatus,
+            gatewayRef: o.razorpayPaymentId || o.razorpayOrderId || o.orderNumber || `pay_${Date.now()}`,
+            createdAt: new Date(o.createdAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }),
+          };
+        });
+
+        setTransactions(mappedTxns);
+      }
+    } catch (err) {
+      console.warn('Failed to fetch live payments (using mock fallback):', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchLivePayments();
+  }, []);
 
   const showToast = (message: string) => {
     setToastMessage(message);
@@ -134,6 +112,14 @@ export default function AdminPaymentsPage() {
   };
 
   // Filter transactions
+  // Search, Filters & Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(8);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, activeTab]);
+
   const filteredTransactions = transactions.filter(txn => {
     const matchesSearch = 
       txn.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -145,6 +131,11 @@ export default function AdminPaymentsPage() {
     if (activeTab === 'refunds') return matchesSearch && txn.status === 'refunded';
     return matchesSearch && txn.status === activeTab;
   });
+
+  const paginatedTransactions = filteredTransactions.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   return (
     <div className="space-y-6">
@@ -226,21 +217,32 @@ export default function AdminPaymentsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-100 text-zinc-700">
-              {filteredTransactions.length === 0 ? (
+              {isLoading ? (
+                <TableSkeletonRows rows={6} cols={8} />
+              ) : filteredTransactions.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="px-6 py-16 text-center text-zinc-400 text-sm">
                     No transactions found in this status category.
                   </td>
                 </tr>
               ) : (
-                filteredTransactions.map((txn, index) => (
+                paginatedTransactions.map((txn, index) => (
                   <tr key={txn.id} className="hover:bg-zinc-50 transition-colors duration-150">
-                    <td className="pl-6 pr-2 py-3.5 font-mono text-zinc-400 text-[11px] font-semibold whitespace-nowrap">{index + 1}</td>
+                    <td className="pl-6 pr-2 py-3.5 font-mono text-zinc-400 text-[11px] font-semibold whitespace-nowrap">{(currentPage - 1) * itemsPerPage + index + 1}</td>
                     <td className="pl-2 pr-6 py-3.5 whitespace-nowrap">
                       <span className="font-bold text-violet-700 text-xs bg-violet-50 px-2 py-0.5 rounded-md border border-violet-100 whitespace-nowrap">{txn.id}</span>
                     </td>
                     <td className="px-6 py-3.5 whitespace-nowrap">
-                      <span className="font-semibold text-zinc-700 text-xs">{txn.orderId}</span>
+                      <div className="flex flex-col gap-0.5">
+                        <span className="font-mono font-bold text-indigo-700 text-xs bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-100/80 w-fit">
+                          {txn.orderId}
+                        </span>
+                        {txn.razorpayOrderId && (
+                          <span className="font-mono text-[9px] text-zinc-400">
+                            {txn.razorpayOrderId}
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-6 py-3.5 whitespace-nowrap">
                       <div className="flex flex-col">
@@ -289,6 +291,15 @@ export default function AdminPaymentsPage() {
             </tbody>
           </table>
         </div>
+
+        {/* Table Pagination Bar */}
+        <Pagination
+          currentPage={currentPage}
+          totalItems={filteredTransactions.length}
+          itemsPerPage={itemsPerPage}
+          onPageChange={setCurrentPage}
+          onItemsPerPageChange={setItemsPerPage}
+        />
       </div>
 
       {/* Transaction Details Modal */}

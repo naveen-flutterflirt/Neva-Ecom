@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { Eye, Star, Cpu, Layers, ShoppingBag, Box, Zap } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useAppSelector } from '../../store';
 import { Product } from '../../types/product';
 
 interface ProductCardProps {
@@ -16,6 +17,8 @@ interface ProductCardProps {
 
 export default function ProductCard({ product, onQuickShop, onQuickView, onAddToCart, onBuyNow }: ProductCardProps) {
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
+  const cartItems = useAppSelector((state) => state.cart.items);
+  const isInCart = cartItems.some((item) => item.product.id === product.id);
 
   // Helper to extract image URL
   const getDisplayImage = () => {
@@ -87,7 +90,7 @@ export default function ProductCard({ product, onQuickShop, onQuickView, onAddTo
         {onQuickView && (
           <button
             onClick={() => onQuickView(product)}
-            className="absolute right-3 top-3 z-10 p-2 rounded-xl bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md text-zinc-700 dark:text-zinc-200 opacity-0 group-hover/img:opacity-100 transition-all hover:scale-105 shadow-md"
+            className="absolute right-3 top-3 z-10 p-2 rounded-xl bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md text-zinc-700 dark:text-zinc-200 opacity-0 group-hover/img:opacity-100 transition-all hover:scale-105 shadow-md cursor-pointer"
             title="Quick View"
           >
             <Eye className="h-4 w-4" />
@@ -150,7 +153,7 @@ export default function ProductCard({ product, onQuickShop, onQuickView, onAddTo
                   key={col.name}
                   type="button"
                   onClick={() => setSelectedColor(col.name)}
-                  className={`h-4 w-4 rounded-full border transition-all ${
+                  className={`h-4 w-4 rounded-full border transition-all cursor-pointer ${
                     selectedColor === col.name ? 'ring-2 ring-violet-500 border-white scale-110' : 'border-zinc-300 dark:border-zinc-700'
                   }`}
                   style={{ backgroundColor: col.code }}
@@ -195,8 +198,9 @@ export default function ProductCard({ product, onQuickShop, onQuickView, onAddTo
 
           <div className="grid grid-cols-2 gap-2 w-full">
             <button
+              type="button"
               onClick={() => onAddToCart && onAddToCart(product)}
-              className="w-full py-2 bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-800 dark:text-zinc-200 border border-zinc-300 dark:border-zinc-700 active:scale-95 rounded-xl text-[11px] font-extrabold uppercase tracking-wider transition flex items-center justify-center gap-1 shrink-0"
+              className="w-full py-2 bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-800 dark:text-zinc-200 border border-zinc-300 dark:border-zinc-700 active:scale-95 rounded-xl text-[11px] font-extrabold uppercase tracking-wider transition flex items-center justify-center gap-1 shrink-0 cursor-pointer"
               title="Add to Cart"
             >
               <ShoppingBag className="h-3.5 w-3.5" />
@@ -204,8 +208,9 @@ export default function ProductCard({ product, onQuickShop, onQuickView, onAddTo
             </button>
 
             <button
+              type="button"
               onClick={() => onBuyNow ? onBuyNow(product) : (onAddToCart && onAddToCart(product))}
-              className="w-full py-2 bg-violet-600 hover:bg-violet-500 active:scale-95 text-white shadow-md shadow-violet-600/20 rounded-xl text-[11px] font-black uppercase tracking-wider transition flex items-center justify-center gap-1 shrink-0"
+              className="w-full py-2 bg-violet-600 hover:bg-violet-500 active:scale-95 text-white shadow-md shadow-violet-600/20 rounded-xl text-[11px] font-black uppercase tracking-wider transition flex items-center justify-center gap-1 shrink-0 cursor-pointer"
               title="Instant Purchase"
             >
               <Zap className="h-3.5 w-3.5 fill-current" />

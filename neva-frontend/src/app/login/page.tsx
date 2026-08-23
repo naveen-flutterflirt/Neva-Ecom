@@ -3,15 +3,21 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { Eye, EyeOff } from 'lucide-react';
 import Button from '../../components/ui/Button';
 import Toast from '../../components/ui/Toast';
 import { apiClient } from '../../lib/api';
 
+import { useAppDispatch } from '../../store';
+import { hydrateCart } from '../../store/cartSlice';
+
 export default function LoginPage() {
   const router = useRouter();
+  const dispatch = useAppDispatch();
 
   const [emailOrNumber, setEmailOrNumber] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -39,6 +45,21 @@ export default function LoginPage() {
 
       showToast('✓ Sign-in successful! 🎉');
       localStorage.setItem('neva-token', resData.token);
+      if (resData.user) {
+        localStorage.setItem('neva-user', JSON.stringify(resData.user));
+      }
+
+      const savedUserCart = localStorage.getItem('neva-saved-user-cart');
+      if (savedUserCart) {
+        try {
+          const parsed = JSON.parse(savedUserCart);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            dispatch(hydrateCart(parsed));
+          }
+        } catch (e) {
+          console.error('Failed to hydrate saved cart on login:', e);
+        }
+      }
 
       setTimeout(() => {
         router.push('/');
@@ -274,7 +295,6 @@ export default function LoginPage() {
                     type="text"
                     name="loginIdentifier"
                     autoComplete="username"
-                    placeholder="abc@example.com / 9876543210"
                     value={emailOrNumber}
                     onChange={(e) => setEmailOrNumber(e.target.value)}
                     className="form-input"
@@ -287,55 +307,30 @@ export default function LoginPage() {
                     Password
                   </label>
 
-                  <input
-                    id="password"
-                    type="password"
-                    name="password"
-                    autoComplete="current-password"
-                    placeholder="Enter your password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="form-input"
-                  />
+                  <div className="relative">
+                    <input
+                      id="password"
+                      type={showPassword ? 'text' : 'password'}
+                      name="password"
+                      autoComplete="current-password"
+                      placeholder="Enter your password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="form-input pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition cursor-pointer"
+                      title={showPassword ? 'Hide password' : 'Show password'}
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
                 </div>
 
-                {/* REMEMBER / FORGOT */}
-                <div
-                  className="
-                    flex
-                    items-center
-                    justify-between
-                    gap-2
-                    text-[10px]
-                    text-zinc-500
-                    dark:text-zinc-400
-                    sm:text-xs
-                    max-[320px]:text-[9px]
-                  "
-                >
-
-                  <label className="flex items-center gap-1.5 sm:gap-2">
-                    <input
-                      type="checkbox"
-                      className="
-                        h-3.5
-                        w-3.5
-                        rounded
-                        border-zinc-300
-                        bg-zinc-100
-                        text-violet-600
-                        focus:ring-violet-400
-                        dark:border-zinc-600
-                        dark:bg-zinc-800
-                        dark:text-violet-500
-                        sm:h-4
-                        sm:w-4
-                      "
-                    />
-
-                    Remember me
-                  </label>
-
+                {/* FORGOT PASSWORD */}
+                <div className="flex justify-end text-[10px] text-zinc-500 dark:text-zinc-400 sm:text-xs">
                   <Link
                     href="/forgot-password"
                     className="
@@ -350,7 +345,6 @@ export default function LoginPage() {
                   >
                     Forgot password?
                   </Link>
-
                 </div>
 
                 {/* LOGIN BUTTON */}

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { Eye, EyeOff } from 'lucide-react';
 import Button from '../../components/ui/Button';
 import Toast from '../../components/ui/Toast';
 import { apiClient } from '../../lib/api';
@@ -15,6 +16,7 @@ export default function SignupPage() {
   const [whatsappNumber, setWhatsappNumber] = useState('');
   const [sameAsContact, setSameAsContact] = useState(false);
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -83,6 +85,9 @@ export default function SignupPage() {
       });
 
       localStorage.setItem('neva-token', signinRes.token);
+      if (signinRes.user) {
+        localStorage.setItem('neva-user', JSON.stringify(signinRes.user));
+      }
       showToast('✓ Logged in successfully! 🎉');
       
       setTimeout(() => {
@@ -343,16 +348,26 @@ export default function SignupPage() {
                     Password
                   </label>
 
-                  <input
-                    id="password"
-                    type="password"
-                    name="password"
-                    autoComplete="new-password"
-                    placeholder="Create a password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="form-input"
-                  />
+                  <div className="relative">
+                    <input
+                      id="password"
+                      type={showPassword ? 'text' : 'password'}
+                      name="password"
+                      autoComplete="new-password"
+                      placeholder="Create a password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="form-input pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition cursor-pointer"
+                      title={showPassword ? 'Hide password' : 'Show password'}
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
                 </div>
 
                 {/* CREATE ACCOUNT */}

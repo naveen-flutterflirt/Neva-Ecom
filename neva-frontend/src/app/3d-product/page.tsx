@@ -3,13 +3,14 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Search, Layers, ArrowLeft, RefreshCw, SlidersHorizontal, Grid, LayoutGrid, X } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import ProductCard from '../../components/product/ProductCard';
 import QuickViewModal from '../../components/product/QuickViewModal';
 import Toast from '../../components/ui/Toast';
 import { Product } from '../../types/product';
 import { apiClient } from '../../lib/api';
 
-import { useAppDispatch } from '../../store';
+import { useAppDispatch, useAppSelector } from '../../store';
 import { addToCart } from '../../store/cartSlice';
 
 const safeParseJSON = (val: any, fallback: any = []) => {
@@ -27,7 +28,9 @@ const safeParseJSON = (val: any, fallback: any = []) => {
 };
 
 export default function ThreeDProductsPage() {
+  const router = useRouter();
   const dispatch = useAppDispatch();
+  const cartItems = useAppSelector((state) => state.cart.items);
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -92,6 +95,11 @@ export default function ThreeDProductsPage() {
 
   const handleAddToCart = (product: Product) => {
     try {
+      const alreadyInCart = cartItems.some((item) => item.product.id === product.id);
+      if (alreadyInCart) {
+        showToast(`⚠️ "${product.name}" is already in your cart! 🛍️`);
+        return;
+      }
       dispatch(addToCart({ product, quantity: 1 }));
       showToast(`✓ Added "${product.name}" to cart! 🛍️`);
     } catch (err) {
@@ -100,8 +108,20 @@ export default function ThreeDProductsPage() {
   };
 
   const handleBuyNow = (product: Product) => {
-    handleAddToCart(product);
-    window.location.href = '/cart';
+    const token = typeof window !== 'undefined' ? localStorage.getItem('neva-token') : null;
+    if (!token) {
+      showToast('🔒 Please Sign In or Create an Account to proceed with Buy Now!');
+      setTimeout(() => {
+        router.push('/login');
+      }, 1500);
+      return;
+    }
+
+    const alreadyInCart = cartItems.some((item) => String(item.product.id) === String(product.id));
+    if (!alreadyInCart) {
+      dispatch(addToCart({ product, quantity: 1 }));
+    }
+    router.push('/checkout');
   };
 
   // Filter & Sort 3D Products

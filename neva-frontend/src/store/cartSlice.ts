@@ -23,19 +23,17 @@ const cartSlice = createSlice({
         },
         addToCart: (state, action: PayloadAction<{ product: Product; quantity: number }>) => {
             const { product, quantity } = action.payload;
-            const existingItem = state.items.find(item => item.product.id === product.id);
-            if (existingItem) {
-                existingItem.quantity += quantity;
-            } else {
-                state.items.push({ product, quantity });
+            const existingItem = state.items.find(item => String(item.product.id) === String(product.id));
+            if (!existingItem) {
+                state.items.push({ product, quantity: quantity || 1 });
             }
         },
         removeFromCart: (state, action: PayloadAction<string>) => {
-            state.items = state.items.filter(item => item.product.id !== action.payload);
+            state.items = state.items.filter(item => String(item.product.id) !== String(action.payload));
         },
         updateQuantity: (state, action: PayloadAction<{ id: string; quantity: number }>) => {
             const { id, quantity } = action.payload;
-            const item = state.items.find(item => item.product.id === id);
+            const item = state.items.find(item => String(item.product.id) === String(id));
             if (item) {
                 item.quantity = Math.max(1, quantity);
             }
