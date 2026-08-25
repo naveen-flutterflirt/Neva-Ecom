@@ -13,10 +13,7 @@ store.subscribe(() => {
         try {
             const cartState = store.getState().cart;
             localStorage.setItem('neva-cart', JSON.stringify(cartState));
-            const token = localStorage.getItem('neva-token');
-            if (token) {
-                localStorage.setItem('neva-saved-user-cart', JSON.stringify(cartState.items));
-            }
+            localStorage.removeItem('neva-saved-user-cart');
         } catch (error) {
             console.error('Failed to save cart to localStorage:', error);
         }

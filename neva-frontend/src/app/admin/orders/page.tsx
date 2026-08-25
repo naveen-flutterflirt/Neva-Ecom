@@ -67,29 +67,60 @@ export default function AdminOrdersPage() {
   const fetchLiveOrders = async () => {
     try {
       setIsLoading(true);
-      const res = await apiClient('/orders');
-      if (res.success && Array.isArray(res.data) && res.data.length > 0) {
-        const mappedOrders: Order[] = res.data.map((o: any) => ({
-          id: o.orderNumber || o.id,
-          customerName: o.customerName || 'Customer',
-          customerEmail: o.customerEmail || 'n/a',
-          shippingAddress: o.shippingAddress || 'n/a',
-          items: Array.isArray(o.items)
-            ? o.items.map((it: any) => ({
-                name: it.productName || 'Product',
-                price: Number(it.unitPrice || 0),
-                quantity: Number(it.quantity || 1),
-              }))
-            : [],
-          totalAmount: Number(o.totalAmount || 0),
-          paymentStatus: o.paymentStatus || 'pending',
-          status: o.orderStatus === 'pending' ? 'confirmed' : o.orderStatus,
-          createdAt: new Date(o.createdAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }),
-        }));
-        setOrders(mappedOrders);
+      const [ordersRes, customPrintRes] = await Promise.all([
+        apiClient('/orders').catch(() => null),
+        apiClient('/custom-print').catch(() => null)
+      ]);
+
+      const allOrders: Order[] = [];
+
+      if (ordersRes && ordersRes.success && Array.isArray(ordersRes.data)) {
+        ordersRes.data.forEach((o: any) => {
+          allOrders.push({
+            id: o.orderNumber || o.id,
+            customerName: o.customerName || 'Customer',
+            customerEmail: o.customerEmail || 'n/a',
+            shippingAddress: o.shippingAddress || 'n/a',
+            items: Array.isArray(o.items)
+              ? o.items.map((it: any) => ({
+                  name: it.productName || 'Product',
+                  price: Number(it.unitPrice || 0),
+                  quantity: Number(it.quantity || 1),
+                }))
+              : [],
+            totalAmount: Number(o.totalAmount || 0),
+            paymentStatus: o.paymentStatus || 'pending',
+            status: o.orderStatus === 'pending' ? 'confirmed' : o.orderStatus,
+            createdAt: new Date(o.createdAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }),
+          });
+        });
       }
+
+      if (customPrintRes && Array.isArray(customPrintRes.data)) {
+        customPrintRes.data.forEach((cp: any) => {
+          if (cp.quotePrice || cp.status !== 'pending_review') {
+            allOrders.push({
+              id: cp.requestId || cp.id,
+              customerName: cp.customerName || 'Customer',
+              customerEmail: cp.customerEmail || 'n/a',
+              shippingAddress: cp.addressLine1 ? `${cp.addressLine1}, ${cp.city || ''}` : 'As specified',
+              items: [{
+                name: `Custom 3D Print (${cp.fileName || 'Model'})`,
+                price: Number(cp.quotePrice || 0),
+                quantity: Number(cp.quantity || 1)
+              }],
+              totalAmount: Number(cp.quotePrice || 0),
+              paymentStatus: cp.paymentStatus || (cp.status === 'in_production' || cp.status === 'completed' ? 'paid' : 'pending'),
+              status: cp.status === 'quote_sent' ? 'pending_payment' : cp.status === 'in_production' ? 'in_production' : cp.status === 'completed' ? 'delivered' : 'confirmed',
+              createdAt: new Date(cp.createdAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }),
+            });
+          }
+        });
+      }
+
+      setOrders(allOrders);
     } catch (err) {
-      console.warn('Failed to fetch live orders (using mock orders):', err);
+      console.warn('Failed to fetch live orders:', err);
     } finally {
       setIsLoading(false);
     }

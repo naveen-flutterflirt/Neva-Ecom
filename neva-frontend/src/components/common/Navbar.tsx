@@ -55,26 +55,21 @@ export default function Navbar() {
   };
 
   useEffect(() => {
-    const token = localStorage.getItem('neva-token');
-    const hasToken = !!token;
-    setIsLoggedIn(hasToken);
+    const checkAuthStatus = () => {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('neva-token') : null;
+      const hasToken = !!token;
+      setIsLoggedIn(hasToken);
+    };
 
-    if (hasToken) {
-      const savedUserCart = localStorage.getItem('neva-saved-user-cart');
-      if (savedUserCart) {
-        try {
-          const parsed = JSON.parse(savedUserCart);
-          if (Array.isArray(parsed)) {
-            dispatch(hydrateCart(parsed));
-          }
-        } catch (e) {
-          console.error('Failed to parse saved user cart:', e);
-        }
-      }
-    } else {
-      dispatch(clearCart());
-    }
-  }, [dispatch]);
+    checkAuthStatus();
+    window.addEventListener('storage', checkAuthStatus);
+    window.addEventListener('neva-auth-change', checkAuthStatus);
+
+    return () => {
+      window.removeEventListener('storage', checkAuthStatus);
+      window.removeEventListener('neva-auth-change', checkAuthStatus);
+    };
+  }, [pathname, dispatch]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -127,7 +122,7 @@ export default function Navbar() {
   const navLinks = [
     {
       label: 'Custom Products',
-      href: '/custom-products/product-info',
+      href: '/custom-product',
     },
     {
       label: 'About',
@@ -156,12 +151,13 @@ export default function Navbar() {
       <div className="relative mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
 
         {/* Logo */}
-        <div className="flex min-w-0 flex-1 items-center justify-start">
+        {/* Logo */}
+        <div className="flex min-w-0 flex-1 items-center">
           <Link
             href="/"
-            className="truncate text-[17px] font-black tracking-[0.12em] text-zinc-900 dark:text-white sm:text-xl sm:tracking-widest"
+            className="text-xl font-black tracking-[0.14em] text-zinc-950 transition-all duration-200 hover:opacity-75 dark:text-white sm:text-2xl"
           >
-            NIVASHOP<span className="text-violet-400">.</span>IN
+            NIVA<span className="text-zinc-500 dark:text-zinc-400">SHOP</span>
           </Link>
         </div>
 

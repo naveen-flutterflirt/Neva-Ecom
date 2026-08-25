@@ -74,7 +74,7 @@ export default function SignupPage() {
       });
 
       showToast('✓ Registration successful! Logging in... 🎉');
-      
+
       // Auto-login after successful registration
       const signinRes = await apiClient('/auth/signin', {
         method: 'POST',
@@ -89,10 +89,12 @@ export default function SignupPage() {
         localStorage.setItem('neva-user', JSON.stringify(signinRes.user));
       }
       showToast('✓ Logged in successfully! 🎉');
-      
+
+      window.dispatchEvent(new Event('neva-auth-change'));
+
       setTimeout(() => {
-        router.push('/');
-      }, 1500);
+        window.location.href = '/';
+      }, 1200);
     } catch (err: any) {
       showToast(`❌ ${err.message || 'Connection error. Please try again.'}`);
     } finally {
@@ -165,20 +167,20 @@ export default function SignupPage() {
                 <h1 className="text-3xl font-black tracking-tight text-zinc-900 dark:text-white">
                   Create your account.
                 </h1>
-               <div className="mt-4 w-full overflow-hidden rounded-2xl">
-    <video
-        src="/yeti_idle.webm"
-        autoPlay
-        muted
-        loop
-        playsInline
-        className="h-[380px] w-full scale-130 object-contain"
-    />
-</div>
+                <div className="mt-4 w-full overflow-hidden rounded-2xl">
+                  <video
+                    src="/yeti_idle.webm"
+                    autoPlay
+                    muted
+                    loop
+                    playsInline
+                    className="h-[380px] w-full scale-130 object-contain"
+                  />
+                </div>
 
               </div>
 
-              
+
             </div>
 
             {/* RIGHT SECTION */}
@@ -197,7 +199,7 @@ export default function SignupPage() {
 
                 <div>
                   <p className="text-[10px] font-semibold uppercase tracking-[0.32em] text-cyan-600 dark:text-cyan-300">
-                    NIVASHOP.IN
+                    NIVASHOP
                   </p>
 
                   <h2 className="mt-2 text-3xl font-black tracking-tight text-zinc-900 dark:text-white">

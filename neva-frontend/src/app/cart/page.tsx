@@ -233,46 +233,51 @@ export default function CartPage() {
                       </div>
 
                       {/* Right: Quantity Stepper, Item Total & Delete */}
-                      <div className="flex items-center justify-between sm:justify-end gap-4 pt-2 sm:pt-0 border-t sm:border-t-0 border-zinc-100 dark:border-zinc-800/60 shrink-0">
-                        {/* Stepper */}
-                        <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-900 p-1 rounded-xl border border-zinc-200 dark:border-zinc-800">
-                          <button
-                            type="button"
-                            onClick={() => dispatch(updateQuantity({ id: item.product.id, quantity: item.quantity - 1 }))}
-                            className="h-7 w-7 rounded-lg bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 flex items-center justify-center transition shadow-xs cursor-pointer"
-                          >
-                            <Minus className="h-3 w-3" />
-                          </button>
-                          <span className="w-7 text-center font-extrabold text-xs text-zinc-900 dark:text-white font-mono">
-                            {item.quantity}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => dispatch(updateQuantity({ id: item.product.id, quantity: item.quantity + 1 }))}
-                            className="h-7 w-7 rounded-lg bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 flex items-center justify-center transition shadow-xs cursor-pointer"
-                          >
-                            <Plus className="h-3 w-3" />
-                          </button>
-                        </div>
+                      {(() => {
+                        const prodId = String(item.product.id || (item.product as any)._id || '');
+                        return (
+                          <div className="flex items-center justify-between sm:justify-end gap-4 pt-2 sm:pt-0 border-t sm:border-t-0 border-zinc-100 dark:border-zinc-800/60 shrink-0">
+                            {/* Stepper */}
+                            <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-900 p-1 rounded-xl border border-zinc-200 dark:border-zinc-800">
+                              <button
+                                type="button"
+                                onClick={() => dispatch(updateQuantity({ id: prodId, quantity: item.quantity - 1 }))}
+                                className="h-7 w-7 rounded-lg bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 flex items-center justify-center transition shadow-xs cursor-pointer"
+                              >
+                                <Minus className="h-3 w-3" />
+                              </button>
+                              <span className="w-7 text-center font-extrabold text-xs text-zinc-900 dark:text-white font-mono">
+                                {item.quantity}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => dispatch(updateQuantity({ id: prodId, quantity: item.quantity + 1 }))}
+                                className="h-7 w-7 rounded-lg bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 flex items-center justify-center transition shadow-xs cursor-pointer"
+                              >
+                                <Plus className="h-3 w-3" />
+                              </button>
+                            </div>
 
-                        {/* Item Total */}
-                        <div className="text-right min-w-[85px]">
-                          <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-wider block">Item Total</span>
-                          <span className="text-sm sm:text-base font-black text-purple-600 dark:text-purple-400 font-mono">
-                            ₹{itemTotal.toLocaleString('en-IN')}
-                          </span>
-                        </div>
+                            {/* Item Total */}
+                            <div className="text-right min-w-[85px]">
+                              <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-wider block">Item Total</span>
+                              <span className="text-sm sm:text-base font-black text-purple-600 dark:text-purple-400 font-mono">
+                                ₹{itemTotal.toLocaleString('en-IN')}
+                              </span>
+                            </div>
 
-                        {/* Delete Icon */}
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveFromCart(item.product.id, item.product.name)}
-                          className="text-zinc-400 hover:text-red-500 p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/40 transition cursor-pointer"
-                          title="Delete Item"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
+                            {/* Delete Icon */}
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveFromCart(prodId, item.product.name)}
+                              className="text-zinc-400 hover:text-red-500 p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/40 transition cursor-pointer"
+                              title="Delete Item"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
+                        );
+                      })()}
                     </motion.div>
                   );
                 })}
@@ -288,37 +293,7 @@ export default function CartPage() {
                   PRICE DETAILS
                 </h2>
 
-                {/* Promo Coupon Section */}
-                <div className="space-y-2">
-                  <span className="text-[11px] font-bold text-zinc-700 dark:text-zinc-300 flex items-center gap-1">
-                    <Tag className="h-3.5 w-3.5 text-purple-600" /> Promo Code / Coupon
-                  </span>
 
-                  {appliedCouponName ? (
-                    <div className="flex items-center justify-between bg-purple-50 dark:bg-purple-950/40 p-2.5 rounded-xl border border-purple-200 dark:border-purple-800 text-xs font-bold text-purple-700 dark:text-purple-300">
-                      <span>🏷️ {appliedCouponName} (-{appliedDiscount}%)</span>
-                      <button type="button" onClick={handleRemoveCoupon} className="text-zinc-400 hover:text-red-500 cursor-pointer">
-                        <X className="h-4 w-4" />
-                      </button>
-                    </div>
-                  ) : (
-                    <form onSubmit={handleApplyCoupon} className="flex gap-2">
-                      <input
-                        type="text"
-                        value={couponCode}
-                        onChange={(e) => setCouponCode(e.target.value)}
-                        placeholder="Try NEVA10 or WELCOME10"
-                        className="flex-1 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/60 px-3 py-2 text-xs font-bold outline-none focus:border-purple-500 uppercase"
-                      />
-                      <button
-                        type="submit"
-                        className="px-4 py-2 rounded-xl bg-purple-600 text-white font-bold text-xs hover:bg-purple-700 transition cursor-pointer"
-                      >
-                        Apply
-                      </button>
-                    </form>
-                  )}
-                </div>
 
                 {/* Price Breakdown */}
                 <div className="space-y-2.5 text-xs">
@@ -365,30 +340,13 @@ export default function CartPage() {
                   PROCEED TO CHECKOUT <ArrowRight className="h-4 w-4" />
                 </button>
 
-                <div className="flex items-center justify-center gap-1.5 text-[10px] font-bold text-zinc-400 dark:text-zinc-500 pt-1">
-                  <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" />
-                  100% Safe &amp; Secure Payments
-                </div>
+
               </div>
 
             </div>
 
             {/* Mobile Sticky Bottom Action Bar (Flipkart Style) */}
-            <div className="sm:hidden fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-zinc-950 border-t border-zinc-200 dark:border-zinc-800 p-3 flex items-center justify-between shadow-2xl backdrop-blur-xl">
-              <div>
-                <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block">Total Amount</span>
-                <span className="text-base font-extrabold text-purple-600 dark:text-purple-400 font-mono">
-                  ₹{grandTotal.toLocaleString('en-IN')}
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={handleCheckout}
-                className="px-6 py-3 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-extrabold text-xs shadow-md shadow-purple-600/30 flex items-center gap-1.5 cursor-pointer"
-              >
-                CHECKOUT NOW <ArrowRight className="h-4 w-4" />
-              </button>
-            </div>
+
 
           </div>
         )}

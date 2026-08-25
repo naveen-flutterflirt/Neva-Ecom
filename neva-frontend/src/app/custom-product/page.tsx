@@ -1,9 +1,9 @@
 'use client';
 
-import { ChangeEvent, useEffect, useRef, useState } from 'react';
+import React, { ChangeEvent, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import Button from '../../../components/ui/Button';
+import Button from '../../components/ui/Button';
 import {
   ArrowLeft,
   Check,
@@ -31,8 +31,8 @@ import {
   Shield,
   Zap
 } from 'lucide-react';
-import Toast from '../../../components/ui/Toast';
-import { apiClient } from '../../../lib/api';
+import Toast from '../../components/ui/Toast';
+import { apiClient } from '../../lib/api';
 
 const customProduct = {
   id: 'custom-neva-maker-kit',
@@ -91,7 +91,7 @@ type UploadedImage = {
   dataUrl?: string;
 };
 
-export default function ProductInfoPage() {
+export default function CustomProductsPage() {
   const router = useRouter();
 
   const [selectedMaterial, setSelectedMaterial] = useState(materials[0].name);
@@ -161,7 +161,7 @@ export default function ProductInfoPage() {
             }
           }
         })
-        .catch(() => {});
+        .catch(() => { });
     }
   }, [router]);
 
@@ -469,11 +469,11 @@ export default function ProductInfoPage() {
           <div className="bg-white dark:bg-[#15161e] border border-zinc-200/80 dark:border-white/5 rounded-2xl p-6 text-left space-y-4 shadow-sm dark:shadow-xl">
             <span className="text-[10px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-widest block">Processing Timeline</span>
 
-            <div className="relative pt-2">
-              {/* Connecting background track */}
-              <div className="absolute top-4 left-6 right-6 h-[2px] bg-zinc-200 dark:bg-zinc-800 -translate-y-1/2" />
-              {/* Filled status bar */}
-              <div className="absolute top-4 left-6 w-[20%] h-[2px] bg-orange-500 -translate-y-1/2" />
+            <div className="relative pt-2 px-3">
+              {/* Track Line Container (Spans center of step 1 to center of step 6, zero overflow) */}
+              <div className="absolute top-3 left-6 right-6 h-[2px] bg-zinc-200 dark:bg-zinc-800 -translate-y-1/2 pointer-events-none overflow-hidden">
+                <div className="h-full bg-orange-500 transition-all duration-300 w-[20%]" />
+              </div>
 
               <div className="relative z-10 flex items-center justify-between">
                 {[
@@ -548,43 +548,51 @@ export default function ProductInfoPage() {
                 </div>
               </div>
 
-              {/* Step tracker list with center-aligned horizontal connecting progress line */}
-              <div className="relative mt-6 pb-2 px-1">
-                {/* Background Connecting Line */}
-                <div className="absolute top-4 left-6 right-6 h-[2px] bg-zinc-200 dark:bg-zinc-800 -translate-y-1/2" />
-
-                {/* Active Progress Fill Line */}
-                <div
-                  className="absolute top-4 left-6 h-[2px] bg-violet-600 -translate-y-1/2 transition-all duration-300"
-                  style={{
-                    width: activeStep === 'product-info' ? '0%' : activeStep === 'personal-info' ? '50%' : '100%'
-                  }}
-                />
-
-                <div className="relative z-10 flex items-center justify-between">
-                  {timelineSteps.map((step, idx) => {
+              {/* Step tracker list with segmented horizontal connecting lines (ZERO OVERFLOW left or right) */}
+              <div className="mt-6 pb-2">
+                <div className="flex items-center justify-between">
+                  {timelineSteps.map((step, idx, arr) => {
                     const isActive = activeStep === step.id;
                     const isCompleted = completedSteps.includes(step.id);
+                    const stepNum = idx + 1;
+                    const activeStepNum = timelineSteps.findIndex(s => s.id === activeStep) + 1;
+
                     return (
-                      <button
-                        key={step.id}
-                        disabled={idx > 0 && !completedSteps.includes(timelineSteps[idx - 1].id)}
-                        onClick={() => setActiveStep(step.id)}
-                        className="flex flex-col items-center select-none"
-                      >
-                        <span className={`h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300 border-2 ${isActive ? 'bg-violet-600 text-white border-violet-600 shadow-md shadow-violet-650/20' :
-                          isCompleted ? 'bg-emerald-500 text-white border-emerald-500' :
-                            'bg-zinc-100 text-zinc-550 border-zinc-250 dark:bg-zinc-850 dark:border-white/10 dark:text-zinc-400'
-                          }`}>
-                          {isCompleted ? <Check className="h-4.5 w-4.5" /> : idx + 1}
-                        </span>
-                        <span className={`text-[10px] mt-2 font-bold transition-colors ${isActive ? 'text-violet-600 dark:text-violet-400 font-extrabold' :
-                          isCompleted ? 'text-emerald-600 dark:text-emerald-400' :
-                            'text-zinc-450 dark:text-zinc-500'
-                          }`}>
-                          {step.label}
-                        </span>
-                      </button>
+                      <React.Fragment key={step.id}>
+                        {/* Step Circle Node */}
+                        <button
+                          disabled={idx > 0 && !completedSteps.includes(timelineSteps[idx - 1].id)}
+                          onClick={() => setActiveStep(step.id)}
+                          className="flex flex-col items-center shrink-0 select-none group focus:outline-none"
+                        >
+                          <span className={`h-8 w-8 sm:h-9 sm:w-9 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300 border-2 ${isCompleted
+                            ? 'bg-emerald-500 text-white border-emerald-500 shadow-sm'
+                            : isActive
+                              ? 'bg-violet-600 text-white border-violet-600 shadow-md shadow-violet-650/20 ring-4 ring-violet-600/15'
+                              : 'bg-white dark:bg-[#1b1c24] text-zinc-400 border-zinc-300 dark:border-zinc-700'
+                            }`}>
+                            {isCompleted ? <Check className="h-4.5 w-4.5 stroke-[3]" /> : stepNum}
+                          </span>
+                          <span className={`text-[10px] sm:text-xs mt-2 font-bold transition-colors whitespace-nowrap ${isActive
+                            ? 'text-violet-600 dark:text-violet-400 font-extrabold'
+                            : isCompleted
+                              ? 'text-emerald-600 dark:text-emerald-400 font-bold'
+                              : 'text-zinc-450 dark:text-zinc-500'
+                            }`}>
+                            {step.label}
+                          </span>
+                        </button>
+
+                        {/* Segmented Line between adjacent steps - ONLY between steps, NEVER outside step 1 or step 3! */}
+                        {idx < arr.length - 1 && (
+                          <div className="flex-1 h-[2px] mx-2 sm:mx-4 -mt-6 bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden">
+                            <div
+                              className={`h-full transition-all duration-300 ${activeStepNum > stepNum ? 'bg-violet-600' : 'bg-transparent'
+                                }`}
+                            />
+                          </div>
+                        )}
+                      </React.Fragment>
                     );
                   })}
                 </div>

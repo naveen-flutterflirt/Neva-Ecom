@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Search, 
   Eye, 
+  Trash2,
   X,
   User,
   Calendar,
@@ -144,6 +145,18 @@ export default function AdminCustomersPage() {
     showToast(`Customer account status updated successfully! ⚡`);
   };
 
+  // Delete customer
+  const handleDeleteCustomer = (id: string, name: string) => {
+    if (window.confirm(`Are you sure you want to delete customer "${name}"?`)) {
+      setCustomers(prev => prev.filter(c => c.id !== id));
+      if (selectedCustomer?.id === id) {
+        setIsDetailOpen(false);
+        setSelectedCustomer(null);
+      }
+      showToast(`✓ Customer "${name}" deleted successfully! 🗑️`);
+    }
+  };
+
   // Filter list & Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(8);
@@ -260,16 +273,23 @@ export default function AdminCustomersPage() {
                       </select>
                     </td>
                     <td className="px-6 py-3.5 text-center whitespace-nowrap">
-                      <div className="flex items-center justify-center">
+                      <div className="flex items-center justify-center gap-2">
                         <button
                           onClick={() => {
                             setSelectedCustomer(c);
                             setIsDetailOpen(true);
                           }}
-                          className="p-1.5 bg-violet-50 text-violet-700 hover:bg-violet-100 border border-violet-150 rounded-lg transition-colors flex items-center gap-1 font-bold text-xs px-2.5"
+                          className="p-1.5 bg-violet-50 text-violet-700 hover:bg-violet-100 border border-violet-150 rounded-lg transition-colors flex items-center gap-1 font-bold text-xs px-2.5 cursor-pointer"
                           title="View Details & Purchased Orders"
                         >
                           <Eye className="h-3.5 w-3.5" /> View Orders
+                        </button>
+                        <button
+                          onClick={() => handleDeleteCustomer(c.id, c.name)}
+                          className="p-1.5 bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 rounded-lg transition-colors flex items-center gap-1 font-bold text-xs px-2 cursor-pointer"
+                          title="Delete Customer"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
                         </button>
                       </div>
                     </td>

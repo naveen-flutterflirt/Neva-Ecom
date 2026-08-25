@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useEffect, useRef } from 'react';
-import { ArrowRight, Cpu, Layers, Box } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { ArrowRight, Cpu, Layers, Box, Volume2, VolumeX } from 'lucide-react';
 import { motion } from 'framer-motion';
 import PromoBanner from './PromoBanner';
 import HeroTitle from './HeroTitle';
@@ -9,6 +9,7 @@ import HeroTitle from './HeroTitle';
 export default function Hero() {
     const heroVideoClassName = 'h-full w-full object-contain object-top transform -translate-y-8 lg:translate-y-0 lg:object-cover lg:object-center';
 
+    const [isUnmuted, setIsUnmuted] = useState(true);
     const introVideoRef = useRef<HTMLVideoElement>(null);
     const idleVideoRef = useRef<HTMLVideoElement>(null);
 
@@ -29,42 +30,24 @@ export default function Hero() {
 
     useEffect(() => {
         const introVideo = introVideoRef.current;
-        const idleVideo = idleVideoRef.current;
+        if (!introVideo) return;
 
-        if (!introVideo || !idleVideo) return;
+        // Play Yeti video with sound (unmuted) when page opens or refreshes
+        introVideo.muted = false;
+        introVideo.play().catch(() => {
+            // Fallback for Chrome autoplay policy prior to first click
+            introVideo.muted = true;
+            introVideo.play().catch(() => {});
 
-        let transitionStarted = false;
-
-        const handleTimeUpdate = () => {
-            if (
-                introVideo.duration &&
-                introVideo.currentTime >= introVideo.duration - 0.8 &&
-                !transitionStarted
-            ) {
-                transitionStarted = true;
-
-                // Start the second video before the first one ends
-                idleVideo.currentTime = 0;
-
-                void idleVideo.play();
-
-                // Smoothly bring the second video forward
-                idleVideo.style.opacity = '1';
-                introVideo.style.opacity = '0';
-            }
-        };
-
-        const handleEnded = () => {
-            introVideo.style.display = 'none';
-        };
-
-        introVideo.addEventListener('timeupdate', handleTimeUpdate);
-        introVideo.addEventListener('ended', handleEnded);
-
-        return () => {
-            introVideo.removeEventListener('timeupdate', handleTimeUpdate);
-            introVideo.removeEventListener('ended', handleEnded);
-        };
+            const enableHeroAudio = () => {
+                if (introVideoRef.current) {
+                    introVideoRef.current.muted = false;
+                    introVideoRef.current.play().catch(() => {});
+                }
+            };
+            window.addEventListener('click', enableHeroAudio, { once: true });
+            window.addEventListener('touchstart', enableHeroAudio, { once: true });
+        });
     }, []);
 
     return (
@@ -201,7 +184,7 @@ export default function Hero() {
                 >
                     <div className="relative overflow-hidden w-full h-full lg:max-w-[640px] lg:h-[580px]">
 
-                        {/* FIRST VIDEO */}
+                        {/* HERO VIDEO - PLAYS 1 TIME ON OPEN/REFRESH (MUTED, NO ICON) */}
                         <video
                             ref={introVideoRef}
                             src="/yeti_dada.webm"
@@ -211,17 +194,6 @@ export default function Hero() {
                             preload="auto"
                             className={`${heroVideoClassName} absolute inset-0 z-10 transition-opacity duration-500`}
                         />
-
-                        {/* SECOND VIDEO */}
-                        {/* <video
-                            ref={idleVideoRef}
-                            src="/yeti_idle.webm"
-                            muted
-                            loop
-                            playsInline
-                            preload="auto"
-                            className={`${heroVideoClassName} absolute inset-0 z-0 opacity-0 transition-opacity duration-500`}
-                        /> */}
 
                         {/* Mobile backdrop blur overlay */}
                         <div className="absolute inset-0 z-20 bg-white/30 dark:bg-zinc-950/85 backdrop-blur-[1px] lg:hidden pointer-events-none" />

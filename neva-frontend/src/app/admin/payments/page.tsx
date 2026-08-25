@@ -51,32 +51,77 @@ export default function AdminPaymentsPage() {
   const fetchLivePayments = async () => {
     try {
       setIsLoading(true);
-      const res = await apiClient('/orders');
-      if (res.success && Array.isArray(res.data) && res.data.length > 0) {
-        const mappedTxns: Transaction[] = res.data.map((o: any, idx: number) => {
-          let txStatus: 'successful' | 'failed' | 'refunded' = 'successful';
-          if (o.paymentStatus === 'failed') txStatus = 'failed';
-          else if (o.paymentStatus === 'refunded') txStatus = 'refunded';
-          else if (o.paymentStatus === 'paid' || o.paymentStatus === 'Paid via Razorpay' || o.paymentMethod === 'cod') txStatus = 'successful';
+      const [ordersRes, customPrintRes] = await Promise.all([
+        apiClient('/orders').catch(() => null),
+        apiClient('/custom-print').catch(() => null)
+      ]);
 
-          return {
-            id: o.razorpayPaymentId || `TXN-${1000 + idx}`,
-            orderId: o.orderNumber || o.id,
-            razorpayOrderId: o.razorpayOrderId || undefined,
-            customerName: o.customerName || 'Customer',
-            customerEmail: o.customerEmail || 'n/a',
-            paymentMethod: (o.paymentMethod || 'UPI').toUpperCase(),
-            amount: Number(o.totalAmount || 0),
-            status: txStatus,
-            gatewayRef: o.razorpayPaymentId || o.razorpayOrderId || o.orderNumber || `pay_${Date.now()}`,
-            createdAt: new Date(o.createdAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }),
-          };
+      const mappedTxns: Transaction[] = [];
+
+      // 1. Process Store Orders & Synced Custom Print Orders
+      const storeOrders = Array.isArray(ordersRes?.data)
+        ? ordersRes.data
+        : Array.isArray(ordersRes)
+          ? ordersRes
+          : [];
+
+      storeOrders.forEach((o: any, idx: number) => {
+        let txStatus: 'successful' | 'failed' | 'refunded' = 'successful';
+        if (o.paymentStatus === 'failed') txStatus = 'failed';
+        else if (o.paymentStatus === 'refunded') txStatus = 'refunded';
+        else if (o.paymentStatus === 'paid' || o.paymentStatus === 'Paid via Razorpay' || o.paymentMethod === 'cod') txStatus = 'successful';
+
+        mappedTxns.push({
+          id: o.razorpayPaymentId || `TXN-${1000 + idx}`,
+          orderId: o.orderNumber || o.id,
+          razorpayOrderId: o.razorpayOrderId || undefined,
+          customerName: o.customerName || 'Customer',
+          customerEmail: o.customerEmail || 'n/a',
+          paymentMethod: (o.paymentMethod || 'UPI').toUpperCase(),
+          amount: Number(o.totalAmount || 0),
+          status: txStatus,
+          gatewayRef: o.razorpayPaymentId || o.razorpayOrderId || o.orderNumber || `pay_${Date.now()}`,
+          createdAt: new Date(o.createdAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }),
         });
+      });
 
-        setTransactions(mappedTxns);
-      }
+      // 2. Process Custom 3D Print Request Quotes & Payments
+      const customPrintRequests = Array.isArray(customPrintRes?.data)
+        ? customPrintRes.data
+        : Array.isArray(customPrintRes)
+          ? customPrintRes
+          : [];
+
+      customPrintRequests.forEach((cp: any, idx: number) => {
+        const rawPrice = cp.quotePrice || cp.priceQuote || cp.amount;
+        const priceNum = parseFloat(rawPrice || 0);
+
+        // Include any custom print that has a quote price
+        if (priceNum > 0) {
+          const isTxnPresent = mappedTxns.some(t => t.orderId === (cp.requestId || cp.id));
+          if (!isTxnPresent) {
+            let txStatus: 'successful' | 'failed' | 'refunded' = 'successful';
+            if (cp.status === 'cancelled') txStatus = 'failed';
+            else if (cp.status === 'quote_sent' || cp.status === 'pending_review') txStatus = 'successful';
+
+            mappedTxns.push({
+              id: `CP-TXN-${cp.requestId ? cp.requestId.replace('#', '') : (2000 + idx)}`,
+              orderId: cp.requestId || `#CR-${cp.id}`,
+              customerName: cp.customerName || 'Customer',
+              customerEmail: cp.customerEmail || 'n/a',
+              paymentMethod: (cp.paymentMethod || 'UPI').toUpperCase(),
+              amount: priceNum,
+              status: txStatus,
+              gatewayRef: `quote_pay_${cp.requestId || cp.id}`,
+              createdAt: new Date(cp.updatedAt || cp.createdAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }),
+            });
+          }
+        }
+      });
+
+      setTransactions(mappedTxns);
     } catch (err) {
-      console.warn('Failed to fetch live payments (using mock fallback):', err);
+      console.warn('Failed to fetch live payments:', err);
     } finally {
       setIsLoading(false);
     }

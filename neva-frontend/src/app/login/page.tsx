@@ -49,21 +49,12 @@ export default function LoginPage() {
         localStorage.setItem('neva-user', JSON.stringify(resData.user));
       }
 
-      const savedUserCart = localStorage.getItem('neva-saved-user-cart');
-      if (savedUserCart) {
-        try {
-          const parsed = JSON.parse(savedUserCart);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            dispatch(hydrateCart(parsed));
-          }
-        } catch (e) {
-          console.error('Failed to hydrate saved cart on login:', e);
-        }
-      }
+      localStorage.removeItem('neva-saved-user-cart');
+      window.dispatchEvent(new Event('neva-auth-change'));
 
       setTimeout(() => {
-        router.push('/');
-      }, 1500);
+        window.location.href = '/';
+      }, 1200);
     } catch (err: any) {
       showToast(`❌ ${err.message || 'Connection error. Please try again.'}`);
     } finally {
@@ -226,7 +217,7 @@ export default function LoginPage() {
                       sm:tracking-[0.32em]
                     "
                   >
-                    NIVASHOP.IN
+                    NIVASHOP
                   </p>
 
                   <h2

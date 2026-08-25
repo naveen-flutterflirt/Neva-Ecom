@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   FolderTree,
   Tags,
@@ -30,7 +30,9 @@ import {
   Search,
   LogOut,
   ChevronRight,
-  LayoutDashboard
+  LayoutDashboard,
+  Film,
+  Sparkles
 } from 'lucide-react';
 
 interface SidebarItem {
@@ -47,6 +49,8 @@ interface SidebarGroup {
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const [authorized, setAuthorized] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({
@@ -55,6 +59,36 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     'Orders': true,
     'Payments': true,
   });
+
+  useEffect(() => {
+    const token = typeof window !== 'undefined' ? (localStorage.getItem('neva-admin-token') || localStorage.getItem('neva-token')) : null;
+    const userStr = typeof window !== 'undefined' ? (localStorage.getItem('neva-admin-user') || localStorage.getItem('neva-user')) : null;
+
+    if (!token) {
+      router.push('/admin-login');
+      return;
+    }
+
+    if (userStr) {
+      try {
+        const u = JSON.parse(userStr);
+        if (u.role !== 'admin') {
+          router.push('/admin-login');
+          return;
+        }
+      } catch (e) { }
+    }
+
+    setAuthorized(true);
+  }, [router]);
+
+  const handleLogout = () => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('neva-admin-token');
+      localStorage.removeItem('neva-admin-user');
+    }
+    router.push('/admin-login');
+  };
 
   const toggleGroup = (title: string) => {
     setExpandedGroups(prev => ({
@@ -92,6 +126,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       icon: CreditCard,
       items: [
         { name: 'All Payments', href: '/admin/payments', icon: CheckCircle },
+      ],
+    },
+    {
+      title: 'Content & Marketing',
+      icon: Sparkles,
+      items: [
+        { name: 'Social Proof Videos', href: '/admin/social-proof', icon: Film },
       ],
     },
   ];
@@ -164,7 +205,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                         onClick={handleMobileLinkClick}
                         className={`flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium transition-all ${isActive
                           ? 'bg-violet-50/70 text-violet-700 font-semibold'
-                          : 'text-zinc-600 hover:text-zinc-950 hover:bg-zinc-50'
+                          : 'text-zinc-600 hover:text-zinc-950 hover:bg-zinc-550'
                           }`}
                       >
                         <ItemIcon className={`h-3.5 w-3.5 ${isActive ? 'text-violet-600' : 'text-zinc-400'}`} />
@@ -206,15 +247,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-xs font-semibold text-zinc-950 truncate">Administrator</p>
-            <p className="text-[10px] text-zinc-400 truncate">admin@nivashop.in</p>
+            <p className="text-[10px] text-zinc-400 truncate">admin@NIVASHOP</p>
           </div>
-          <Link
-            href="/admin-login"
-            className="p-1.5 rounded-lg text-zinc-400 hover:text-red-600 hover:bg-red-50 transition-all"
+          <button
+            onClick={handleLogout}
+            className="p-1.5 rounded-lg text-zinc-400 hover:text-red-600 hover:bg-red-50 transition-all cursor-pointer"
             title="Sign Out"
           >
             <LogOut className="h-4.5 w-4.5" />
-          </Link>
+          </button>
         </div>
       </div>
     </div>

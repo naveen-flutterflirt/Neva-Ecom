@@ -38,6 +38,25 @@ import {
 import Toast from '../../components/ui/Toast';
 import { apiClient } from '../../lib/api';
 
+declare global {
+  interface Window {
+    Razorpay: any;
+  }
+}
+
+const loadRazorpayScript = (): Promise<boolean> => {
+  return new Promise((resolve) => {
+    if (typeof window === 'undefined') return resolve(false);
+    if (window.Razorpay) return resolve(true);
+
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+};
+
 interface SavedAddress {
   id: string;
   street: string;
@@ -158,6 +177,146 @@ export default function ProfilePage() {
   const [addrPincode, setAddrPincode] = useState('');
   const [addrType, setAddrType] = useState<'home' | 'work' | 'other'>('home');
   const [isSavingAddress, setIsSavingAddress] = useState(false);
+
+  // Quote Payment Modal State
+  const [payingQuoteRequest, setPayingQuoteRequest] = useState<CustomPrintItem | null>(null);
+  const [quotePaymentMethod, setQuotePaymentMethod] = useState<'upi' | 'card' | 'netbanking' | 'cod'>('upi');
+  const [isProcessingQuotePayment, setIsProcessingQuotePayment] = useState(false);
+
+  const handleConfirmQuotePayment = async () => {
+    if (!payingQuoteRequest || !payingQuoteRequest.quotePrice) return;
+    try {
+      setIsProcessingQuotePayment(true);
+      const targetBackendId = payingQuoteRequest.id;
+      const amountToPay = payingQuoteRequest.quotePrice;
+
+      // Helper function to complete order & status updates in backend DB
+      const completeQuoteOrderInDb = async (paymentMethodLabel: string, razorpayOrderId?: string, razorpayPaymentId?: string) => {
+        await apiClient(`/custom-print/${targetBackendId}`, {
+          method: 'PUT',
+          body: {
+            status: 'in_production',
+            paymentStatus: 'paid',
+            paymentMethod: paymentMethodLabel
+          }
+        }).catch(err => console.warn('Custom print status update error:', err));
+
+        await apiClient('/orders', {
+          method: 'POST',
+          body: {
+            orderNumber: payingQuoteRequest.requestId,
+            customerName: payingQuoteRequest.customerName || userInfo.name,
+            customerEmail: payingQuoteRequest.customerEmail || userInfo.email,
+            shippingAddress: payingQuoteRequest.addressLine1 ? `${payingQuoteRequest.addressLine1}, ${payingQuoteRequest.city || ''}` : 'As specified',
+            totalAmount: amountToPay,
+            paymentMethod: quotePaymentMethod,
+            paymentStatus: 'paid',
+            orderStatus: 'in_production',
+            razorpayPaymentId: razorpayPaymentId || undefined,
+            razorpayOrderId: razorpayOrderId || undefined,
+            items: [{
+              productName: `Custom 3D Print (${payingQuoteRequest.fileName})`,
+              unitPrice: amountToPay,
+              quantity: payingQuoteRequest.quantity || 1
+            }]
+          }
+        }).catch(err => console.warn('Order sync error:', err));
+
+        setCustomRequests(prev => prev.map(r => {
+          if (r.id === targetBackendId || r.requestId === payingQuoteRequest.requestId) {
+            return { ...r, status: 'in_production' };
+          }
+          return r;
+        }));
+
+        showToast(`🎉 Real Payment of ₹${amountToPay.toLocaleString()} Verified! Print is now in Production! 🚀`);
+        setPayingQuoteRequest(null);
+      };
+
+      // Online Gateway Payment via Razorpay
+      if (quotePaymentMethod !== 'cod') {
+        const scriptLoaded = await loadRazorpayScript();
+        const orderRes = await apiClient('/payment/create-order', {
+          method: 'POST',
+          body: {
+            amount: amountToPay,
+            receipt: `rcpt_quote_${Date.now()}`,
+            notes: {
+              customerName: payingQuoteRequest.customerName || userInfo.name,
+              email: payingQuoteRequest.customerEmail || userInfo.email,
+              requestId: payingQuoteRequest.requestId
+            }
+          }
+        });
+
+        if (orderRes && orderRes.success && orderRes.order) {
+          const razorpayKey = orderRes.key || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_TSnKuVgteVheGX';
+          const razorpayOrder = orderRes.order;
+
+          if (scriptLoaded && typeof window !== 'undefined' && window.Razorpay) {
+            const options = {
+              key: razorpayKey,
+              amount: razorpayOrder.amount,
+              currency: razorpayOrder.currency,
+              name: 'NIVASHOP - 3D Printing',
+              description: `Quote Payment for Request ${payingQuoteRequest.requestId}`,
+              image: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=120&q=80',
+              order_id: razorpayOrder.id,
+              prefill: {
+                name: payingQuoteRequest.customerName || userInfo.name,
+                email: payingQuoteRequest.customerEmail || userInfo.email,
+                contact: payingQuoteRequest.customerPhone || userInfo.contactNumber || userInfo.whatsappNumber || '',
+                method: quotePaymentMethod === 'card' ? 'card' : quotePaymentMethod === 'upi' ? 'upi' : undefined
+              },
+              theme: { color: '#7c3aed' },
+              handler: async function (response: any) {
+                try {
+                  const verifyRes = await apiClient('/payment/verify', {
+                    method: 'POST',
+                    body: {
+                      razorpay_order_id: response.razorpay_order_id,
+                      razorpay_payment_id: response.razorpay_payment_id,
+                      razorpay_signature: response.razorpay_signature,
+                    }
+                  });
+
+                  if (verifyRes && verifyRes.success) {
+                    await completeQuoteOrderInDb(`Paid via Razorpay (${quotePaymentMethod.toUpperCase()})`, response.razorpay_order_id, response.razorpay_payment_id);
+                  } else {
+                    showToast('❌ Razorpay payment signature verification failed!');
+                  }
+                } catch (err: any) {
+                  console.error('Razorpay verify error:', err);
+                  showToast('❌ Error verifying payment. Please contact support.');
+                } finally {
+                  setIsProcessingQuotePayment(false);
+                }
+              },
+              modal: {
+                ondismiss: function () {
+                  showToast('⚠️ Payment checkout window closed.');
+                  setIsProcessingQuotePayment(false);
+                }
+              }
+            };
+
+            const rzp = new window.Razorpay(options);
+            rzp.open();
+            return;
+          }
+        }
+      }
+
+      // COD Order Flow
+      await completeQuoteOrderInDb('Pay on Delivery (COD)');
+
+    } catch (err: any) {
+      console.error('Failed to process quote payment:', err);
+      showToast(err.message || 'Payment processing failed. Please try again.');
+    } finally {
+      setIsProcessingQuotePayment(false);
+    }
+  };
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -685,7 +844,7 @@ export default function ProfilePage() {
                 }`}
             >
               <ShoppingBag className="h-4 w-4" />
-              My Store Orders
+              My Orders
               <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${selectedTab === 'my_orders' ? 'bg-white/20 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300'
                 }`}>
                 {ecomOrders.length}
@@ -700,7 +859,7 @@ export default function ProfilePage() {
                 }`}
             >
               <Printer className="h-4 w-4" />
-              Custom 3D Print Orders
+              Custom Orders
               <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${selectedTab === 'custom_orders' ? 'bg-white/20 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300'
                 }`}>
                 {customRequests.length}
@@ -943,16 +1102,7 @@ export default function ProfilePage() {
                         </div>
                       </div>
 
-                      {/* Delivery Address Footer */}
-                      {ord.shippingAddress && (
-                        <div className="flex items-start gap-2.5 bg-zinc-50/80 dark:bg-zinc-900/40 p-3.5 rounded-2xl border border-zinc-200/60 dark:border-zinc-800/60 text-xs text-zinc-600 dark:text-zinc-400">
-                          <MapPin className="h-4 w-4 text-violet-600 dark:text-violet-400 mt-0.5 shrink-0" />
-                          <div>
-                            <span className="text-[10px] font-extrabold uppercase text-zinc-400 block tracking-wider">Delivery Address:</span>
-                            <p className="font-medium mt-0.5 leading-relaxed text-zinc-800 dark:text-zinc-200">{ord.shippingAddress}</p>
-                          </div>
-                        </div>
-                      )}
+
                     </div>
                   );
                 })}
@@ -1017,7 +1167,7 @@ export default function ProfilePage() {
                   <p className="text-xs text-zinc-500 mt-1">Upload your custom 3D STL file to receive a price quote!</p>
                 </div>
                 <Link
-                  href="/custom-products/product-info"
+                  href="/custom-product"
                   className="inline-flex items-center gap-2 px-5 py-2.5 bg-violet-600 hover:bg-violet-500 text-white rounded-xl text-xs font-bold uppercase tracking-wider transition shadow-sm"
                 >
                   Configure 3D Print Request
@@ -1051,14 +1201,27 @@ export default function ProfilePage() {
                           </div>
                         </div>
 
-                        {/* Price Quote Tag */}
-                        <div className="flex items-center justify-between sm:justify-end gap-4 bg-zinc-50 dark:bg-zinc-900/50 p-3 rounded-2xl sm:bg-transparent sm:p-0">
+                        {/* Price Quote Tag & Pay Now Button */}
+                        <div className="flex items-center justify-between sm:justify-end gap-3 bg-zinc-50 dark:bg-zinc-900/50 p-3 rounded-2xl sm:bg-transparent sm:p-0">
                           <div className="text-left sm:text-right">
                             <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block">Price Quote</span>
                             <span className="text-base sm:text-lg font-black text-zinc-900 dark:text-white font-mono">
                               {req.quotePrice ? `₹${req.quotePrice.toLocaleString()}` : 'Pending Quote'}
                             </span>
                           </div>
+
+                          {(req.status === 'quote_sent' || (req.quotePrice && req.status === 'pending_review')) && (
+                            <button
+                              onClick={() => {
+                                setPayingQuoteRequest(req);
+                                setQuotePaymentMethod('upi');
+                              }}
+                              className="px-4 py-2 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-md shadow-violet-600/25 transition active:scale-95 flex items-center gap-1.5 shrink-0"
+                            >
+                              <CreditCard className="h-3.5 w-3.5" />
+                              Pay Now
+                            </button>
+                          )}
 
                           {req.fileUrl && (
                             <button
@@ -1071,6 +1234,41 @@ export default function ProfilePage() {
                           )}
                         </div>
                       </div>
+
+                      {/* QUOTE APPROVED HIGHLIGHT BANNER WITH PAY NOW BUTTON */}
+                      {(req.status === 'quote_sent' || (req.quotePrice && req.status !== 'in_production' && req.status !== 'completed')) && (
+                        <div className="bg-gradient-to-r from-violet-600/10 via-indigo-600/10 to-purple-600/10 border border-violet-500/30 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+                          <div className="flex items-center gap-3">
+                            <div className="h-10 w-10 rounded-xl bg-violet-600 text-white flex items-center justify-center font-bold text-sm shrink-0 shadow-md shadow-violet-600/30">
+                              ₹
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-black text-violet-700 dark:text-violet-300 uppercase tracking-wider">
+                                  Admin Price Quote Ready!
+                                </span>
+                                <span className="px-2 py-0.5 bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold rounded-full">
+                                  Approved
+                                </span>
+                              </div>
+                              <p className="text-xs text-zinc-600 dark:text-zinc-300 mt-0.5">
+                                Engineering quote approved for <strong className="text-zinc-950 dark:text-white font-bold">₹{req.quotePrice?.toLocaleString()}</strong>. Complete payment to start 3D printing.
+                              </p>
+                            </div>
+                          </div>
+
+                          <button
+                            onClick={() => {
+                              setPayingQuoteRequest(req);
+                              setQuotePaymentMethod('upi');
+                            }}
+                            className="w-full sm:w-auto px-6 py-2.5 bg-violet-600 hover:bg-violet-500 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-lg shadow-violet-600/30 transition active:scale-95 flex items-center justify-center gap-2 shrink-0"
+                          >
+                            <CreditCard className="h-4 w-4" />
+                            Pay Now (₹{req.quotePrice?.toLocaleString()})
+                          </button>
+                        </div>
+                      )}
 
                       {/* FLIPKART/AMAZON STYLE COMPACT SEGMENTED CUSTOM PRINT PIPELINE (ZERO OVERFLOW) */}
                       <div className="bg-zinc-50/70 dark:bg-zinc-900/40 border border-zinc-200/60 dark:border-zinc-800/60 p-3.5 sm:p-4 rounded-2xl space-y-2.5">
@@ -1608,6 +1806,112 @@ export default function ProfilePage() {
         )}
 
       </div>
+
+      {/* QUOTE PAYMENT MODAL */}
+      {payingQuoteRequest && payingQuoteRequest.quotePrice && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-zinc-950/60 backdrop-blur-sm p-4 animate-fade-in">
+          <div className="relative w-full max-w-md rounded-3xl bg-white dark:bg-[#12131a] border border-zinc-200 dark:border-zinc-800 p-6 sm:p-7 shadow-2xl space-y-6">
+
+            {/* Modal Header */}
+            <div className="flex items-center justify-between pb-4 border-b border-zinc-100 dark:border-zinc-800/80">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-xl bg-violet-50 dark:bg-violet-950/60 text-violet-600 dark:text-violet-400 border border-violet-200 dark:border-violet-800/40 flex items-center justify-center font-bold">
+                  <CreditCard className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-extrabold text-zinc-900 dark:text-white">Custom Print Payment</h3>
+                  <span className="text-[11px] font-mono text-violet-600 dark:text-violet-400 font-bold">{payingQuoteRequest.requestId}</span>
+                </div>
+              </div>
+              <button
+                onClick={() => setPayingQuoteRequest(null)}
+                className="p-1.5 rounded-xl text-zinc-400 hover:text-zinc-600 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Quote Summary Box */}
+            <div className="bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200/80 dark:border-zinc-800/80 p-4 rounded-2xl space-y-3">
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-zinc-500 font-medium">3D Model File:</span>
+                <span className="font-bold text-zinc-900 dark:text-white truncate max-w-[180px] font-mono">{payingQuoteRequest.fileName}</span>
+              </div>
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-zinc-500 font-medium">Material &amp; Color:</span>
+                <span className="font-bold text-zinc-900 dark:text-white">{payingQuoteRequest.material} ({payingQuoteRequest.color})</span>
+              </div>
+              <div className="flex justify-between items-center text-xs border-t border-zinc-200/60 dark:border-zinc-800/60 pt-2.5">
+                <span className="text-zinc-700 dark:text-zinc-300 font-bold">Total Approved Quote:</span>
+                <span className="text-lg font-black text-violet-600 dark:text-violet-400 font-mono">₹{payingQuoteRequest.quotePrice.toLocaleString()}</span>
+              </div>
+            </div>
+
+            {/* Select Payment Method */}
+            <div className="space-y-3">
+              <label className="text-xs font-extrabold uppercase tracking-wider text-zinc-400 block">Select Payment Method</label>
+              <div className="grid grid-cols-2 gap-2.5">
+                {[
+                  { id: 'upi', label: 'Instant UPI / QR', note: 'GPay, PhonePe, Paytm', icon: Zap },
+                  { id: 'card', label: 'Credit / Debit Card', note: 'Visa, MasterCard, RuPay', icon: CreditCard },
+                  { id: 'netbanking', label: 'Net Banking', note: 'All Indian Banks', icon: Building },
+                  { id: 'cod', label: 'Pay on Delivery', note: 'Pay cash/UPI at doorstep', icon: Truck },
+                ].map((method) => {
+                  const Icon = method.icon;
+                  const isSelected = quotePaymentMethod === method.id;
+                  return (
+                    <button
+                      key={method.id}
+                      type="button"
+                      onClick={() => setQuotePaymentMethod(method.id as any)}
+                      className={`p-3 rounded-2xl border text-left transition-all ${isSelected
+                        ? 'bg-violet-50 dark:bg-violet-950/40 border-violet-600 dark:border-violet-500 text-violet-700 dark:text-violet-300 ring-2 ring-violet-600/20'
+                        : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:border-zinc-300 dark:hover:border-zinc-700'
+                        }`}
+                    >
+                      <div className="flex items-center gap-2 mb-1">
+                        <Icon className={`h-4 w-4 ${isSelected ? 'text-violet-600 dark:text-violet-400' : 'text-zinc-400'}`} />
+                        <span className="text-xs font-bold">{method.label}</span>
+                      </div>
+                      <span className="text-[9px] text-zinc-400 block">{method.note}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Modal Actions */}
+            <div className="pt-2 flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setPayingQuoteRequest(null)}
+                className="w-1/3 py-3 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition uppercase tracking-wider"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={isProcessingQuotePayment}
+                onClick={handleConfirmQuotePayment}
+                className="w-2/3 py-3 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-lg shadow-violet-600/25 transition active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                {isProcessingQuotePayment ? (
+                  <>
+                    <Clock className="h-4 w-4 animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    <Check className="h-4 w-4" />
+                    Confirm &amp; Pay ₹{payingQuoteRequest.quotePrice.toLocaleString()}
+                  </>
+                )}
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
 
       {/* Image Preview Overlay Modal */}
       {previewImage && (

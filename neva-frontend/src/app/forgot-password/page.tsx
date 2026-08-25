@@ -217,7 +217,7 @@ export default function ForgotPasswordPage() {
               <div className="mb-5 flex items-center justify-between">
                 <div>
                   <p className="text-[9px] font-semibold uppercase tracking-[0.28em] text-violet-600 dark:text-violet-300 sm:text-[10px] sm:tracking-[0.32em]">
-                    NIVASHOP.IN
+                    NIVASHOP
                   </p>
 
                   <h2 className="mt-1 text-2xl font-black tracking-tight text-zinc-900 dark:text-white sm:mt-2 sm:text-3xl">

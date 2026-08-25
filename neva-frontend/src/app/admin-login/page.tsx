@@ -2,7 +2,8 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Shield, Lock, Mail, Eye, EyeOff, ArrowRight } from 'lucide-react';
+import { Shield, Lock, Mail, Eye, EyeOff, ArrowRight, AlertCircle, CheckCircle } from 'lucide-react';
+import { apiClient } from '../../lib/api';
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -10,14 +11,46 @@ export default function AdminLoginPage() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setTimeout(() => {
+    setErrorMsg(null);
+    setSuccessMsg(null);
+
+    try {
+      const res = await apiClient('/auth/admin-login', {
+        method: 'POST',
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (res && res.token && res.user) {
+        // Verify role is strictly admin
+        if (res.user.role !== 'admin') {
+          setErrorMsg('Access Denied: You do not have administrator permissions.');
+          setLoading(false);
+          return;
+        }
+
+        // Store tokens strictly in admin storage keys (does not affect active customer tabs)
+        localStorage.setItem('neva-admin-token', res.token);
+        localStorage.setItem('neva-admin-user', JSON.stringify(res.user));
+
+        setSuccessMsg('Authorization granted! Redirecting to Admin Dashboard...');
+        setTimeout(() => {
+          router.push('/admin');
+        }, 1000);
+      } else {
+        setErrorMsg(res?.message || res?.error || 'Invalid administrator credentials.');
+        setLoading(false);
+      }
+    } catch (err: any) {
+      console.error('Admin login error:', err);
+      setErrorMsg(err?.message || 'Failed to authorize administrator. Please check your credentials.');
       setLoading(false);
-      router.push('/admin');
-    }, 1000);
+    }
   };
 
   return (
@@ -39,8 +72,25 @@ export default function AdminLoginPage() {
           </p>
         </div>
 
-        <div className="rounded-3xl border border-zinc-200/80 bg-white p-8 shadow-[0_15px_40px_rgba(0,0,0,0.04)] backdrop-blur-xl">
-          <form className="space-y-6" onSubmit={handleSubmit}>
+        <div className="rounded-3xl border border-zinc-200/80 bg-white p-8 shadow-[0_15px_40px_rgba(0,0,0,0.04)] backdrop-blur-xl space-y-5">
+
+          {/* Error Message Box */}
+          {errorMsg && (
+            <div className="p-3.5 bg-red-50 border border-red-200 text-red-700 text-xs font-semibold rounded-xl flex items-start gap-2.5 animate-shake">
+              <AlertCircle className="h-4 w-4 shrink-0 text-red-600 mt-0.5" />
+              <span>{errorMsg}</span>
+            </div>
+          )}
+
+          {/* Success Message Box */}
+          {successMsg && (
+            <div className="p-3.5 bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-semibold rounded-xl flex items-start gap-2.5">
+              <CheckCircle className="h-4 w-4 shrink-0 text-emerald-600 mt-0.5" />
+              <span>{successMsg}</span>
+            </div>
+          )}
+
+          <form className="space-y-5" onSubmit={handleSubmit}>
             <div>
               <label htmlFor="email" className="block text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-500 mb-2">
                 Admin Email
@@ -55,7 +105,7 @@ export default function AdminLoginPage() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="admin@nivashop.in"
+                  placeholder="admin@NIVASHOP"
                   className="w-full rounded-xl border border-zinc-200 bg-zinc-50 py-3 pl-10 pr-4 text-sm text-zinc-900 placeholder-zinc-400 outline-none transition duration-200 hover:border-zinc-300 focus:border-violet-500 focus:bg-white focus:ring-2 focus:ring-violet-500/10"
                 />
               </div>
@@ -108,6 +158,7 @@ export default function AdminLoginPage() {
               )}
             </button>
           </form>
+
         </div>
       </div>
     </div>

@@ -12,6 +12,7 @@ export default function ReduxProvider({ children }: { children: React.ReactNode 
         }
 
         try {
+            localStorage.removeItem('neva-saved-user-cart');
             const savedCart = localStorage.getItem('neva-cart');
             if (savedCart) {
                 const parsedCart = JSON.parse(savedCart);

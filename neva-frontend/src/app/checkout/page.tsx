@@ -493,7 +493,7 @@ export default function CheckoutPage() {
                     <span className="h-6 w-6 rounded-full bg-purple-100 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400 text-xs font-black flex items-center justify-center border border-purple-300 dark:border-purple-500/40">
                       1
                     </span>
-                    Contact &amp; Customer Information
+                    Customer Information
                   </h2>
                   <span className="text-[10px] font-bold text-purple-600 dark:text-purple-400 uppercase tracking-wider">Required</span>
                 </div>
@@ -558,7 +558,7 @@ export default function CheckoutPage() {
                     <span className="h-6 w-6 rounded-full bg-purple-100 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400 text-xs font-black flex items-center justify-center border border-purple-300 dark:border-purple-500/40">
                       2
                     </span>
-                    Shipping &amp; Delivery Address
+                    Delivery Address
                   </h2>
                   <div className="flex items-center gap-1.5">
                     <button
@@ -674,7 +674,7 @@ export default function CheckoutPage() {
                     <span className="h-6 w-6 rounded-full bg-purple-100 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400 text-xs font-black flex items-center justify-center border border-purple-300 dark:border-purple-500/40">
                       3
                     </span>
-                    Payment Method Selection
+                    Payment Method
                   </h2>
                   <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
                     <ShieldCheck className="h-3.5 w-3.5" /> Instant Confirmation
@@ -771,9 +771,7 @@ export default function CheckoutPage() {
                     <ShoppingBag className="h-4.5 w-4.5 text-purple-600 dark:text-purple-400" />
                     Order Summary ({cartItems.reduce((acc, i) => acc + i.quantity, 0)} Items)
                   </h2>
-                  <Link href="/cart" className="text-xs text-purple-600 dark:text-purple-400 hover:underline font-bold">
-                    Edit Cart
-                  </Link>
+
                 </div>
 
                 {/* Items Mini List */}
