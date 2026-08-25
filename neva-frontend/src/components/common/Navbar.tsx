@@ -144,20 +144,19 @@ export default function Navbar() {
   return (
     <nav
       className={`fixed top-0 left-0 z-50 w-full transition-all duration-300 ${isScrolled
-        ? 'bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md border-b border-zinc-200/50 dark:border-zinc-800/50 shadow-lg'
-        : 'bg-transparent border-b border-transparent'
+        ? 'bg-white/90 dark:bg-zinc-950/90 backdrop-blur-md border-b border-zinc-200/60 dark:border-zinc-800/60 shadow-md'
+        : 'bg-white/60 dark:bg-zinc-950/40 backdrop-blur-sm border-b border-zinc-200/30 dark:border-zinc-800/30'
         }`}
     >
       <div className="relative mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
 
-        {/* Logo */}
         {/* Logo */}
         <div className="flex min-w-0 flex-1 items-center">
           <Link
             href="/"
             className="text-xl font-black tracking-[0.14em] text-zinc-950 transition-all duration-200 hover:opacity-75 dark:text-white sm:text-2xl"
           >
-            NIVA<span className="text-zinc-500 dark:text-zinc-400">SHOP</span>
+            NIVA<span className="text-violet-600 dark:text-violet-400">SHOP</span>
           </Link>
         </div>
 
@@ -173,9 +172,9 @@ export default function Navbar() {
           >
             {/* Products Trigger */}
             <div
-              className={`flex cursor-default items-center gap-1 text-sm font-medium transition-colors ${isProductsActive
-                ? 'text-white'
-                : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white'
+              className={`flex cursor-pointer items-center gap-1 text-sm font-semibold transition-colors ${isProductsActive
+                ? 'text-violet-600 dark:text-violet-400 font-extrabold'
+                : 'text-zinc-700 hover:text-violet-600 dark:text-zinc-300 dark:hover:text-white'
                 }`}
               aria-haspopup="menu"
             >
@@ -183,7 +182,7 @@ export default function Navbar() {
 
               <ChevronDown
                 className={`ml-0.5 h-3.5 w-3.5 stroke-[2.5] transition-transform duration-200 ${isProductsActive
-                  ? 'text-white'
+                  ? 'text-violet-600 dark:text-violet-400'
                   : 'text-zinc-500 dark:text-zinc-400'
                   } ${isProductsOpen ? 'rotate-180' : ''
                   }`}
@@ -193,9 +192,9 @@ export default function Navbar() {
             {/* Invisible Hover Bridge */}
             <div className="absolute left-0 right-0 top-full h-3" />
 
-            {/* Products Dropdown */}
+            {/* Products Dropdown Menu */}
             <div
-              className={`absolute left-1/2 top-full z-50 w-56 -translate-x-1/2 rounded-2xl border border-zinc-200/70 bg-white/95 p-2 shadow-[0_18px_45px_rgba(15,23,42,0.16)] backdrop-blur-md dark:border-zinc-800/80 dark:bg-zinc-950/95 transition-all duration-200 ${isProductsOpen
+              className={`absolute left-1/2 top-full z-50 w-56 -translate-x-1/2 rounded-2xl border border-zinc-200/80 bg-white p-2 shadow-xl backdrop-blur-md dark:border-zinc-800/80 dark:bg-zinc-950 transition-all duration-200 ${isProductsOpen
                 ? 'pointer-events-auto translate-y-3 opacity-100'
                 : 'pointer-events-none translate-y-1 opacity-0'
                 }`}
@@ -204,9 +203,9 @@ export default function Navbar() {
                 <Link
                   key={item.label}
                   href={item.href}
-                  className={`block rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${isActive(item.href)
-                    ? 'bg-violet-50 text-violet-700 dark:bg-zinc-900 dark:text-violet-300'
-                    : 'text-zinc-700 hover:bg-violet-50 hover:text-violet-700 dark:text-zinc-300 dark:hover:bg-zinc-900 dark:hover:text-violet-300'
+                  className={`block rounded-xl px-3.5 py-2.5 text-sm font-semibold transition-colors ${isActive(item.href)
+                    ? 'bg-violet-50 text-violet-700 dark:bg-zinc-900 dark:text-violet-300 font-bold'
+                    : 'text-zinc-800 hover:bg-violet-50 hover:text-violet-700 dark:text-zinc-200 dark:hover:bg-zinc-900 dark:hover:text-violet-300'
                     }`}
                 >
                   {item.label}
@@ -220,9 +219,9 @@ export default function Navbar() {
             <Link
               key={link.label}
               href={link.href}
-              className={`text-sm font-medium transition-colors ${isActive(link.href)
-                ? 'text-zinc-900 dark:text-white'
-                : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white'
+              className={`text-sm font-semibold transition-colors ${isActive(link.href)
+                ? 'text-violet-600 dark:text-violet-400 font-extrabold'
+                : 'text-zinc-700 hover:text-violet-600 dark:text-zinc-300 dark:hover:text-white'
                 }`}
             >
               {link.label}
@@ -236,7 +235,7 @@ export default function Navbar() {
           {/* Theme Toggle */}
           <button
             onClick={toggleTheme}
-            className="shrink-0 p-1.5 text-zinc-600 transition-colors hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white sm:p-2"
+            className="shrink-0 p-1.5 text-zinc-700 transition-colors hover:text-violet-600 dark:text-zinc-300 dark:hover:text-white sm:p-2 cursor-pointer"
             aria-label="Toggle Theme"
           >
             {theme === 'dark' ? (
@@ -248,7 +247,7 @@ export default function Navbar() {
 
           {/* Search */}
           <button
-            className="shrink-0 p-1.5 text-zinc-600 transition-colors hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white sm:p-2"
+            className="shrink-0 p-1.5 text-zinc-700 transition-colors hover:text-violet-600 dark:text-zinc-300 dark:hover:text-white sm:p-2 cursor-pointer"
             aria-label="Search"
           >
             <Search className="h-[18px] w-[18px] sm:h-5 sm:w-5" />
@@ -257,7 +256,7 @@ export default function Navbar() {
           {/* Cart */}
           <Link
             href="/cart"
-            className="relative shrink-0 p-1.5 text-zinc-600 transition-colors hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white sm:p-2"
+            className="relative shrink-0 p-1.5 text-zinc-700 transition-colors hover:text-violet-600 dark:text-zinc-300 dark:hover:text-white sm:p-2"
             aria-label="Shopping Cart"
           >
             <ShoppingCart className="h-[18px] w-[18px] sm:h-5 sm:w-5" />
@@ -278,7 +277,7 @@ export default function Navbar() {
             >
               <button
                 type="button"
-                className="shrink-0 p-2 text-zinc-600 transition-colors hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white"
+                className="shrink-0 p-2 text-zinc-700 transition-colors hover:text-violet-600 dark:text-zinc-300 dark:hover:text-white cursor-pointer"
                 aria-label="User Account"
               >
                 <User className="h-5 w-5" />
@@ -289,21 +288,21 @@ export default function Navbar() {
 
               {/* User Dropdown */}
               <div
-                className={`absolute right-0 top-full z-50 w-44 rounded-2xl border border-zinc-200/70 bg-white/95 p-2 shadow-[0_18px_45px_rgba(15,23,42,0.16)] backdrop-blur-md dark:border-zinc-800/80 dark:bg-zinc-950/95 transition-all duration-200 ${isUserDropdownOpen
+                className={`absolute right-0 top-full z-50 w-44 rounded-2xl border border-zinc-200/80 bg-white p-2 shadow-xl backdrop-blur-md dark:border-zinc-800/80 dark:bg-zinc-950 transition-all duration-200 ${isUserDropdownOpen
                   ? 'pointer-events-auto translate-y-3 opacity-100'
                   : 'pointer-events-none translate-y-1 opacity-0'
                   }`}
               >
                 <Link
                   href="/profile"
-                  className="block rounded-xl px-3 py-2.5 text-sm font-medium text-zinc-700 hover:bg-violet-50 hover:text-violet-755 dark:text-zinc-300 dark:hover:bg-zinc-900 dark:hover:text-violet-300 transition-colors"
+                  className="block rounded-xl px-3 py-2.5 text-sm font-semibold text-zinc-800 hover:bg-violet-50 hover:text-violet-700 dark:text-zinc-200 dark:hover:bg-zinc-900 dark:hover:text-violet-300 transition-colors"
                 >
                   Profile
                 </Link>
                 <button
                   type="button"
                   onClick={handleLogout}
-                  className="w-full text-left block rounded-xl px-3 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-950/30 dark:hover:text-red-300 transition-colors cursor-pointer"
+                  className="w-full text-left block rounded-xl px-3 py-2.5 text-sm font-semibold text-red-600 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-950/30 dark:hover:text-red-300 transition-colors cursor-pointer"
                 >
                   Logout
                 </button>
@@ -312,7 +311,7 @@ export default function Navbar() {
           ) : (
             <Link
               href="/login"
-              className="hidden shrink-0 p-2 text-zinc-600 transition-colors hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white md:block"
+              className="hidden shrink-0 p-2 text-zinc-700 transition-colors hover:text-violet-600 dark:text-zinc-300 dark:hover:text-white md:block"
               aria-label="Login"
             >
               <User className="h-5 w-5" />
@@ -323,7 +322,7 @@ export default function Navbar() {
           <button
             data-mobile-menu-button
             onClick={toggleMobileMenu}
-            className="ml-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-zinc-600 transition-colors hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-white sm:ml-1 sm:h-10 sm:w-10 md:hidden"
+            className="ml-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-zinc-700 transition-colors hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-900 dark:hover:text-white sm:ml-1 sm:h-10 sm:w-10 md:hidden cursor-pointer"
             aria-label="Toggle Menu"
             aria-expanded={isMobileMenuOpen}
           >
@@ -346,7 +345,7 @@ export default function Navbar() {
 
           {/* Mobile Products */}
           <div className="space-y-2 border-b border-zinc-100 pb-2 dark:border-zinc-900/50">
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">
+            <p className="text-xs font-bold uppercase tracking-[0.24em] text-zinc-500">
               Products
             </p>
 
@@ -355,9 +354,9 @@ export default function Navbar() {
                 key={link.label}
                 href={link.href}
                 onClick={() => setIsMobileMenuOpen(false)}
-                className={`block text-sm font-medium py-1.5 transition-colors ${isActive(link.href)
-                  ? 'text-white'
-                  : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white'
+                className={`block text-sm font-semibold py-1.5 transition-colors ${isActive(link.href)
+                  ? 'text-violet-600 dark:text-violet-400 font-extrabold'
+                  : 'text-zinc-700 hover:text-violet-600 dark:text-zinc-300 dark:hover:text-white'
                   }`}
               >
                 {link.label}
@@ -371,9 +370,9 @@ export default function Navbar() {
               key={link.label}
               href={link.href}
               onClick={() => setIsMobileMenuOpen(false)}
-              className={`block text-sm font-medium py-1.5 border-b border-zinc-100 dark:border-zinc-900/50 transition-colors ${isActive(link.href)
-                ? 'text-white'
-                : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white'
+              className={`block text-sm font-semibold py-1.5 border-b border-zinc-100 dark:border-zinc-900/50 transition-colors ${isActive(link.href)
+                ? 'text-violet-600 dark:text-violet-400 font-extrabold'
+                : 'text-zinc-700 hover:text-violet-600 dark:text-zinc-300 dark:hover:text-white'
                 }`}
             >
               {link.label}
@@ -386,14 +385,14 @@ export default function Navbar() {
               <Link
                 href="/profile"
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="block text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white py-1.5 border-b border-zinc-100 dark:border-zinc-900/50"
+                className="block text-sm font-semibold text-zinc-700 dark:text-zinc-300 hover:text-violet-600 dark:hover:text-white py-1.5 border-b border-zinc-100 dark:border-zinc-900/50"
               >
                 Profile
               </Link>
               <button
                 type="button"
                 onClick={handleLogout}
-                className="w-full text-left block text-sm font-medium text-red-600 hover:text-red-700 py-1.5 border-b border-zinc-100 dark:border-zinc-900/50 cursor-pointer"
+                className="w-full text-left block text-sm font-semibold text-red-600 hover:text-red-700 py-1.5 border-b border-zinc-100 dark:border-zinc-900/50 cursor-pointer"
               >
                 Logout
               </button>
@@ -402,7 +401,7 @@ export default function Navbar() {
             <Link
               href="/login"
               onClick={() => setIsMobileMenuOpen(false)}
-              className="block text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white py-1.5 border-b border-zinc-100 dark:border-zinc-900/50"
+              className="block text-sm font-semibold text-zinc-700 dark:text-zinc-300 hover:text-violet-600 dark:hover:text-white py-1.5 border-b border-zinc-100 dark:border-zinc-900/50"
             >
               Login
             </Link>

@@ -430,28 +430,7 @@ export default function AdminDashboardPage() {
               </div>
             </div>
 
-            {/* AWS S3 Social Proof Videos Quick Action Card */}
-            <Link
-              href="/admin/social-proof"
-              className="group rounded-2xl border border-pink-200/80 bg-gradient-to-br from-pink-50/50 to-purple-50/50 p-6 hover:border-pink-300 transition-all duration-300 shadow-xs hover:shadow-md block cursor-pointer"
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-extrabold text-pink-700 uppercase tracking-wider">Social Proof Videos</span>
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-pink-600 text-white transition-transform group-hover:scale-110 shadow-md">
-                  <Film className="h-5 w-5" />
-                </div>
-              </div>
-              <div className="mt-4">
-                <span className="text-lg font-black tracking-tight text-zinc-900 flex items-center gap-1.5 group-hover:text-pink-600 transition-colors">
-                  Upload S3 Videos <ChevronRight className="h-4 w-4 text-pink-600 group-hover:translate-x-1 transition-transform" />
-                </span>
-                <div className="mt-2 flex items-center gap-2">
-                  <span className="inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[11px] font-bold bg-pink-100 text-pink-700">
-                    <UploadCloud className="h-3 w-3" /> AWS S3 Direct Upload
-                  </span>
-                </div>
-              </div>
-            </Link>
+
           </>
         )}
       </div>

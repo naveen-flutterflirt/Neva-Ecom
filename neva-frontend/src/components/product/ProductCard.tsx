@@ -59,47 +59,23 @@ export default function ProductCard({ product, onQuickShop, onQuickView, onAddTo
       initial={{ opacity: 0, y: 15 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: '-20px' }}
-      transition={{ duration: 0.4 }}
-      whileHover={{ y: -4 }}
-      className="group relative flex flex-col h-full overflow-hidden rounded-2xl border border-zinc-200/80 dark:border-zinc-800/80 bg-white dark:bg-[#12131a] transition-all duration-300 hover:border-violet-500/40 hover:shadow-xl dark:hover:shadow-violet-950/20"
-    >
-      {/* Product Top Badges */}
-      <div className="absolute left-3 top-3 z-10 flex flex-col gap-1.5 pointer-events-none">
-        {product.badge && (
-          <span className="rounded-lg bg-violet-600 text-white px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider shadow-md">
-            {product.badge}
-          </span>
-        )}
-        {numDiscountPrice && (
-          <span className="rounded-lg bg-emerald-500 text-white px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider shadow-md">
-            Sale
-          </span>
-        )}
-      </div>
 
-      {/* Dynamic Image Container */}
-      <div className="relative aspect-[4/3] w-full overflow-hidden bg-zinc-900/10 dark:bg-zinc-900 border-b border-zinc-100 dark:border-zinc-800/50 group/img">
-        <Link href={`/products/${product.id}`}>
+      className="group relative flex flex-col h-full overflow-hidden rounded-2xl border border-zinc-200/80 dark:border-zinc-800/80 bg-white dark:bg-[#12131a] "
+    >
+      {/* Dynamic Image Container - Uncropped Full View */}
+      <div className="relative aspect-[4/3] w-full overflow-hidden bg-zinc-50 dark:bg-zinc-900/60 border-b border-zinc-100 dark:border-zinc-800/50 group/img flex items-center justify-center p-2">
+        <Link href={`/products/${product.id}`} className="w-full h-full flex items-center justify-center">
           <img
             src={getDisplayImage()}
             alt={product.name}
-            className="h-full w-full cursor-pointer object-cover transition-transform duration-500 group-hover:scale-105"
+            className="h-full w-full cursor-pointer object-contain transition-transform duration-300 group-hover/img:scale-105"
             loading="lazy"
           />
         </Link>
-        {onQuickView && (
-          <button
-            onClick={() => onQuickView(product)}
-            className="absolute right-3 top-3 z-10 p-2 rounded-xl bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md text-zinc-700 dark:text-zinc-200 opacity-0 group-hover/img:opacity-100 transition-all hover:scale-105 shadow-md cursor-pointer"
-            title="Quick View"
-          >
-            <Eye className="h-4 w-4" />
-          </button>
-        )}
       </div>
 
       {/* Details Content */}
-      <div className="flex flex-1 flex-col p-4 space-y-3">
+      <div className="flex flex-1 flex-col p-3.5 space-y-2.5">
 
         {/* Category Badge & Rating */}
         <div className="flex items-center justify-between text-xs">
@@ -153,9 +129,8 @@ export default function ProductCard({ product, onQuickShop, onQuickView, onAddTo
                   key={col.name}
                   type="button"
                   onClick={() => setSelectedColor(col.name)}
-                  className={`h-4 w-4 rounded-full border transition-all cursor-pointer ${
-                    selectedColor === col.name ? 'ring-2 ring-violet-500 border-white scale-110' : 'border-zinc-300 dark:border-zinc-700'
-                  }`}
+                  className={`h-4 w-4 rounded-full border transition-all cursor-pointer ${selectedColor === col.name ? 'ring-2 ring-violet-500 border-white scale-110' : 'border-zinc-300 dark:border-zinc-700'
+                    }`}
                   style={{ backgroundColor: col.code }}
                   title={`${col.name} (${col.priceAdjustment ? `+₹${col.priceAdjustment}` : 'Included'})`}
                 />
@@ -197,24 +172,46 @@ export default function ProductCard({ product, onQuickShop, onQuickView, onAddTo
           </div>
 
           <div className="grid grid-cols-2 gap-2 w-full">
+            {/* Add Cart Button with Soft Left-to-Right Color Wipe */}
             <button
               type="button"
-              onClick={() => onAddToCart && onAddToCart(product)}
-              className="w-full py-2 bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-800 dark:text-zinc-200 border border-zinc-300 dark:border-zinc-700 active:scale-95 rounded-xl text-[11px] font-extrabold uppercase tracking-wider transition flex items-center justify-center gap-1 shrink-0 cursor-pointer"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (onAddToCart) onAddToCart(product);
+              }}
+              className="group/btn relative overflow-hidden w-full py-2 px-3 rounded-xl border border-zinc-300 dark:border-zinc-700 text-zinc-800 dark:text-zinc-200 text-[11px] font-black uppercase tracking-wider shadow-xs transition-all duration-300 active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer hover:border-cyan-500 hover:text-white"
               title="Add to Cart"
             >
-              <ShoppingBag className="h-3.5 w-3.5" />
-              Add Cart
+              {/* Left to Right Color Fill Overlay */}
+              <span className="absolute inset-0 bg-gradient-to-r from-cyan-600 to-teal-500 w-0 group-hover/btn:w-full transition-all duration-500 ease-out z-0" />
+
+              <span className="relative z-10 flex items-center justify-center gap-1.5 transition-colors duration-300">
+                <ShoppingBag className="h-3.5 w-3.5" />
+                Add Cart
+              </span>
             </button>
 
+            {/* Buy Now Button with Soft Left-to-Right Color Wipe */}
             <button
               type="button"
-              onClick={() => onBuyNow ? onBuyNow(product) : (onAddToCart && onAddToCart(product))}
-              className="w-full py-2 bg-violet-600 hover:bg-violet-500 active:scale-95 text-white shadow-md shadow-violet-600/20 rounded-xl text-[11px] font-black uppercase tracking-wider transition flex items-center justify-center gap-1 shrink-0 cursor-pointer"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (onBuyNow) {
+                  onBuyNow(product);
+                } else if (onAddToCart) {
+                  onAddToCart(product);
+                }
+              }}
+              className="group/btn relative overflow-hidden w-full py-2 px-3 rounded-xl border border-violet-600 bg-violet-600 text-white text-[11px] font-black uppercase tracking-wider shadow-md shadow-violet-600/20 transition-all duration-300 active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer hover:border-violet-500"
               title="Instant Purchase"
             >
-              <Zap className="h-3.5 w-3.5 fill-current" />
-              Buy Now
+              {/* Left to Right Color Fill Overlay */}
+              <span className="absolute inset-0 bg-gradient-to-r from-fuchsia-600 to-indigo-600 w-0 group-hover/btn:w-full transition-all duration-500 ease-out z-0" />
+
+              <span className="relative z-10 flex items-center justify-center gap-1.5 transition-colors duration-300">
+                <Zap className="h-3.5 w-3.5 fill-current" />
+                Buy Now
+              </span>
             </button>
           </div>
         </div>

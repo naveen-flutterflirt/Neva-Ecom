@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import {
   Search,
@@ -23,6 +24,7 @@ import { useRouter } from 'next/navigation';
 import ProductCard from '../../components/product/ProductCard';
 import QuickViewModal from '../../components/product/QuickViewModal';
 import Toast from '../../components/ui/Toast';
+import { ProductCardSkeleton } from '../../components/ui/Skeleton';
 import { Product } from '../../types/product';
 import { apiClient } from '../../lib/api';
 
@@ -73,13 +75,13 @@ export default function IotProductsPage() {
   const [inStockOnly, setInStockOnly] = useState<boolean>(false);
   const [onSaleOnly, setOnSaleOnly] = useState<boolean>(false);
 
-  // Accordion Section States
+  // Accordion Section States (All sections collapsed by default)
   const [openSections, setOpenSections] = useState({
-    price: true,
-    colors: true,
-    materials: true,
-    rating: true,
-    status: true,
+    price: false,
+    colors: false,
+    materials: false,
+    rating: false,
+    status: false,
   });
 
   const toggleSection = (section: keyof typeof openSections) => {
@@ -335,7 +337,7 @@ export default function IotProductsPage() {
   // Filter Sidebar UI Component
   const FilterSidebarContent = () => (
     <div className="space-y-6 text-xs text-zinc-800 dark:text-zinc-200">
-      
+
       {/* Search Input */}
       <div className="space-y-2">
         <label className="text-[11px] font-extrabold text-zinc-450 dark:text-zinc-500 uppercase tracking-widest block">
@@ -578,7 +580,7 @@ export default function IotProductsPage() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-6">
 
         {/* Minimal Clean Top Header Bar */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-200/80 dark:border-zinc-800/80 pb-5">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-zinc-200/80 dark:border-zinc-800/80 pb-5">
           <div className="space-y-1">
             <div className="flex items-center gap-2 text-xs font-semibold text-zinc-500 dark:text-zinc-400">
               <Link href="/" className="inline-flex items-center gap-1.5 hover:text-violet-600 dark:hover:text-violet-400 transition-colors">
@@ -588,8 +590,8 @@ export default function IotProductsPage() {
               <span>/</span>
               <span className="text-zinc-900 dark:text-zinc-200 font-medium">IoT Catalog</span>
             </div>
-            <div className="flex items-center gap-3 pt-1">
-              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-zinc-900 dark:text-white">
+            <div className="flex items-center gap-2.5 pt-1 flex-wrap">
+              <h1 className="text-xl sm:text-3xl font-extrabold tracking-tight text-zinc-900 dark:text-white">
                 IoT &amp; Hardware Components
               </h1>
               {!isLoading && (
@@ -601,11 +603,11 @@ export default function IotProductsPage() {
           </div>
 
           {/* Right Action Bar: Sort & Mobile Filter Toggle */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5 flex-wrap sm:flex-nowrap">
             {/* Mobile Filter Button */}
             <button
               onClick={() => setMobileFilterOpen(true)}
-              className="lg:hidden inline-flex items-center gap-2 px-3.5 py-2 bg-white dark:bg-[#111218] border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold text-zinc-700 dark:text-zinc-300 shadow-sm"
+              className="lg:hidden inline-flex items-center gap-2 px-3.5 py-2 bg-white dark:bg-[#111218] border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-extrabold text-zinc-700 dark:text-zinc-300 shadow-xs cursor-pointer hover:border-violet-500 transition"
             >
               <Filter className="h-3.5 w-3.5 text-violet-600 dark:text-violet-400" />
               Filters
@@ -615,12 +617,12 @@ export default function IotProductsPage() {
             </button>
 
             {/* Sort Dropdown */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 shrink-0">
               <span className="text-xs font-bold text-zinc-400 hidden sm:inline">Sort:</span>
               <select
                 value={sortBy}
                 onChange={(e: any) => setSortBy(e.target.value)}
-                className="bg-white dark:bg-[#111218] border border-zinc-200/90 dark:border-zinc-800 rounded-xl px-3 py-2 text-xs font-semibold outline-none focus:border-violet-500 shadow-sm text-zinc-800 dark:text-zinc-200 cursor-pointer"
+                className="bg-white dark:bg-[#111218] border border-zinc-200/90 dark:border-zinc-800 rounded-xl px-3 py-2 text-xs font-semibold outline-none focus:border-violet-500 shadow-xs text-zinc-800 dark:text-zinc-200 cursor-pointer"
               >
                 <option value="featured">Featured Items</option>
                 <option value="price-low">Price: Low to High</option>
@@ -633,7 +635,7 @@ export default function IotProductsPage() {
 
         {/* Main Grid: Left Filter Sidebar + Right Product Display */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          
+
           {/* Desktop Left Sidebar Filter (3 Cols) */}
           <div className="hidden lg:block lg:col-span-3 lg:sticky lg:top-24 bg-white dark:bg-[#111218] border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-5 shadow-sm space-y-6">
             <div className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800/80 pb-3">
@@ -656,7 +658,7 @@ export default function IotProductsPage() {
 
           {/* Right Product Grid Area (9 Cols) */}
           <div className="lg:col-span-9 space-y-4">
-            
+
             {/* Active Filter Badges Pill Bar */}
             {hasActiveFilters && (
               <div className="flex flex-wrap items-center gap-2 bg-white dark:bg-[#111218] border border-zinc-200/80 dark:border-zinc-800/80 p-3 rounded-xl shadow-sm text-xs">
@@ -722,20 +724,9 @@ export default function IotProductsPage() {
 
             {/* Product Cards Grid / Loading / Empty */}
             {isLoading ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6 sm:gap-7">
                 {[1, 2, 3, 4, 5, 6].map((idx) => (
-                  <div
-                    key={idx}
-                    className="animate-pulse bg-white dark:bg-[#111218] border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-4 space-y-4 shadow-sm"
-                  >
-                    <div className="w-full h-48 bg-zinc-200 dark:bg-zinc-800/60 rounded-xl" />
-                    <div className="h-4 bg-zinc-200 dark:bg-zinc-800/60 rounded w-3/4" />
-                    <div className="h-3 bg-zinc-100 dark:bg-zinc-800/40 rounded w-1/2" />
-                    <div className="flex justify-between items-center pt-2">
-                      <div className="h-5 bg-zinc-200 dark:bg-zinc-800/60 rounded w-1/3" />
-                      <div className="h-8 bg-zinc-200 dark:bg-zinc-800/60 rounded-lg w-24" />
-                    </div>
-                  </div>
+                  <ProductCardSkeleton key={idx} />
                 ))}
               </div>
             ) : processedProducts.length === 0 ? (
@@ -757,7 +748,7 @@ export default function IotProductsPage() {
                 )}
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6 sm:gap-7">
                 {processedProducts.map((product) => (
                   <ProductCard
                     key={product.id}
@@ -776,35 +767,51 @@ export default function IotProductsPage() {
 
       </div>
 
-      {/* Mobile Filter Slide-Over Drawer */}
-      {mobileFilterOpen && (
-        <div className="fixed inset-0 z-50 flex justify-end bg-black/60 backdrop-blur-sm lg:hidden animate-fade-in">
-          <div className="w-full max-w-xs bg-white dark:bg-[#111218] h-full p-6 space-y-6 overflow-y-auto shadow-2xl">
-            <div className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800 pb-3">
-              <h2 className="text-sm font-extrabold text-zinc-950 dark:text-white flex items-center gap-2">
-                <Sliders className="h-4 w-4 text-violet-600 dark:text-violet-400" />
-                Filter Products
-              </h2>
+      {/* Mobile Filter Slide-Over Drawer rendered directly on document.body via Portal */}
+      {mobileFilterOpen && typeof window !== 'undefined' && createPortal(
+        <div
+          onClick={() => setMobileFilterOpen(false)}
+          className="fixed inset-0 z-[999999] flex justify-end bg-black/80 backdrop-blur-md lg:hidden animate-fade-in"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-[320px] sm:max-w-xs bg-white dark:bg-[#111218] h-full p-5 space-y-4 shadow-2xl relative flex flex-col z-[1000000]"
+          >
+            <div className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800 pb-3.5 shrink-0">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-xl bg-violet-100 dark:bg-violet-950/60 text-violet-600 dark:text-violet-400">
+                  <Sliders className="h-4 w-4" />
+                </div>
+                <h2 className="text-sm font-extrabold text-zinc-950 dark:text-white">
+                  Filter Products
+                </h2>
+              </div>
               <button
+                type="button"
                 onClick={() => setMobileFilterOpen(false)}
-                className="p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-white"
+                className="h-8 w-8 rounded-xl bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200 flex items-center justify-center transition active:scale-95 cursor-pointer"
+                aria-label="Close filters"
               >
-                <X className="h-5 w-5" />
+                <X className="h-4 w-4" />
               </button>
             </div>
 
-            <FilterSidebarContent />
+            <div className="flex-1 overflow-y-auto pr-1 py-1 space-y-6">
+              <FilterSidebarContent />
+            </div>
 
-            <div className="pt-4 border-t border-zinc-100 dark:border-zinc-800">
+            <div className="pt-3 border-t border-zinc-100 dark:border-zinc-800 shrink-0">
               <button
+                type="button"
                 onClick={() => setMobileFilterOpen(false)}
-                className="w-full py-3 bg-violet-600 text-white font-bold text-xs rounded-xl shadow-md uppercase tracking-wider"
+                className="w-full py-3 bg-violet-600 hover:bg-violet-500 text-white font-black text-xs rounded-xl shadow-md uppercase tracking-wider transition active:scale-95 cursor-pointer"
               >
                 View ({processedProducts.length}) Products
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Quick View Modal */}

@@ -129,12 +129,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       ],
     },
     {
-      title: 'Content & Marketing',
+      title: 'Social Media',
       icon: Sparkles,
       items: [
-        { name: 'Social Proof Videos', href: '/admin/social-proof', icon: Film },
-      ],
-    },
+        { name: 'Social Proof Videos', href: '/admin/social-proof', icon: Film }
+      ]
+    }
   ];
 
   const handleMobileLinkClick = () => {

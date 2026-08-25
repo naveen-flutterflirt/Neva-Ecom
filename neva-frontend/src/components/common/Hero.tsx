@@ -37,12 +37,12 @@ export default function Hero() {
         introVideo.play().catch(() => {
             // Fallback for Chrome autoplay policy prior to first click
             introVideo.muted = true;
-            introVideo.play().catch(() => {});
+            introVideo.play().catch(() => { });
 
             const enableHeroAudio = () => {
                 if (introVideoRef.current) {
                     introVideoRef.current.muted = false;
-                    introVideoRef.current.play().catch(() => {});
+                    introVideoRef.current.play().catch(() => { });
                 }
             };
             window.addEventListener('click', enableHeroAudio, { once: true });
@@ -184,16 +184,18 @@ export default function Hero() {
                 >
                     <div className="relative overflow-hidden w-full h-full lg:max-w-[640px] lg:h-[580px]">
 
-                        {/* HERO VIDEO - PLAYS 1 TIME ON OPEN/REFRESH (MUTED, NO ICON) */}
+                        {/* HERO VIDEO - DUAL MP4 & WEBM FALLBACK FOR 60FPS MOBILE PLAYBACK */}
                         <video
                             ref={introVideoRef}
-                            src="/yeti_dada.webm"
                             autoPlay
                             muted
                             playsInline
                             preload="auto"
                             className={`${heroVideoClassName} absolute inset-0 z-10 transition-opacity duration-500`}
-                        />
+                        >
+                            <source src="/yeti_dada.mp4" type="video/mp4" />
+                            {/* <source src="/yeti_dada.webm" type="video/webm" /> */}
+                        </video>
 
                         {/* Mobile backdrop blur overlay */}
                         <div className="absolute inset-0 z-20 bg-white/30 dark:bg-zinc-950/85 backdrop-blur-[1px] lg:hidden pointer-events-none" />

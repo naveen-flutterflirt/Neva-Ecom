@@ -229,7 +229,7 @@ export default function ProfilePage() {
           return r;
         }));
 
-        showToast(`🎉 Real Payment of ₹${amountToPay.toLocaleString()} Verified! Print is now in Production! 🚀`);
+        showToast(`Payment of ₹${amountToPay.toLocaleString()} Verified!`);
         setPayingQuoteRequest(null);
       };
 

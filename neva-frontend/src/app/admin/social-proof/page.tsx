@@ -1,16 +1,16 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { 
-  Plus, 
-  Trash2, 
-  Eye, 
-  Check, 
-  X, 
-  ExternalLink, 
-  Video, 
-  Image as ImageIcon, 
-  Sparkles, 
+import {
+  Plus,
+  Trash2,
+  Eye,
+  Check,
+  X,
+  ExternalLink,
+  Video,
+  Image as ImageIcon,
+  Sparkles,
   Loader2,
   RefreshCw,
   UploadCloud,
@@ -188,38 +188,23 @@ export default function AdminSocialProofPage() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* Left Form: Upload Video File to AWS S3 (7 cols) */}
         <div className="lg:col-span-7 bg-white rounded-3xl border border-zinc-200 p-6 sm:p-7 shadow-sm space-y-5">
-          
+
           <div className="flex items-center justify-between border-b border-zinc-100 pb-4">
             <h2 className="text-base font-extrabold text-zinc-900 flex items-center gap-2">
               <UploadCloud className="h-5 w-5 text-pink-600" />
-              Upload Video File (AWS S3)
+              Upload Video File
             </h2>
-            
-            <div className="flex items-center gap-1 bg-zinc-100 p-1 rounded-xl">
-              <button
-                type="button"
-                onClick={() => setUploadMode('upload')}
-                className={`px-3 py-1 text-[10px] font-extrabold rounded-lg transition ${uploadMode === 'upload' ? 'bg-pink-600 text-white shadow-xs' : 'text-zinc-600 hover:text-zinc-900'}`}
-              >
-                File Upload
-              </button>
-              <button
-                type="button"
-                onClick={() => setUploadMode('url')}
-                className={`px-3 py-1 text-[10px] font-extrabold rounded-lg transition ${uploadMode === 'url' ? 'bg-pink-600 text-white shadow-xs' : 'text-zinc-600 hover:text-zinc-900'}`}
-              >
-                Paste URL
-              </button>
-            </div>
+
+
           </div>
 
           <form onSubmit={handleAddPost} className="space-y-4">
-            
+
             {uploadMode === 'upload' ? (
               /* AWS S3 Drag & Drop Video File Card */
               <div className="space-y-2">
                 <label className="text-xs font-bold text-zinc-700 block">Select Video File (.mp4, .webm)</label>
-                
+
                 <div className="relative border-2 border-dashed border-pink-200 hover:border-pink-500 bg-pink-50/40 rounded-2xl p-6 text-center transition group cursor-pointer">
                   <input
                     type="file"
@@ -279,8 +264,9 @@ export default function AdminSocialProofPage() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full py-3.5 bg-gradient-to-r from-pink-600 to-violet-600 hover:from-pink-500 hover:to-violet-500 text-white rounded-2xl font-black text-xs uppercase tracking-wider shadow-lg shadow-pink-600/20 transition active:scale-98 flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
+              className="w-full py-3.5  inline-flex items-center justify-center gap-2 rounded-xl bg-violet-600 px-4 py-2.5 text-xs font-semibold text-white shadow-md hover:bg-violet-500 transition duration-200"
             >
+
               {isSubmitting ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -324,20 +310,20 @@ export default function AdminSocialProofPage() {
       <div className="bg-white rounded-3xl border border-zinc-200 overflow-hidden shadow-sm space-y-4 p-6">
         <div className="flex items-center justify-between border-b border-zinc-100 pb-4">
           <div>
-            <h2 className="text-base font-extrabold text-zinc-900">AWS S3 Published Videos on Homepage</h2>
-            <p className="text-xs text-zinc-500">Total {posts.length} videos stored on AWS S3</p>
+            <h2 className="text-base font-extrabold text-zinc-900"> Published Videos on Homepage</h2>
+            <p className="text-xs text-zinc-500">Total {posts.length} videos </p>
           </div>
         </div>
 
         {isLoading ? (
           <div className="py-12 text-center text-zinc-400 text-xs flex items-center justify-center gap-2">
             <Loader2 className="h-4 w-4 animate-spin text-pink-600" />
-            Loading AWS S3 videos...
+            Loading videos...
           </div>
         ) : posts.length === 0 ? (
           <div className="py-12 text-center text-zinc-400 text-xs space-y-2">
             <Film className="h-8 w-8 mx-auto text-zinc-300" />
-            <p>No custom videos uploaded to AWS S3 yet. Upload your first video above!</p>
+            <p>No custom videos uploaded yet. Upload your first video above!</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

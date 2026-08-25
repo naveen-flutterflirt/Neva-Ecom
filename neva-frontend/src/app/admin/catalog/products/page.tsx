@@ -12,7 +12,8 @@ import {
   Upload,
   Image as ImageIcon,
   Check,
-  Video as VideoIcon
+  Video as VideoIcon,
+  Sparkles
 } from 'lucide-react';
 import Toast from '../../../../components/ui/Toast';
 import Pagination from '../../../../components/ui/Pagination';
@@ -123,6 +124,7 @@ export default function AdminProductsPage() {
   const [stock, setStock] = useState('');
   const [description, setDescription] = useState('');
   const [status, setStatus] = useState<'draft' | 'active' | 'out_of_stock'>('draft');
+  const [isNewArrival, setIsNewArrival] = useState(false);
   const [autoSku, setAutoSku] = useState(true);
 
   // Category-based Variant & Attributes States
@@ -281,7 +283,8 @@ export default function AdminProductsPage() {
     setDiscountPrice('');
     setStock('');
     setDescription('');
-    setStatus('draft');
+    setStatus('active');
+    setIsNewArrival(true);
     setAutoSku(true);
     setSelectedImageFiles([]);
     setImagePreviews([]);
@@ -333,6 +336,7 @@ export default function AdminProductsPage() {
     setStock(product.stock.toString());
     setDescription(product.description || '');
     setStatus(product.status);
+    setIsNewArrival(!!(product as any).isNewArrival);
     setAutoSku(false);
     setSelectedImageFiles([]);
     setImagePreviews([]);
@@ -421,6 +425,7 @@ export default function AdminProductsPage() {
     formData.append('stock', stock);
     formData.append('description', description);
     formData.append('status', status);
+    formData.append('isNewArrival', isNewArrival.toString());
     formData.append('primaryImageIndex', primaryIndex.toString());
 
     // Append JSON Variant & Spec Fields
@@ -829,6 +834,29 @@ export default function AdminProductsPage() {
                     <option value="out_of_stock">Out of Stock</option>
                   </select>
                 </div>
+              </div>
+
+              {/* Show in New Arrivals Toggle Card */}
+              <div className="flex items-center justify-between p-3.5 border border-pink-200/80 bg-gradient-to-r from-pink-50/60 to-purple-50/60 rounded-2xl">
+                <div className="flex items-center gap-2.5">
+                  <div className="h-8 w-8 rounded-xl bg-pink-600 text-white flex items-center justify-center shadow-xs shrink-0">
+                    <Sparkles className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <span className="text-xs font-extrabold text-zinc-900 block">Show in New Arrivals Section</span>
+                    <span className="text-[10px] text-zinc-500 block">Feature this product in the New Arrivals section on the homepage</span>
+                  </div>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={isNewArrival}
+                    onChange={(e) => setIsNewArrival(e.target.checked)}
+                    disabled={isSaving}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-zinc-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-pink-600"></div>
+                </label>
               </div>
 
               <div>
