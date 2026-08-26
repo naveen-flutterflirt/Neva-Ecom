@@ -24,7 +24,7 @@ export default function DynamicProductDetailsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState<string>('');
   const [selectedMaterialIdx, setSelectedMaterialIdx] = useState<number>(0);
-  const [selectedColorIdx, setSelectedColorIdx] = useState<number>(0);
+  const [selectedColorIdx, setSelectedColorIdx] = useState<number | null>(null);
   const [selectedSizeIdx, setSelectedSizeIdx] = useState<number>(0);
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [isCustomColorModalOpen, setIsCustomColorModalOpen] = useState(false);
@@ -129,11 +129,9 @@ export default function DynamicProductDetailsPage() {
           };
 
           setProduct(formatted);
-          if (formatted.images && formatted.images.length > 0) {
-            setSelectedImage(formatted.images[0].imageUrl);
-          } else {
-            setSelectedImage(formatted.image || '');
-          }
+          // Set initial showcase image to Primary Cover Image
+          const primaryImgObj = (formatted.images || []).find(img => img.isPrimary && (img.mediaType || 'image') === 'image') || formatted.images?.[0];
+          setSelectedImage(primaryImgObj?.imageUrl || formatted.image || '');
         }
       } catch (err) {
         console.error('Error fetching product details:', err);
@@ -169,7 +167,7 @@ export default function DynamicProductDetailsPage() {
   // Price calculations
   const basePrice = typeof product.price === 'string' ? parseFloat(product.price) : product.price;
   const matAdj = product.materialVariants && product.materialVariants[selectedMaterialIdx] ? product.materialVariants[selectedMaterialIdx].priceAdjustment || 0 : 0;
-  const colAdj = product.colorOptions && product.colorOptions[selectedColorIdx] ? product.colorOptions[selectedColorIdx].priceAdjustment || 0 : 0;
+  const colAdj = selectedColorIdx !== null && product.colorOptions && product.colorOptions[selectedColorIdx] ? product.colorOptions[selectedColorIdx].priceAdjustment || 0 : 0;
   const szAdj = product.sizeVariants && product.sizeVariants[selectedSizeIdx] ? product.sizeVariants[selectedSizeIdx].priceAdjustment || 0 : 0;
 
   const finalPrice = basePrice + matAdj + colAdj + szAdj;
@@ -180,7 +178,7 @@ export default function DynamicProductDetailsPage() {
   const isIoT = product.isIoT || categoryName.toLowerCase().includes('iot');
 
   // Active color item
-  const activeColor = product.colorOptions && product.colorOptions[selectedColorIdx] ? product.colorOptions[selectedColorIdx] : null;
+  const activeColor = selectedColorIdx !== null && product.colorOptions && product.colorOptions[selectedColorIdx] ? product.colorOptions[selectedColorIdx] : null;
   const activeMaterial = product.materialVariants && product.materialVariants[selectedMaterialIdx] ? product.materialVariants[selectedMaterialIdx] : null;
 
   const handleAddToCart = () => {
@@ -377,7 +375,7 @@ export default function DynamicProductDetailsPage() {
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-xs">
                   <span className="font-extrabold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 text-[10px]">FINISH / COLOR</span>
-                  <span className="font-bold text-purple-600 dark:text-purple-400">{activeColor?.name}</span>
+                  <span className="font-bold text-purple-600 dark:text-purple-400">{activeColor ? activeColor.name : 'Select a color'}</span>
                 </div>
                 <div className="flex items-center gap-2.5">
                   {product.colorOptions.map((col, idx) => (

@@ -156,7 +156,7 @@ export default function NewArrivals() {
             <QuickViewModal
                 product={selectedProduct}
                 onClose={() => setSelectedProduct(null)}
-                onAddToCart={() => {}}
+                onAddToCart={() => { }}
             />
 
             {/* Custom Premium Toast Notification */}

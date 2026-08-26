@@ -3,7 +3,6 @@ import Hero from '../components/common/Hero';
 import NewArrivals from '../components/product/NewArrivals';
 import MarqueeSlide from '../components/product/slide';
 import SocialProofStrip from '../components/product/SocialProofStrip';
-import Footer from '../components/common/Footer';
 
 export default function Home() {
   return (
@@ -12,7 +11,6 @@ export default function Home() {
       <NewArrivals />
       <MarqueeSlide />
       <SocialProofStrip />
-      <Footer />
     </main>
   );
 }

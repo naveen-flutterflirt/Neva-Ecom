@@ -20,12 +20,35 @@ export default function ProductCard({ product, onQuickShop, onQuickView, onAddTo
   const cartItems = useAppSelector((state) => state.cart.items);
   const isInCart = cartItems.some((item) => item.product.id === product.id);
 
-  // Helper to extract image URL
+  // Helper to extract image URL based on selected color option
   const getDisplayImage = () => {
-    if (selectedColor && product.images) {
-      const colorImg = product.images.find(img => img.color && img.color.toLowerCase() === selectedColor.toLowerCase());
-      if (colorImg) return colorImg.imageUrl;
+    if (selectedColor) {
+      const targetColor = selectedColor.trim().toLowerCase();
+
+      // 1. Check if color object inside colorOptions has a dedicated imageUrl
+      if (product.colorOptions) {
+        let parsedCols: any[] = [];
+        if (typeof product.colorOptions === 'string') {
+          try { parsedCols = JSON.parse(product.colorOptions); } catch (e) { parsedCols = []; }
+        } else if (Array.isArray(product.colorOptions)) {
+          parsedCols = product.colorOptions;
+        }
+        const matchedColObj = parsedCols.find((col: any) =>
+          typeof col === 'object' && col !== null && (col.name || '').trim().toLowerCase() === targetColor
+        );
+        if (matchedColObj && matchedColObj.imageUrl) {
+          return matchedColObj.imageUrl;
+        }
+      }
+
+      // 2. Check if product.images gallery has an image tagged with this color
+      if (product.images && product.images.length > 0) {
+        const colorImg = product.images.find(img => img.color && img.color.trim().toLowerCase() === targetColor);
+        if (colorImg) return colorImg.imageUrl;
+      }
     }
+
+    // 3. Fallback to Primary Cover Image
     if (product.images && product.images.length > 0) {
       const primary = product.images.find(img => img.isPrimary && (img.mediaType || 'image') === 'image') || product.images[0];
       return primary.imageUrl;
@@ -35,12 +58,37 @@ export default function ProductCard({ product, onQuickShop, onQuickView, onAddTo
 
   // Helper to extract material information
   const getMaterialString = () => {
-    if (product.materialVariants && product.materialVariants.length > 0) {
-      return product.materialVariants.map(m => m.name.replace(/\s*\(Base\)/gi, '')).join(' / ');
+    let variants: any[] = [];
+    if (product.materialVariants) {
+      if (typeof product.materialVariants === 'string') {
+        try {
+          const parsed = JSON.parse(product.materialVariants);
+          variants = Array.isArray(parsed) ? parsed : [];
+        } catch {
+          variants = [];
+        }
+      } else if (Array.isArray(product.materialVariants)) {
+        variants = product.materialVariants;
+      }
     }
+
+    if (variants && variants.length > 0) {
+      return variants
+        .map((m: any) => {
+          const str = typeof m === 'string' ? m : (m?.name || m?.label || (typeof m === 'object' ? JSON.stringify(m) : String(m || '')));
+          return str ? str.replace(/\s*\(Base\)/gi, '') : '';
+        })
+        .filter(Boolean)
+        .join(' / ');
+    }
+
     if (product.specifications && product.specifications.material) {
-      return product.specifications.material.replace(/\s*\(Base\)/gi, '');
+      const matStr = typeof product.specifications.material === 'string'
+        ? product.specifications.material
+        : String(product.specifications.material?.name || product.specifications.material || '');
+      return matStr.replace(/\s*\(Base\)/gi, '');
     }
+
     return null;
   };
 
@@ -113,28 +161,50 @@ export default function ProductCard({ product, onQuickShop, onQuickView, onAddTo
         {/* Color Swatch Options */}
         {(() => {
           let parsedCols: any[] = [];
+
           if (product.colorOptions) {
             if (typeof product.colorOptions === 'string') {
-              try { parsedCols = JSON.parse(product.colorOptions); } catch (e) { parsedCols = []; }
+              try {
+                const parsed = JSON.parse(product.colorOptions);
+                parsedCols = Array.isArray(parsed) ? parsed : [];
+              } catch {
+                parsedCols = [];
+              }
             } else if (Array.isArray(product.colorOptions)) {
               parsedCols = product.colorOptions;
             }
           }
-          if (!parsedCols || parsedCols.length === 0) return null;
+
+          if (parsedCols.length === 0) return null;
+
           return (
             <div className="flex items-center gap-1 pt-0.5">
-              <span className="text-[9px] text-zinc-400 font-semibold uppercase tracking-wider mr-0.5">Colors:</span>
-              {parsedCols.slice(0, 5).map((col: any) => (
-                <button
-                  key={col.name}
-                  type="button"
-                  onClick={() => setSelectedColor(col.name)}
-                  className={`h-4 w-4 rounded-full border transition-all cursor-pointer ${selectedColor === col.name ? 'ring-2 ring-violet-500 border-white scale-110' : 'border-zinc-300 dark:border-zinc-700'
-                    }`}
-                  style={{ backgroundColor: col.code }}
-                  title={`${col.name} (${col.priceAdjustment ? `+₹${col.priceAdjustment}` : 'Included'})`}
-                />
-              ))}
+              <span className="text-[9px] text-zinc-400 font-semibold uppercase tracking-wider mr-0.5">
+                Colors:
+              </span>
+
+              {parsedCols.slice(0, 5).map((col: any, index: number) => {
+                const colorName = col?.name || `Color ${index + 1}`;
+                const colorCode = col?.code || '#cccccc';
+
+                return (
+                  <button
+                    key={`${colorName}-${index}`}
+                    type="button"
+                    onClick={() => setSelectedColor(colorName)}
+                    className={`h-4 w-4 rounded-full border transition-all cursor-pointer ${selectedColor === colorName
+                      ? 'ring-2 ring-violet-500 border-white scale-110'
+                      : 'border-zinc-300 dark:border-zinc-700'
+                      }`}
+                    style={{ backgroundColor: colorCode }}
+                    title={`${colorName} ${col?.priceAdjustment
+                      ? `(+₹${col.priceAdjustment})`
+                      : '(Included)'
+                      }`}
+                    aria-label={`Select ${colorName}`}
+                  />
+                );
+              })}
             </div>
           );
         })()}

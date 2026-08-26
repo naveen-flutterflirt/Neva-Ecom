@@ -1,4 +1,7 @@
+'use client';
+
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { Mail, Phone } from 'lucide-react';
 
 const WhatsAppIcon = ({ className = "h-3.5 w-3.5" }: { className?: string }) => (
@@ -8,6 +11,11 @@ const WhatsAppIcon = ({ className = "h-3.5 w-3.5" }: { className?: string }) => 
 );
 
 export default function Footer() {
+  const pathname = usePathname();
+
+  if (pathname && (pathname.startsWith('/admin') || pathname === '/admin-login')) {
+    return null;
+  }
   return (
     <footer className="w-full bg-white text-zinc-600 border-t border-zinc-200/80 dark:bg-[#0c0c0e] dark:text-zinc-400 dark:border-zinc-900 py-8 md:py-10 px-4 sm:px-6 md:px-12 transition-colors duration-200">
       <div className="mx-auto w-full max-w-7xl space-y-8">

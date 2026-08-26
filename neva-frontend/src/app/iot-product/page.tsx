@@ -335,7 +335,7 @@ export default function IotProductsPage() {
   };
 
   // Filter Sidebar UI Component
-  const FilterSidebarContent = () => (
+  const renderFilterSidebarContent = () => (
     <div className="space-y-6 text-xs text-zinc-800 dark:text-zinc-200">
 
       {/* Search Input */}
@@ -653,7 +653,7 @@ export default function IotProductsPage() {
               )}
             </div>
 
-            <FilterSidebarContent />
+            {renderFilterSidebarContent()}
           </div>
 
           {/* Right Product Grid Area (9 Cols) */}
@@ -797,7 +797,7 @@ export default function IotProductsPage() {
             </div>
 
             <div className="flex-1 overflow-y-auto pr-1 py-1 space-y-6">
-              <FilterSidebarContent />
+              {renderFilterSidebarContent()}
             </div>
 
             <div className="pt-3 border-t border-zinc-100 dark:border-zinc-800 shrink-0">

@@ -72,6 +72,46 @@ export default function SocialProofStrip({ posts: initialPosts }: { posts?: Soci
     ? initialPosts
     : (livePosts.length > 0 ? livePosts : defaultPosts);
 
+  const pauseAllVideos = () => {
+    activePosts.forEach((post) => {
+      const vid = document.getElementById(`social-vid-${post.id}`) as HTMLVideoElement;
+      if (vid) {
+        vid.pause();
+      }
+    });
+    setPlayingMap({});
+  };
+
+  // Pause videos when scrolling container out of view
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+
+    let timeoutId: NodeJS.Timeout;
+    const handleScroll = () => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        activePosts.forEach((post) => {
+          const vid = document.getElementById(`social-vid-${post.id}`) as HTMLVideoElement;
+          if (vid) {
+            const rect = vid.getBoundingClientRect();
+            const containerRect = el.getBoundingClientRect();
+            if (rect.right < containerRect.left + 40 || rect.left > containerRect.right - 40) {
+              vid.pause();
+              setPlayingMap(prev => ({ ...prev, [post.id]: false }));
+            }
+          }
+        });
+      }, 150);
+    };
+
+    el.addEventListener('scroll', handleScroll, { passive: true });
+    return () => {
+      el.removeEventListener('scroll', handleScroll);
+      clearTimeout(timeoutId);
+    };
+  }, [activePosts]);
+
   const toggleMuteAudio = (id: number, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -83,8 +123,15 @@ export default function SocialProofStrip({ posts: initialPosts }: { posts?: Soci
       if (videoEl) {
         videoEl.muted = !nextUnmuted;
         if (nextUnmuted && videoEl.paused) {
+          // Pause all other videos before playing
+          activePosts.forEach(p => {
+            if (p.id !== id) {
+              const other = document.getElementById(`social-vid-${p.id}`) as HTMLVideoElement;
+              if (other) other.pause();
+            }
+          });
           videoEl.play().catch(() => { });
-          setPlayingMap(p => ({ ...p, [id]: true }));
+          setPlayingMap({ [id]: true });
         }
       }
       return { ...prev, [id]: nextUnmuted };
@@ -94,6 +141,15 @@ export default function SocialProofStrip({ posts: initialPosts }: { posts?: Soci
   const togglePlayPause = (id: number, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+
+    // Pause all other playing videos
+    activePosts.forEach(p => {
+      if (p.id !== id) {
+        const other = document.getElementById(`social-vid-${p.id}`) as HTMLVideoElement;
+        if (other) other.pause();
+      }
+    });
+
     setPlayingMap(prev => {
       const isCurrentlyPlaying = !!prev[id];
       const nextPlaying = !isCurrentlyPlaying;
@@ -102,23 +158,25 @@ export default function SocialProofStrip({ posts: initialPosts }: { posts?: Soci
       if (videoEl) {
         if (nextPlaying) {
           videoEl.muted = false; // Turn sound ON when user starts playing!
-          setUnmutedMap(u => ({ ...u, [id]: true }));
+          setUnmutedMap({ [id]: true });
           videoEl.play().catch(() => { });
         } else {
           videoEl.pause();
         }
       }
-      return { ...prev, [id]: nextPlaying };
+      return { [id]: nextPlaying };
     });
   };
 
   const scrollLeft = () => {
+    pauseAllVideos();
     if (scrollRef.current) {
       scrollRef.current.scrollBy({ left: -360, behavior: 'smooth' });
     }
   };
 
   const scrollRight = () => {
+    pauseAllVideos();
     if (scrollRef.current) {
       scrollRef.current.scrollBy({ left: 360, behavior: 'smooth' });
     }
