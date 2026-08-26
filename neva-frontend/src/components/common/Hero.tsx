@@ -178,13 +178,13 @@ export default function Hero() {
                     </motion.div>
                 </div>
 
-                {/* RIGHT COLUMN: Hero Video Player */}
+                {/* RIGHT COLUMN: Hero Video Player (Hidden on Mobile & Tablet, Desktop Only) */}
                 <motion.div
-                    className="absolute inset-0 w-full h-full lg:relative lg:col-span-5 lg:flex lg:items-center lg:justify-center mt-0 lg:mt-0 z-0 lg:z-10"
+                    className="hidden lg:flex lg:col-span-5 lg:items-center lg:justify-center z-10"
                 >
                     <div className="relative overflow-hidden w-full h-full lg:max-w-[640px] lg:h-[580px]">
 
-                        {/* HERO VIDEO - DUAL MP4 & WEBM FALLBACK FOR 60FPS MOBILE PLAYBACK */}
+                        {/* HERO VIDEO - DESKTOP ONLY PLAYBACK */}
                         <video
                             ref={introVideoRef}
                             autoPlay
@@ -193,12 +193,9 @@ export default function Hero() {
                             preload="auto"
                             className={`${heroVideoClassName} absolute inset-0 z-10 transition-opacity duration-500`}
                         >
-                            <source src="/yetii.webm" type="video/mp4" />
-                            {/* <source src="/yeti_dada.webm" type="video/webm" /> */}
+                            <source src="/yetii.webm" type="video/webm" />
+                            <source src="/yeti_dada.mp4" type="video/mp4" />
                         </video>
-
-                        {/* Mobile backdrop blur overlay */}
-                        <div className="absolute inset-0 z-20 bg-white/30 dark:bg-zinc-950/85 backdrop-blur-[1px] lg:hidden pointer-events-none" />
                     </div>
                 </motion.div>
             </div>
