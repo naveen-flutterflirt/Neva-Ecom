@@ -208,18 +208,15 @@ export default function Hero() {
                             <button
                                 type="button"
                                 onClick={toggleSound}
-                                className="absolute top-4 right-4 z-30 px-3.5 py-2 rounded-full bg-black/65 hover:bg-black/85 text-white border border-white/25 backdrop-blur-md shadow-2xl transition-all active:scale-95 flex items-center gap-2 cursor-pointer"
+                                className=""
                                 title={isMuted ? "Click to Unmute Audio" : "Click to Mute Audio"}
                             >
                                 {isMuted ? (
                                     <>
-                                        <VolumeX className="h-4 w-4 text-white/80" />
-                                        <span className="text-[11px] font-extrabold tracking-wider uppercase text-white/90">Unmute Sound</span>
+
                                     </>
                                 ) : (
                                     <>
-                                        <Volume2 className="h-4 w-4 text-pink-400 animate-pulse" />
-                                        <span className="text-[11px] font-extrabold tracking-wider uppercase text-pink-300">Sound ON</span>
                                     </>
                                 )}
                             </button>
