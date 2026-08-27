@@ -426,17 +426,17 @@ export default function DynamicProductDetailsPage() {
             </button>
 
             {/* Side-by-Side Action Buttons */}
-            <div className="grid grid-cols-2 gap-2.5 pt-1">
+            <div className="grid grid-cols-2 gap-2 sm:gap-2.5 pt-1">
               {/* Buy Now Button (Matching Card Gradient Fill Overlay Style) */}
               <button
                 type="button"
                 onClick={handleBuyNow}
-                className="group/btn relative overflow-hidden w-full py-2.5 sm:py-3 rounded-2xl border border-violet-600 bg-violet-600 text-white text-xs font-black uppercase tracking-wider shadow-lg shadow-violet-600/25 transition-all duration-300 active:scale-98 flex items-center justify-center gap-1.5 cursor-pointer hover:border-violet-500"
+                className="group/btn relative overflow-hidden w-full px-2 py-2.5 sm:py-3 rounded-2xl border border-violet-600 bg-violet-600 text-white text-[11px] sm:text-xs font-black uppercase tracking-tight sm:tracking-wider shadow-lg shadow-violet-600/25 transition-all duration-300 active:scale-98 flex items-center justify-center gap-1 sm:gap-1.5 cursor-pointer hover:border-violet-500"
               >
                 <span className="absolute inset-0 bg-gradient-to-r from-fuchsia-600 to-indigo-600 w-0 group-hover/btn:w-full transition-all duration-500 ease-out z-0" />
-                <span className="relative z-10 flex items-center justify-center gap-1.5 truncate">
-                  <Zap className="h-4 w-4 fill-current text-white shrink-0" />
-                  Buy Now
+                <span className="relative z-10 flex items-center justify-center gap-1 sm:gap-1.5 truncate">
+                  <Zap className="h-3.5 w-3.5 sm:h-4 sm:w-4 fill-current text-white shrink-0" />
+                  <span>Buy Now</span>
                 </span>
               </button>
 
@@ -444,12 +444,13 @@ export default function DynamicProductDetailsPage() {
               <button
                 type="button"
                 onClick={handleWhatsAppChat}
-                className="group/btn relative overflow-hidden w-full py-2.5 sm:py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 border border-emerald-500 active:scale-98 text-white font-extrabold text-xs uppercase tracking-wider transition-all duration-300 shadow-md shadow-emerald-600/25 flex items-center justify-center gap-1.5 cursor-pointer"
+                className="group/btn relative overflow-hidden w-full px-2 py-2.5 sm:py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 border border-emerald-500 active:scale-98 text-white font-extrabold text-[11px] sm:text-xs uppercase tracking-tight sm:tracking-wider transition-all duration-300 shadow-md shadow-emerald-600/25 flex items-center justify-center gap-1 sm:gap-1.5 cursor-pointer"
               >
                 <span className="absolute inset-0 bg-gradient-to-r from-emerald-500 to-teal-600 w-0 group-hover/btn:w-full transition-all duration-500 ease-out z-0" />
-                <span className="relative z-10 flex items-center justify-center gap-1.5 truncate">
-                  <MessageCircle className="h-4 w-4 fill-white text-white shrink-0" />
-                  Chat on WhatsApp
+                <span className="relative z-10 flex items-center justify-center gap-1 sm:gap-1.5 truncate">
+                  <MessageCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4 fill-white text-white shrink-0" />
+                  <span className="hidden sm:inline">Chat on WhatsApp</span>
+                  <span className="sm:hidden">WhatsApp Chat</span>
                 </span>
               </button>
             </div>
