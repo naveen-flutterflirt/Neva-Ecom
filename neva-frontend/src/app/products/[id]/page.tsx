@@ -525,9 +525,9 @@ export default function DynamicProductDetailsPage() {
                         {idx % 4 === 0 ? <Cpu className="h-4 w-4" /> : idx % 4 === 1 ? <Droplets className="h-4 w-4" /> : idx % 4 === 2 ? <Smartphone className="h-4 w-4" /> : <Code className="h-4 w-4" />}
                       </div>
                       <div className="min-w-0">
-                        <span className="text-xs font-bold text-zinc-800 dark:text-zinc-100 block truncate">{titleText}</span>
-                        {descText && (
-                          <span className="text-[10px] text-zinc-500 dark:text-zinc-400 block truncate">{descText}</span>
+                        <span className="text-xs font-bold text-zinc-800 dark:text-zinc-100 block leading-snug">{titleText}</span>
+                        {descText && descText.trim().length > 0 && (
+                          <span className="text-[10px] text-zinc-500 dark:text-zinc-400 block leading-tight pt-0.5">{descText}</span>
                         )}
                       </div>
                     </div>
