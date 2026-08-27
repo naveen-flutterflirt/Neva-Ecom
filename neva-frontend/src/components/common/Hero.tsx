@@ -10,6 +10,7 @@ export default function Hero() {
     const heroVideoClassName = 'h-full w-full object-contain object-top transform -translate-y-8 lg:translate-y-0 lg:object-cover lg:object-center';
 
     const [isDesktop, setIsDesktop] = useState(false);
+    const [isMuted, setIsMuted] = useState(true);
     const introVideoRef = useRef<HTMLVideoElement>(null);
 
     const contentVariants = {
@@ -47,22 +48,26 @@ export default function Hero() {
         const introVideo = introVideoRef.current;
         if (!introVideo) return;
 
-        // Play Yeti video with sound (unmuted) when page opens or refreshes on Desktop
+        // Attempt playing unmuted first, fallback to muted if browser blocks unmuted autoplay
         introVideo.muted = false;
-        introVideo.play().catch(() => {
-            introVideo.muted = true;
-            introVideo.play().catch(() => { });
-
-            const enableHeroAudio = () => {
-                if (introVideoRef.current && window.innerWidth >= 1024) {
-                    introVideoRef.current.muted = false;
-                    introVideoRef.current.play().catch(() => { });
-                }
-            };
-            window.addEventListener('click', enableHeroAudio, { once: true });
-            window.addEventListener('touchstart', enableHeroAudio, { once: true });
-        });
+        introVideo.play()
+            .then(() => setIsMuted(false))
+            .catch(() => {
+                introVideo.muted = true;
+                setIsMuted(true);
+                introVideo.play().catch(() => { });
+            });
     }, [isDesktop]);
+
+    const toggleSound = () => {
+        if (!introVideoRef.current) return;
+        const nextState = !isMuted;
+        introVideoRef.current.muted = nextState;
+        setIsMuted(nextState);
+        if (!nextState) {
+            introVideoRef.current.play().catch(() => { });
+        }
+    };
 
     return (
         <div className="relative flex w-full flex-col items-center overflow-hidden bg-transparent pb-0 pt-8 lg:pb-12 lg:pt-10 text-zinc-950 dark:text-white">
@@ -199,11 +204,31 @@ export default function Hero() {
                     >
                         <div className="relative overflow-hidden w-full h-full lg:max-w-[640px] lg:h-[580px]">
 
+                            {/* Sound Toggle Button */}
+                            <button
+                                type="button"
+                                onClick={toggleSound}
+                                className="absolute top-4 right-4 z-30 px-3.5 py-2 rounded-full bg-black/65 hover:bg-black/85 text-white border border-white/25 backdrop-blur-md shadow-2xl transition-all active:scale-95 flex items-center gap-2 cursor-pointer"
+                                title={isMuted ? "Click to Unmute Audio" : "Click to Mute Audio"}
+                            >
+                                {isMuted ? (
+                                    <>
+                                        <VolumeX className="h-4 w-4 text-white/80" />
+                                        <span className="text-[11px] font-extrabold tracking-wider uppercase text-white/90">Unmute Sound</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Volume2 className="h-4 w-4 text-pink-400 animate-pulse" />
+                                        <span className="text-[11px] font-extrabold tracking-wider uppercase text-pink-300">Sound ON</span>
+                                    </>
+                                )}
+                            </button>
+
                             {/* HERO VIDEO - DESKTOP ONLY PLAYBACK */}
                             <video
                                 ref={introVideoRef}
                                 autoPlay
-                                muted
+                                muted={isMuted}
                                 playsInline
                                 preload="auto"
                                 className={`${heroVideoClassName} absolute inset-0 z-10 transition-opacity duration-500`}
