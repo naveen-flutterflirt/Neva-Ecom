@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   User,
   Mail,
@@ -151,6 +151,23 @@ export default function ProfilePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [selectedTab, setSelectedTab] = useState<'my_orders' | 'custom_orders' | 'account' | 'addresses'>('my_orders');
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get('tab');
+      if (tabParam === 'my_orders' || tabParam === 'orders') {
+        setSelectedTab('my_orders');
+      } else if (tabParam === 'custom_orders') {
+        setSelectedTab('custom_orders');
+      } else if (tabParam === 'account') {
+        setSelectedTab('account');
+      } else if (tabParam === 'addresses') {
+        setSelectedTab('addresses');
+      }
+    }
+  }, []);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [isAuth, setIsAuth] = useState<boolean | null>(null);

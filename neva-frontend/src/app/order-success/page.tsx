@@ -42,14 +42,14 @@ export default function OrderSuccessPage() {
 
         {/* Celebration Header Card */}
         <motion.div
-          initial={{ scale: 0.9, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 0.4 }}
+          initial={{ scale: 0.92, opacity: 0, y: 15 }}
+          animate={{ scale: 1, opacity: 1, y: 0 }}
+          transition={{ type: 'spring', stiffness: 320, damping: 24 }}
           className="bg-white dark:bg-[#0c0d14]/90 p-8 sm:p-10 rounded-3xl border border-zinc-200/90 dark:border-zinc-800/80 shadow-2xl backdrop-blur-xl text-center space-y-5"
         >
-          {/* Animated Success Badge */}
-          <div className="h-20 w-20 bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 rounded-full flex items-center justify-center mx-auto border-2 border-emerald-300 dark:border-emerald-500/40 shadow-lg shadow-emerald-500/20">
-            <CheckCircle2 className="h-10 w-10 animate-bounce" />
+          {/* Professional Solid Success Badge */}
+          <div className="h-20 w-20 bg-gradient-to-br from-emerald-100 to-teal-100 dark:from-emerald-950/60 dark:to-teal-950/60 text-emerald-600 dark:text-emerald-400 rounded-full flex items-center justify-center mx-auto border-2 border-emerald-300 dark:border-emerald-500/40 shadow-lg shadow-emerald-500/15 shrink-0">
+            <CheckCircle2 className="h-10 w-10 text-emerald-600 dark:text-emerald-400 stroke-[2.2]" />
           </div>
 
           <div className="space-y-2">
@@ -125,7 +125,7 @@ export default function OrderSuccessPage() {
               Continue Shopping
             </Link>
             <Link
-              href="/orders"
+              href="/profile?tab=my_orders"
               className="px-6 py-3 rounded-2xl bg-zinc-100 dark:bg-zinc-900 text-zinc-800 dark:text-zinc-200 font-extrabold text-xs border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-800 transition flex items-center gap-1.5"
             >
               <ShoppingBag className="h-4 w-4" />

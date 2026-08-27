@@ -132,6 +132,7 @@ export default function ThreeDProductsPage() {
             keyFeatures: safeParseJSON(p.keyFeatures, []),
             specifications: safeParseJSON(p.specifications, {}),
             specs: safeParseJSON(p.specifications, {}),
+            sortOrder: p.sortOrder !== undefined && p.sortOrder !== null ? Number(p.sortOrder) : 999,
           }));
 
         setProducts(threeDList);
@@ -314,7 +315,7 @@ export default function ThreeDProductsPage() {
         if (sortBy === 'price-low') return Number(a.price) - Number(b.price);
         if (sortBy === 'price-high') return Number(b.price) - Number(a.price);
         if (sortBy === 'rating') return (b.rating || 0) - (a.rating || 0);
-        return 0;
+        return (a.sortOrder ?? 999) - (b.sortOrder ?? 999);
       });
   }, [products, searchQuery, priceLimit, selectedColors, selectedMaterials, minRating, inStockOnly, onSaleOnly, sortBy]);
 
@@ -468,7 +469,7 @@ export default function ThreeDProductsPage() {
           </button>
 
           {openSections.materials && (
-            <div className="space-y-1.5 pt-1">
+            <div className="space-y-1.5 pt-1 max-h-52 overflow-y-auto scrollbar-thin pr-1">
               {materialsList.map((mat) => {
                 const isSelected = selectedMaterials.includes(mat);
                 return (
@@ -641,7 +642,7 @@ export default function ThreeDProductsPage() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
 
           {/* Desktop Left Sidebar Filter (3 Cols) */}
-          <div className="hidden lg:block lg:col-span-3 lg:sticky lg:top-24 bg-white dark:bg-[#111218] border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-5 shadow-sm space-y-6">
+          <div className="hidden lg:block lg:col-span-3 lg:sticky lg:top-24 max-h-[calc(100vh-110px)] overflow-y-auto scrollbar-thin pr-1 bg-white dark:bg-[#111218] border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-5 shadow-sm space-y-6">
             <div className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800/80 pb-3">
               <h2 className="text-sm font-extrabold text-zinc-950 dark:text-white flex items-center gap-2">
                 <Sliders className="h-4 w-4 text-violet-600 dark:text-violet-400" />

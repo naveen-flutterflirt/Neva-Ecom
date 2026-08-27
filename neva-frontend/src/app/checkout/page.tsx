@@ -163,9 +163,9 @@ export default function CheckoutPage() {
   // Calculate Order Prices
   const subtotal = cartItems.reduce((sum, item) => sum + Number(item.product.price) * item.quantity, 0);
   const discountAmount = Math.round((subtotal * appliedDiscount) / 100);
-  const shippingFee = subtotal > 1499 || subtotal === 0 ? 0 : 99;
+  const shippingFee = subtotal > 400 || subtotal === 0 ? 0 : 99;
   const codFee = paymentMethod === 'cod' ? 49 : 0;
-  const gstTax = Math.round((subtotal - discountAmount) * 0.18);
+  const gstTax = Math.round((subtotal - discountAmount) * 0.05);
   const grandTotal = Math.max(0, subtotal - discountAmount + shippingFee + codFee + gstTax);
 
   // Apply Coupon Code

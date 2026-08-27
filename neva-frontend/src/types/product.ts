@@ -53,4 +53,5 @@ export interface Product {
   keyFeatures?: KeyFeatureItem[];
   specifications?: Record<string, any>;
   specs?: Record<string, string>;
+  sortOrder?: number;
 }

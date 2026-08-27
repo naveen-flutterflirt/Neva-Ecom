@@ -110,13 +110,13 @@ export default function ProductCard({ product, onQuickShop, onQuickView, onAddTo
 
       className="group relative flex flex-col h-full overflow-hidden rounded-2xl border border-zinc-200/80 dark:border-zinc-800/80 bg-white dark:bg-[#12131a] "
     >
-      {/* Dynamic Image Container - Uncropped Full View */}
-      <div className="relative aspect-[4/3] w-full overflow-hidden bg-zinc-50 dark:bg-zinc-900/60 border-b border-zinc-100 dark:border-zinc-800/50 group/img flex items-center justify-center p-2">
-        <Link href={`/products/${product.id}`} className="w-full h-full flex items-center justify-center">
+      {/* Dynamic Image Container - Perfect Square Aspect Ratio */}
+      <div className="relative aspect-square w-full overflow-hidden bg-zinc-100 dark:bg-zinc-900/60 border-b border-zinc-100 dark:border-zinc-800/50 group/img">
+        <Link href={`/products/${product.id}`} className="w-full h-full block">
           <img
             src={getDisplayImage()}
             alt={product.name}
-            className="h-full w-full cursor-pointer object-contain transition-transform duration-300 group-hover/img:scale-105"
+            className="h-full w-full cursor-pointer object-cover object-center "
             loading="lazy"
           />
         </Link>
@@ -148,82 +148,6 @@ export default function ProductCard({ product, onQuickShop, onQuickView, onAddTo
             {product.name}
           </h3>
         </Link>
-
-        {/* Material Badge */}
-        {materials && (
-          <div className="flex items-center gap-1 text-xs text-zinc-700 dark:text-zinc-300 bg-violet-50/80 dark:bg-violet-950/40 border border-violet-200/80 dark:border-violet-800/40 px-2 py-0.5 rounded-lg w-fit">
-            <Box className="h-3.5 w-3.5 text-violet-600 dark:text-violet-400 shrink-0" />
-            <span className="text-[9px] font-extrabold text-violet-700 dark:text-violet-300 uppercase tracking-wider">Material:</span>
-            <span className="text-[11px] font-semibold truncate max-w-[160px]">{materials}</span>
-          </div>
-        )}
-
-        {/* Color Swatch Options */}
-        {(() => {
-          let parsedCols: any[] = [];
-
-          if (product.colorOptions) {
-            if (typeof product.colorOptions === 'string') {
-              try {
-                const parsed = JSON.parse(product.colorOptions);
-                parsedCols = Array.isArray(parsed) ? parsed : [];
-              } catch {
-                parsedCols = [];
-              }
-            } else if (Array.isArray(product.colorOptions)) {
-              parsedCols = product.colorOptions;
-            }
-          }
-
-          if (parsedCols.length === 0) return null;
-
-          return (
-            <div className="flex items-center gap-1 pt-0.5">
-              <span className="text-[9px] text-zinc-400 font-semibold uppercase tracking-wider mr-0.5">
-                Colors:
-              </span>
-
-              {parsedCols.slice(0, 5).map((col: any, index: number) => {
-                const colorName = col?.name || `Color ${index + 1}`;
-                const colorCode = col?.code || '#cccccc';
-
-                return (
-                  <button
-                    key={`${colorName}-${index}`}
-                    type="button"
-                    onClick={() => setSelectedColor(colorName)}
-                    className={`h-4 w-4 rounded-full border transition-all cursor-pointer ${selectedColor === colorName
-                      ? 'ring-2 ring-violet-500 border-white scale-110'
-                      : 'border-zinc-300 dark:border-zinc-700'
-                      }`}
-                    style={{ backgroundColor: colorCode }}
-                    title={`${colorName} ${col?.priceAdjustment
-                      ? `(+₹${col.priceAdjustment})`
-                      : '(Included)'
-                      }`}
-                    aria-label={`Select ${colorName}`}
-                  />
-                );
-              })}
-            </div>
-          );
-        })()}
-
-        {/* Specifications Highlight Pills (IoT Products) */}
-        {isIoT && product.specifications && (
-          <div className="flex flex-wrap gap-1 text-[9px] text-zinc-500 dark:text-zinc-400">
-            {product.specifications.electronics && (
-              <span className="bg-zinc-100 dark:bg-zinc-800/60 px-1.5 py-0.5 rounded-md border border-zinc-200 dark:border-zinc-700/50">
-                {product.specifications.electronics}
-              </span>
-            )}
-            {product.specifications.power && (
-              <span className="bg-zinc-100 dark:bg-zinc-800/60 px-1.5 py-0.5 rounded-md border border-zinc-200 dark:border-zinc-700/50">
-                {product.specifications.power}
-              </span>
-            )}
-          </div>
-        )}
 
         {/* Price & Action Section */}
         <div className="mt-auto pt-3 border-t border-zinc-100 dark:border-zinc-800/60 space-y-2.5">

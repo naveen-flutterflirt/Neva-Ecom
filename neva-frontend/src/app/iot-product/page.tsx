@@ -637,7 +637,7 @@ export default function IotProductsPage() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
 
           {/* Desktop Left Sidebar Filter (3 Cols) */}
-          <div className="hidden lg:block lg:col-span-3 lg:sticky lg:top-24 bg-white dark:bg-[#111218] border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-5 shadow-sm space-y-6">
+          <div className="hidden lg:block lg:col-span-3 lg:sticky lg:top-24 max-h-[calc(100vh-110px)] overflow-y-auto scrollbar-thin pr-1 bg-white dark:bg-[#111218] border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-5 shadow-sm space-y-6">
             <div className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800/80 pb-3">
               <h2 className="text-sm font-extrabold text-zinc-950 dark:text-white flex items-center gap-2">
                 <Sliders className="h-4 w-4 text-violet-600 dark:text-violet-400" />
@@ -733,9 +733,9 @@ export default function IotProductsPage() {
               <div className="py-20 text-center bg-white dark:bg-[#111218] border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl space-y-4 shadow-sm">
                 <Cpu className="h-10 w-10 text-zinc-400 mx-auto opacity-60" />
                 <div className="space-y-1">
-                  <h3 className="text-base font-bold text-zinc-900 dark:text-white">No Matching IoT Products</h3>
+                  <h3 className="text-base font-bold text-zinc-900 dark:text-white">Coming Soon</h3>
                   <p className="text-xs text-zinc-500 max-w-sm mx-auto">
-                    We couldn't find any IoT hardware matching your active filters.
+                    IoT &amp; Smart Hardware products are currently under development and coming soon!
                   </p>
                 </div>
                 {hasActiveFilters && (

@@ -7,7 +7,7 @@ import {
   ArrowLeft, Star, Cpu, Layers, Heart, ShoppingCart, Zap,
   Ruler, RefreshCw, Truck, RotateCcw, Palette, Info, Sparkles,
   Smile, Droplets, Smartphone, Code, ShieldCheck, Box, Sun, Home, ShieldAlert,
-  Radio, Thermometer, Brain
+  Radio, Thermometer, Brain, MessageCircle
 } from 'lucide-react';
 import Toast from '../../../components/ui/Toast';
 import { Product } from '../../../types/product';
@@ -203,6 +203,15 @@ export default function DynamicProductDetailsPage() {
     }
   };
 
+  const handleWhatsAppChat = () => {
+    if (!product) return;
+    const phone = '919131450933';
+    const text = encodeURIComponent(
+      `Hello Nivashop! I would like to inquire about "${product.name}" (SKU: ${product.sku || 'N/A'}, Price: ₹${finalDiscountPrice || finalPrice}).`
+    );
+    window.open(`https://wa.me/${phone}?text=${text}`, '_blank');
+  };
+
   const handleBuyNow = () => {
     const token = typeof window !== 'undefined' ? localStorage.getItem('neva-token') : null;
     if (!token) {
@@ -264,7 +273,7 @@ export default function DynamicProductDetailsPage() {
               <img
                 src={selectedImage || product.image || ''}
                 alt={product.name}
-                className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                className="w-full h-full object-cover"
               />
             </div>
 
@@ -418,20 +427,30 @@ export default function DynamicProductDetailsPage() {
 
             {/* Side-by-Side Action Buttons */}
             <div className="grid grid-cols-2 gap-3 pt-1">
+              {/* Buy Now Button (Matching Card Gradient Fill Overlay Style) */}
               <button
+                type="button"
                 onClick={handleBuyNow}
-                className="w-full py-3 rounded-2xl bg-gradient-to-r from-purple-600 via-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 active:scale-[0.98] text-white font-black text-xs sm:text-sm uppercase tracking-wider transition-all duration-200 shadow-md shadow-purple-600/20 flex items-center justify-center gap-2"
+                className="group/btn relative overflow-hidden w-full py-3 rounded-2xl border border-violet-600 bg-violet-600 text-white text-xs sm:text-sm font-black uppercase tracking-wider shadow-lg shadow-violet-600/25 transition-all duration-300 active:scale-98 flex items-center justify-center gap-2 cursor-pointer hover:border-violet-500"
               >
-                <Zap className="h-4 w-4 fill-white" />
-                Buy Now
+                <span className="absolute inset-0 bg-gradient-to-r from-fuchsia-600 to-indigo-600 w-0 group-hover/btn:w-full transition-all duration-500 ease-out z-0" />
+                <span className="relative z-10 flex items-center justify-center gap-2">
+                  <Zap className="h-4 w-4 fill-current text-white" />
+                  Buy Now
+                </span>
               </button>
 
+              {/* Chat on WhatsApp Button */}
               <button
-                onClick={handleAddToCart}
-                className="w-full py-3 rounded-2xl bg-white dark:bg-zinc-900 hover:bg-purple-50 dark:hover:bg-purple-950/40 border-2 border-purple-600 dark:border-purple-500/80 active:scale-[0.98] text-purple-700 dark:text-white font-extrabold text-xs sm:text-sm uppercase tracking-wider transition-all duration-200 flex items-center justify-center gap-2 shadow-sm"
+                type="button"
+                onClick={handleWhatsAppChat}
+                className="group/btn relative overflow-hidden w-full py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 border border-emerald-500 active:scale-98 text-white font-extrabold text-xs sm:text-sm uppercase tracking-wider transition-all duration-300 shadow-md shadow-emerald-600/25 flex items-center justify-center gap-2 cursor-pointer"
               >
-                <ShoppingCart className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-                Add to Cart
+                <span className="absolute inset-0 bg-gradient-to-r from-emerald-500 to-teal-600 w-0 group-hover/btn:w-full transition-all duration-500 ease-out z-0" />
+                <span className="relative z-10 flex items-center justify-center gap-2">
+                  <MessageCircle className="h-4 w-4 fill-white text-white" />
+                  Chat on WhatsApp
+                </span>
               </button>
             </div>
 
@@ -461,10 +480,9 @@ export default function DynamicProductDetailsPage() {
         </div>
 
         {/* Bottom Specs & Key Features Section */}
-        {isIoT ? (
-          /* IoT Hardware Specs & Features Section */
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 pt-8 border-t border-zinc-200/80 dark:border-zinc-800/80">
-            {/* Left Box: Tech Specs Table */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 pt-8 border-t border-zinc-200/80 dark:border-zinc-800/80">
+          {/* Left Box: Specifications Table */}
+          {product.specifications && Object.keys(product.specifications).length > 0 && (
             <div className="lg:col-span-6 space-y-4 bg-white dark:bg-[#0c0d14]/50 p-5 rounded-3xl border border-zinc-200/90 dark:border-zinc-800/80 shadow-md dark:shadow-xl">
               <div className="flex items-center gap-2 border-b border-zinc-200/80 dark:border-zinc-800/80 pb-3">
                 <Cpu className="h-4.5 w-4.5 text-purple-600 dark:text-purple-400" />
@@ -472,117 +490,70 @@ export default function DynamicProductDetailsPage() {
               </div>
 
               <div className="divide-y divide-zinc-200/80 dark:divide-zinc-800/60 text-xs space-y-2.5">
-                <div className="flex items-center justify-between pt-2">
-                  <span className="text-zinc-500 dark:text-zinc-400 font-medium">Material</span>
-                  <span className="font-bold text-zinc-800 dark:text-zinc-200 text-right">
-                    {product.specifications?.material || activeMaterial?.name || 'N/A'}
-                  </span>
-                </div>
-
-                <div className="flex items-center justify-between pt-2.5 pb-0.5">
-                  <span className="text-zinc-500 dark:text-zinc-400 font-medium">Electronics</span>
-                  <span className="font-bold text-zinc-800 dark:text-zinc-200 text-right max-w-[280px]">
-                    {product.specifications?.electronics || 'N/A'}
-                  </span>
-                </div>
-
-                <div className="flex items-center justify-between pt-2.5">
-                  <span className="text-zinc-500 dark:text-zinc-400 font-medium">Power Requirements</span>
-                  <span className="font-bold text-zinc-800 dark:text-zinc-200 text-right">
-                    {product.specifications?.power || 'N/A'}
-                  </span>
-                </div>
-
-                <div className="flex items-center justify-between pt-2.5">
-                  <span className="text-zinc-500 dark:text-zinc-400 font-medium">Wireless Connectivity</span>
-                  <span className="font-bold text-zinc-800 dark:text-zinc-200 text-right">
-                    {product.specifications?.connectivity || 'N/A'}
-                  </span>
-                </div>
-
-                <div className="flex items-center justify-between pt-2.5 pb-1">
-                  <span className="text-zinc-500 dark:text-zinc-400 font-medium">Physical Dimensions</span>
-                  <span className="font-bold text-zinc-800 dark:text-zinc-200 text-right">
-                    {product.specifications?.dimensions || 'N/A'}
-                  </span>
-                </div>
+                {Object.entries(product.specifications).map(([key, val], idx) => {
+                  const label = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+                  const displayVal = typeof val === 'object' && val !== null ? (val.name || JSON.stringify(val)) : String(val);
+                  return (
+                    <div key={idx} className="flex items-center justify-between pt-2.5 pb-0.5">
+                      <span className="text-zinc-500 dark:text-zinc-400 font-medium capitalize">{label}</span>
+                      <span className="font-bold text-zinc-800 dark:text-zinc-200 text-right max-w-[280px]">
+                        {displayVal}
+                      </span>
+                    </div>
+                  );
+                })}
               </div>
             </div>
+          )}
 
-            {/* Right Box: Key Features & Care */}
-            <div className="lg:col-span-6 space-y-4">
-              <div className="flex items-center gap-2">
-                <Brain className="h-4.5 w-4.5 text-purple-600 dark:text-purple-400" />
-                <h3 className="text-base font-bold text-zinc-900 dark:text-white tracking-tight">Key Features &amp; Care</h3>
-              </div>
-
-              {/* Feature Pill Cards Grid (2x2) */}
-              {product.keyFeatures && product.keyFeatures.length > 0 && (
-                <div className="grid grid-cols-2 gap-2.5">
-                  {product.keyFeatures.map((feat, idx) => {
-                    const titleText = typeof feat === 'string' ? feat : (feat.title || '');
-                    const descText = typeof feat === 'object' ? feat.description : null;
-                    return (
-                      <div key={idx} className="p-3.5 rounded-2xl border border-zinc-200/90 dark:border-zinc-800/90 bg-white dark:bg-[#12131a]/80 flex items-center gap-3 hover:border-purple-500/40 transition-all duration-200 shadow-sm">
-                        <div className="p-2 rounded-xl bg-purple-100 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-200 dark:border-purple-500/20 shrink-0">
-                          {idx % 4 === 0 ? <Cpu className="h-4 w-4" /> : idx % 4 === 1 ? <Droplets className="h-4 w-4" /> : idx % 4 === 2 ? <Smartphone className="h-4 w-4" /> : <Code className="h-4 w-4" />}
-                        </div>
-                        <div className="min-w-0">
-                          <span className="text-xs font-bold text-zinc-800 dark:text-zinc-100 block truncate">{titleText}</span>
-                          {descText && (
-                            <span className="text-[10px] text-zinc-500 dark:text-zinc-400 block truncate">{descText}</span>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-
-              {/* Care Instructions Box */}
-              {product.careInstructions && product.careInstructions.length > 0 && (
-                <div className="p-4 rounded-2xl border border-zinc-200/90 dark:border-zinc-800/90 bg-white dark:bg-[#12131a]/80 space-y-3 shadow-sm">
-                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-purple-600 dark:text-purple-400 block">
-                    CARE INSTRUCTIONS
-                  </span>
-                  <ul className="space-y-2 text-xs text-zinc-600 dark:text-zinc-300">
-                    {product.careInstructions.map((inst, idx) => (
-                      <li key={idx} className="flex items-start gap-2.5">
-                        {idx === 0 ? <Sparkles className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400 shrink-0 mt-0.5" /> : idx === 1 ? <Radio className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400 shrink-0 mt-0.5" /> : <Thermometer className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400 shrink-0 mt-0.5" />}
-                        <span className="leading-relaxed text-zinc-700 dark:text-zinc-300">{inst}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
-          </div>
-        ) : (
-          /* 3D Products Key Features Section */
-          <div className="pt-8 border-t border-zinc-200/80 dark:border-zinc-800/80 space-y-4">
-            <div className="border-b border-zinc-200/80 dark:border-zinc-800/80 pb-2.5 flex items-center gap-2">
+          {/* Right Box: Key Features & Care Instructions */}
+          <div className={`${(product.specifications && Object.keys(product.specifications).length > 0) ? 'lg:col-span-6' : 'lg:col-span-12'} space-y-4`}>
+            <div className="flex items-center gap-2">
               <Sparkles className="h-4.5 w-4.5 text-purple-600 dark:text-purple-400" />
-              <h3 className="text-sm sm:text-base font-bold uppercase tracking-wider text-zinc-900 dark:text-white">
-                Key Features &amp; Care
-              </h3>
+              <h3 className="text-base font-bold text-zinc-900 dark:text-white tracking-tight">Key Features &amp; Care</h3>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
-              {product.keyFeatures && product.keyFeatures.map((feat, idx) => (
-                <div
-                  key={idx}
-                  className="p-4 rounded-2xl border border-zinc-200/90 dark:border-zinc-800/90 bg-white dark:bg-[#12131a]/80 space-y-2 shadow-sm hover:border-purple-500/40 transition-all duration-200"
-                >
-                  <div className="p-2 rounded-xl bg-purple-100 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-200 dark:border-purple-500/20 w-fit shrink-0">
-                    {idx === 0 ? <Sun className="h-4 w-4" /> : idx === 1 ? <Sparkles className="h-4 w-4" /> : idx === 2 ? <ShieldAlert className="h-4 w-4" /> : <Home className="h-4 w-4" />}
-                  </div>
-                  <h4 className="text-xs sm:text-sm font-bold text-zinc-900 dark:text-white tracking-tight">{feat.title}</h4>
-                  <p className="text-[11px] sm:text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">{feat.description}</p>
-                </div>
-              ))}
-            </div>
+            {/* Feature Cards Grid */}
+            {product.keyFeatures && product.keyFeatures.length > 0 && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                {product.keyFeatures.map((feat, idx) => {
+                  const titleText = typeof feat === 'string' ? feat : (feat.title || '');
+                  const descText = typeof feat === 'object' ? feat.description : null;
+                  return (
+                    <div key={idx} className="p-3.5 rounded-2xl border border-zinc-200/90 dark:border-zinc-800/90 bg-white dark:bg-[#12131a]/80 flex items-center gap-3 hover:border-purple-500/40 transition-all duration-200 shadow-sm">
+                      <div className="p-2 rounded-xl bg-purple-100 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-200 dark:border-purple-500/20 shrink-0">
+                        {idx % 4 === 0 ? <Cpu className="h-4 w-4" /> : idx % 4 === 1 ? <Droplets className="h-4 w-4" /> : idx % 4 === 2 ? <Smartphone className="h-4 w-4" /> : <Code className="h-4 w-4" />}
+                      </div>
+                      <div className="min-w-0">
+                        <span className="text-xs font-bold text-zinc-800 dark:text-zinc-100 block truncate">{titleText}</span>
+                        {descText && (
+                          <span className="text-[10px] text-zinc-500 dark:text-zinc-400 block truncate">{descText}</span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Care Instructions Box */}
+            {product.careInstructions && product.careInstructions.length > 0 && (
+              <div className="p-4 rounded-2xl border border-zinc-200/90 dark:border-zinc-800/90 bg-white dark:bg-[#12131a]/80 space-y-3 shadow-sm">
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-purple-600 dark:text-purple-400 block">
+                  CARE INSTRUCTIONS
+                </span>
+                <ul className="space-y-2 text-xs text-zinc-600 dark:text-zinc-300">
+                  {product.careInstructions.map((inst, idx) => (
+                    <li key={idx} className="flex items-start gap-2.5">
+                      {idx === 0 ? <Sparkles className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400 shrink-0 mt-0.5" /> : idx === 1 ? <Radio className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400 shrink-0 mt-0.5" /> : <Thermometer className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400 shrink-0 mt-0.5" />}
+                      <span className="leading-relaxed text-zinc-700 dark:text-zinc-300">{inst}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
-        )}
+        </div>
 
       </div>
 

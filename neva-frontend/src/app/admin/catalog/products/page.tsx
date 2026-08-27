@@ -72,6 +72,7 @@ interface Product {
   careInstructions?: string[];
   keyFeatures?: { title: string; description: string }[];
   specifications?: Record<string, any>;
+  sortOrder?: number;
 }
 
 const PRESET_COLOR_CHART = [
@@ -126,6 +127,7 @@ export default function AdminProductsPage() {
   const [status, setStatus] = useState<'draft' | 'active' | 'out_of_stock'>('draft');
   const [isNewArrival, setIsNewArrival] = useState(false);
   const [autoSku, setAutoSku] = useState(true);
+  const [sortOrder, setSortOrder] = useState<string>('0');
 
   // Category-based Variant & Attributes States
   const [materialVariants, setMaterialVariants] = useState<MaterialVariant[]>([]);
@@ -293,6 +295,7 @@ export default function AdminProductsPage() {
     setExistingMedia([]);
     setDeletedImageIds([]);
     setPrimaryIndex(0);
+    setSortOrder('0');
 
     setMaterialVariants([
       { name: 'Tough PLA (Base)', priceAdjustment: 0 },
@@ -344,6 +347,7 @@ export default function AdminProductsPage() {
     setVideoPreviews([]);
     setExistingMedia(product.images || []);
     setDeletedImageIds([]);
+    setSortOrder(String(product.sortOrder ?? 0));
 
     let parsedColorOpts: ColorOption[] = [];
     if (product.colorOptions) {
@@ -427,6 +431,7 @@ export default function AdminProductsPage() {
     formData.append('status', status);
     formData.append('isNewArrival', isNewArrival.toString());
     formData.append('primaryImageIndex', primaryIndex.toString());
+    formData.append('sortOrder', sortOrder || '0');
 
     // Append JSON Variant & Spec Fields
     formData.append('materialVariants', JSON.stringify(materialVariants));
@@ -803,7 +808,7 @@ export default function AdminProductsPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-[10px] font-semibold uppercase tracking-wider text-zinc-400 mb-1.5">
                     Stock Inventory Quantity
@@ -816,6 +821,21 @@ export default function AdminProductsPage() {
                     onChange={(e) => setStock(e.target.value)}
                     placeholder="50"
                     className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs text-zinc-900 outline-none focus:border-violet-500 focus:bg-white disabled:opacity-60"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-semibold uppercase tracking-wider text-violet-600 dark:text-violet-400 mb-1.5 font-bold">
+                    Display Rank (e.g. 1, 2, 3...)
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    disabled={isSaving}
+                    value={sortOrder}
+                    onChange={(e) => setSortOrder(e.target.value)}
+                    placeholder="1"
+                    className="w-full rounded-xl border border-violet-300 bg-violet-50/50 px-3 py-2 text-xs font-bold text-violet-900 outline-none focus:border-violet-600 focus:bg-white disabled:opacity-60"
                   />
                 </div>
 
