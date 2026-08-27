@@ -9,9 +9,8 @@ import HeroTitle from './HeroTitle';
 export default function Hero() {
     const heroVideoClassName = 'h-full w-full object-contain object-top transform -translate-y-8 lg:translate-y-0 lg:object-cover lg:object-center';
 
-    const [isUnmuted, setIsUnmuted] = useState(true);
+    const [isDesktop, setIsDesktop] = useState(false);
     const introVideoRef = useRef<HTMLVideoElement>(null);
-    const idleVideoRef = useRef<HTMLVideoElement>(null);
 
     const contentVariants = {
         hidden: { opacity: 0, y: 30, filter: 'blur(12px)', scale: 0.96 },
@@ -29,18 +28,33 @@ export default function Hero() {
     };
 
     useEffect(() => {
+        const checkIsDesktop = () => {
+            const matches = window.innerWidth >= 1024;
+            setIsDesktop(matches);
+            if (!matches && introVideoRef.current) {
+                introVideoRef.current.pause();
+            }
+        };
+
+        checkIsDesktop();
+        window.addEventListener('resize', checkIsDesktop);
+        return () => window.removeEventListener('resize', checkIsDesktop);
+    }, []);
+
+    useEffect(() => {
+        if (!isDesktop) return;
+
         const introVideo = introVideoRef.current;
         if (!introVideo) return;
 
-        // Play Yeti video with sound (unmuted) when page opens or refreshes
+        // Play Yeti video with sound (unmuted) when page opens or refreshes on Desktop
         introVideo.muted = false;
         introVideo.play().catch(() => {
-            // Fallback for Chrome autoplay policy prior to first click
             introVideo.muted = true;
             introVideo.play().catch(() => { });
 
             const enableHeroAudio = () => {
-                if (introVideoRef.current) {
+                if (introVideoRef.current && window.innerWidth >= 1024) {
                     introVideoRef.current.muted = false;
                     introVideoRef.current.play().catch(() => { });
                 }
@@ -48,7 +62,7 @@ export default function Hero() {
             window.addEventListener('click', enableHeroAudio, { once: true });
             window.addEventListener('touchstart', enableHeroAudio, { once: true });
         });
-    }, []);
+    }, [isDesktop]);
 
     return (
         <div className="relative flex w-full flex-col items-center overflow-hidden bg-transparent pb-0 pt-8 lg:pb-12 lg:pt-10 text-zinc-950 dark:text-white">
@@ -178,26 +192,28 @@ export default function Hero() {
                     </motion.div>
                 </div>
 
-                {/* RIGHT COLUMN: Hero Video Player (Hidden on Mobile & Tablet, Desktop Only) */}
-                <motion.div
-                    className="hidden lg:flex lg:col-span-5 lg:items-center lg:justify-center z-10"
-                >
-                    <div className="relative overflow-hidden w-full h-full lg:max-w-[640px] lg:h-[580px]">
+                {/* RIGHT COLUMN: Hero Video Player (Desktop Only - NEVER rendered on Mobile or Tablet) */}
+                {isDesktop && (
+                    <motion.div
+                        className="hidden lg:flex lg:col-span-5 lg:items-center lg:justify-center z-10"
+                    >
+                        <div className="relative overflow-hidden w-full h-full lg:max-w-[640px] lg:h-[580px]">
 
-                        {/* HERO VIDEO - DESKTOP ONLY PLAYBACK */}
-                        <video
-                            ref={introVideoRef}
-                            autoPlay
-                            muted
-                            playsInline
-                            preload="auto"
-                            className={`${heroVideoClassName} absolute inset-0 z-10 transition-opacity duration-500`}
-                        >
-                            <source src="/yetii.webm" type="video/webm" />
-                            <source src="/yeti_dada.mp4" type="video/mp4" />
-                        </video>
-                    </div>
-                </motion.div>
+                            {/* HERO VIDEO - DESKTOP ONLY PLAYBACK */}
+                            <video
+                                ref={introVideoRef}
+                                autoPlay
+                                muted
+                                playsInline
+                                preload="auto"
+                                className={`${heroVideoClassName} absolute inset-0 z-10 transition-opacity duration-500`}
+                            >
+                                <source src="/yetii.webm" type="video/webm" />
+                                <source src="/yeti_dada.mp4" type="video/mp4" />
+                            </video>
+                        </div>
+                    </motion.div>
+                )}
             </div>
         </div>
     );

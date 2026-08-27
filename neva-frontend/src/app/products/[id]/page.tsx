@@ -304,14 +304,14 @@ export default function DynamicProductDetailsPage() {
             </div>
           </div>
 
-          {/* Right Column: Title, Price, Customization & Actions (6 Cols) */}
-          <div className="lg:col-span-6 space-y-4 bg-white dark:bg-[#0c0d14]/70 p-5 sm:p-6 rounded-3xl border border-zinc-200/90 dark:border-zinc-800/80 shadow-lg dark:shadow-2xl backdrop-blur-xl">
+          {/* Right Column: Title, Price, Customization & Actions (6 Cols on Tablet & Laptop) */}
+          <div className="md:col-span-6 space-y-3.5 bg-white dark:bg-[#0c0d14]/70 p-4 sm:p-5 lg:p-6 rounded-3xl border border-zinc-200/90 dark:border-zinc-800/80 shadow-lg dark:shadow-2xl backdrop-blur-xl">
 
             {/* Title & Review Rating */}
-            <div className="space-y-2">
+            <div className="space-y-1.5">
 
 
-              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-zinc-900 dark:text-white leading-snug">
+              <h1 className="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-extrabold tracking-tight text-zinc-900 dark:text-white leading-snug">
                 {product.name}
               </h1>
 
@@ -328,11 +328,11 @@ export default function DynamicProductDetailsPage() {
             </div>
 
             {/* Price Header Box */}
-            <div className="p-3.5 rounded-2xl bg-zinc-100/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800/90 flex items-center justify-between">
+            <div className="p-3 rounded-2xl bg-zinc-100/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800/90 flex items-center justify-between">
               <div>
                 <span className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider block mb-0.5">Total Price</span>
-                <div className="flex items-baseline gap-2.5">
-                  <span className="text-2xl sm:text-3xl font-black font-mono text-zinc-900 dark:text-white tracking-tight">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-xl sm:text-2xl lg:text-3xl font-black font-mono text-zinc-900 dark:text-white tracking-tight">
                     ₹{(finalDiscountPrice || finalPrice).toLocaleString()}
                   </span>
                   {finalDiscountPrice && (
@@ -350,7 +350,7 @@ export default function DynamicProductDetailsPage() {
             </div>
 
             {/* Description */}
-            <p className="text-xs sm:text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed border-t border-b border-zinc-200/80 dark:border-zinc-800/80 py-2.5">
+            <p className="text-xs lg:text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed border-t border-b border-zinc-200/80 dark:border-zinc-800/80 py-2.5">
               {product.description}
             </p>
 
@@ -426,16 +426,16 @@ export default function DynamicProductDetailsPage() {
             </button>
 
             {/* Side-by-Side Action Buttons */}
-            <div className="grid grid-cols-2 gap-3 pt-1">
+            <div className="grid grid-cols-2 gap-2.5 pt-1">
               {/* Buy Now Button (Matching Card Gradient Fill Overlay Style) */}
               <button
                 type="button"
                 onClick={handleBuyNow}
-                className="group/btn relative overflow-hidden w-full py-3 rounded-2xl border border-violet-600 bg-violet-600 text-white text-xs sm:text-sm font-black uppercase tracking-wider shadow-lg shadow-violet-600/25 transition-all duration-300 active:scale-98 flex items-center justify-center gap-2 cursor-pointer hover:border-violet-500"
+                className="group/btn relative overflow-hidden w-full py-2.5 sm:py-3 rounded-2xl border border-violet-600 bg-violet-600 text-white text-xs font-black uppercase tracking-wider shadow-lg shadow-violet-600/25 transition-all duration-300 active:scale-98 flex items-center justify-center gap-1.5 cursor-pointer hover:border-violet-500"
               >
                 <span className="absolute inset-0 bg-gradient-to-r from-fuchsia-600 to-indigo-600 w-0 group-hover/btn:w-full transition-all duration-500 ease-out z-0" />
-                <span className="relative z-10 flex items-center justify-center gap-2">
-                  <Zap className="h-4 w-4 fill-current text-white" />
+                <span className="relative z-10 flex items-center justify-center gap-1.5 truncate">
+                  <Zap className="h-4 w-4 fill-current text-white shrink-0" />
                   Buy Now
                 </span>
               </button>
@@ -444,11 +444,11 @@ export default function DynamicProductDetailsPage() {
               <button
                 type="button"
                 onClick={handleWhatsAppChat}
-                className="group/btn relative overflow-hidden w-full py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 border border-emerald-500 active:scale-98 text-white font-extrabold text-xs sm:text-sm uppercase tracking-wider transition-all duration-300 shadow-md shadow-emerald-600/25 flex items-center justify-center gap-2 cursor-pointer"
+                className="group/btn relative overflow-hidden w-full py-2.5 sm:py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 border border-emerald-500 active:scale-98 text-white font-extrabold text-xs uppercase tracking-wider transition-all duration-300 shadow-md shadow-emerald-600/25 flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 <span className="absolute inset-0 bg-gradient-to-r from-emerald-500 to-teal-600 w-0 group-hover/btn:w-full transition-all duration-500 ease-out z-0" />
-                <span className="relative z-10 flex items-center justify-center gap-2">
-                  <MessageCircle className="h-4 w-4 fill-white text-white" />
+                <span className="relative z-10 flex items-center justify-center gap-1.5 truncate">
+                  <MessageCircle className="h-4 w-4 fill-white text-white shrink-0" />
                   Chat on WhatsApp
                 </span>
               </button>
