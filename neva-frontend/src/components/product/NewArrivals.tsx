@@ -76,6 +76,23 @@ export default function NewArrivals() {
         setSelectedProduct(product);
     };
 
+    const handleBuyNow = (product: Product) => {
+        const token = typeof window !== 'undefined' ? localStorage.getItem('neva-token') : null;
+        if (!token) {
+            showToast('🔒 Please Sign In or Create an Account to proceed with Buy Now!');
+            setTimeout(() => {
+                router.push('/login');
+            }, 1500);
+            return;
+        }
+
+        localStorage.setItem('neva-buynow-item', JSON.stringify({
+            product,
+            quantity: 1
+        }));
+        router.push('/checkout?buyNow=true');
+    };
+
     // If API loaded and no live products exist, don't show dummy data
     if (!loading && liveProducts.length === 0) {
         return null;
@@ -145,6 +162,7 @@ export default function NewArrivals() {
                                     onQuickShop={handleAddToCart}
                                     onQuickView={handleQuickView}
                                     onAddToCart={handleAddToCart}
+                                    onBuyNow={handleBuyNow}
                                 />
                             </div>
                         ))}

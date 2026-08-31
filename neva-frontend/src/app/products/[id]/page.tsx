@@ -222,17 +222,14 @@ export default function DynamicProductDetailsPage() {
       return;
     }
 
-    const isAlreadyInCart = cartItems.some((item) => String(item.product.id) === String(product.id));
-    if (!isAlreadyInCart) {
-      dispatch(addToCart({
-        product: {
-          ...product,
-          price: finalDiscountPrice || finalPrice,
-        },
-        quantity: 1,
-      }));
-    }
-    router.push('/checkout');
+    localStorage.setItem('neva-buynow-item', JSON.stringify({
+      product: {
+        ...product,
+        price: finalDiscountPrice || finalPrice,
+      },
+      quantity: 1,
+    }));
+    router.push('/checkout?buyNow=true');
   };
 
   return (

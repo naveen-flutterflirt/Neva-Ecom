@@ -178,11 +178,11 @@ export default function IotProductsPage() {
       return;
     }
 
-    const alreadyInCart = cartItems.some((item) => String(item.product.id) === String(product.id));
-    if (!alreadyInCart) {
-      dispatch(addToCart({ product, quantity: 1 }));
-    }
-    router.push('/checkout');
+    localStorage.setItem('neva-buynow-item', JSON.stringify({
+      product,
+      quantity: 1
+    }));
+    router.push('/checkout?buyNow=true');
   };
 
   // Dynamically extract color options from products schema + standard swatches

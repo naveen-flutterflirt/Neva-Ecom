@@ -41,6 +41,7 @@ export default function CheckoutPage() {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const cartItems = useAppSelector((state) => state.cart.items);
+  const [checkoutItems, setCheckoutItems] = useState<any[]>([]);
 
   const [isMounted, setIsMounted] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -79,8 +80,8 @@ export default function CheckoutPage() {
     setTimeout(() => setToastMessage(null), 3500);
   };
 
-  // Calculate cart subtotal
-  const subtotal = cartItems.reduce((sum, item) => sum + Number(item.product.price) * item.quantity, 0);
+  // Calculate checkout items subtotal
+  const subtotal = checkoutItems.reduce((sum, item) => sum + Number(item.product.price) * item.quantity, 0);
 
   // Dynamic Shipping Fee Calculator via Shiprocket API
   useEffect(() => {
@@ -94,7 +95,7 @@ export default function CheckoutPage() {
     const fetchShippingRate = async () => {
       setIsCalculatingShipping(true);
       try {
-        const totalQuantity = cartItems.reduce((acc, item) => acc + item.quantity, 0);
+        const totalQuantity = checkoutItems.reduce((acc, item) => acc + item.quantity, 0);
         const totalWeight = totalQuantity * 0.5; // Each product is 0.5 kg
         const isCod = paymentMethod === 'cod';
 
@@ -117,7 +118,7 @@ export default function CheckoutPage() {
 
     const timer = setTimeout(fetchShippingRate, 500); // debounce API call as user types pincode
     return () => clearTimeout(timer);
-  }, [pincode, paymentMethod, subtotal]);
+  }, [pincode, paymentMethod, subtotal, checkoutItems]);
 
   // Pre-fill user data & saved default address into form fields on mount
   useEffect(() => {
@@ -203,6 +204,27 @@ export default function CheckoutPage() {
     loadRazorpayScript().catch(err => console.warn('Razorpay pre-load error:', err));
   }, []);
 
+  // Load checkout items from buyNow storage or Redux cart fallback
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const searchParams = new URLSearchParams(window.location.search);
+      const isBuyNow = searchParams.get('buyNow') === 'true';
+      if (isBuyNow) {
+        const buyNowData = localStorage.getItem('neva-buynow-item');
+        if (buyNowData) {
+          try {
+            const parsed = JSON.parse(buyNowData);
+            setCheckoutItems([parsed]);
+            return;
+          } catch (e) {
+            console.warn('Failed to parse buyNow data:', e);
+          }
+        }
+      }
+    }
+    setCheckoutItems(cartItems);
+  }, [cartItems]);
+
   // Calculate Order Prices
   const discountAmount = Math.round((subtotal * appliedDiscount) / 100);
   const codFee = paymentMethod === 'cod' ? 49 : 0;
@@ -244,8 +266,8 @@ export default function CheckoutPage() {
   const handlePlaceOrder = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (cartItems.length === 0) {
-      showToast('❌ Your cart is empty!');
+    if (checkoutItems.length === 0) {
+      showToast('❌ Your order is empty!');
       return;
     }
 
@@ -264,7 +286,7 @@ export default function CheckoutPage() {
     const orderPayload = {
       orderId: `NEVA-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`,
       userId: userId || undefined,
-      items: cartItems.map(i => ({
+      items: checkoutItems.map(i => ({
         id: i.product.id,
         name: i.product.name,
         price: Number(i.product.price),
@@ -495,7 +517,7 @@ export default function CheckoutPage() {
               </div>
             </div>
           </div>
-        ) : cartItems.length === 0 ? (
+        ) : checkoutItems.length === 0 ? (
           <div className="bg-white dark:bg-[#0c0d14] rounded-3xl border border-zinc-200 dark:border-zinc-800 p-8 sm:p-12 text-center max-w-2xl mx-auto space-y-5 shadow-xl">
             <div className="h-16 w-16 bg-purple-100 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 rounded-full flex items-center justify-center mx-auto border border-purple-200 dark:border-purple-800/50">
               <ShoppingBag className="h-8 w-8" />
@@ -810,14 +832,14 @@ export default function CheckoutPage() {
                 <div className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800/80 pb-3">
                   <h2 className="text-base font-extrabold text-zinc-900 dark:text-white flex items-center gap-2">
                     <ShoppingBag className="h-4.5 w-4.5 text-purple-600 dark:text-purple-400" />
-                    Order Summary ({cartItems.reduce((acc, i) => acc + i.quantity, 0)} Items)
+                    Order Summary ({checkoutItems.reduce((acc, i) => acc + i.quantity, 0)} Items)
                   </h2>
 
                 </div>
 
                 {/* Items Mini List */}
                 <div className="space-y-3 max-h-[260px] overflow-y-auto pr-1 scrollbar-thin">
-                  {cartItems.map((item) => (
+                  {checkoutItems.map((item) => (
                     <div key={item.product.id} className="flex items-center gap-3 bg-zinc-50/70 dark:bg-zinc-900/40 p-2.5 rounded-2xl border border-zinc-200/60 dark:border-zinc-800/60">
                       <img
                         src={item.product.image || (item.product.images && item.product.images[0]?.imageUrl) || ''}
