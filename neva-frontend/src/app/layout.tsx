@@ -13,8 +13,25 @@ const plusJakartaSans = Plus_Jakarta_Sans({
 });
 
 export const metadata = {
-  title: 'Neva E-Commerce',
-  description: 'Clean and modern shopping experience',
+  title: 'NIVASHOP - Premium 3D Printed Accessories & IoT Hardware',
+  description: 'Shop premium 3D printed desk accessories, custom filaments, and developer-ready smart IoT hardware for creators at NIVASHOP.',
+  icons: {
+    icon: '/logobgg.png',
+    shortcut: '/logobgg.png',
+    apple: '/logobgg.png',
+  },
+  openGraph: {
+    title: 'NIVASHOP - Premium 3D Printed Accessories & IoT Hardware',
+    description: 'Shop premium 3D printed desk accessories, custom filaments, and developer-ready smart IoT hardware for creators at NIVASHOP.',
+    images: [
+      {
+        url: '/logobgg.png',
+        width: 800,
+        height: 800,
+        alt: 'NIVASHOP Logo',
+      },
+    ],
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
