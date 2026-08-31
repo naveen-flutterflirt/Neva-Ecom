@@ -62,6 +62,8 @@ export default function ThreeDProductsPage() {
   const cartItems = useAppSelector((state) => state.cart.items);
 
   const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
+  const [selectedSubCategoryId, setSelectedSubCategoryId] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
 
   // Filters state (Category removed, Color Circles added)
@@ -97,13 +99,21 @@ export default function ThreeDProductsPage() {
     setTimeout(() => setToastMessage(null), 3000);
   };
 
-  // Fetch 3D Products from backend API
+  // Fetch 3D Products and Categories from backend API in parallel
   const fetchProducts = async () => {
     try {
       setIsLoading(true);
-      const res = await apiClient('/products');
-      if (res && Array.isArray(res.data)) {
-        const threeDList: Product[] = res.data
+      const [prodRes, catRes] = await Promise.all([
+        apiClient('/products'),
+        apiClient('/categories')
+      ]);
+
+      if (catRes && Array.isArray(catRes.data)) {
+        setCategories(catRes.data);
+      }
+
+      if (prodRes && Array.isArray(prodRes.data)) {
+        const threeDList: Product[] = prodRes.data
           .filter((p: any) => {
             const catName = typeof p.category === 'object' && p.category !== null ? p.category.name : (p.category || '');
             const catSlug = typeof p.category === 'object' && p.category !== null ? p.category.slug : '';
@@ -133,6 +143,7 @@ export default function ThreeDProductsPage() {
             specifications: safeParseJSON(p.specifications, {}),
             specs: safeParseJSON(p.specifications, {}),
             sortOrder: p.sortOrder !== undefined && p.sortOrder !== null ? Number(p.sortOrder) : 999,
+            subCategoryId: p.subCategoryId || null,
           }));
 
         setProducts(threeDList);
@@ -186,6 +197,12 @@ export default function ThreeDProductsPage() {
     }
     router.push('/checkout');
   };
+
+  // Dynamically get subcategories of '3d-product'
+  const subcategories = useMemo(() => {
+    const parent3d = categories.find((c: any) => c.slug === '3d-product');
+    return parent3d ? (parent3d.subcategories || []) : [];
+  }, [categories]);
 
   // Dynamically extract color options from products schema + standard swatches
   const availableColorSwatches = useMemo(() => {
@@ -309,6 +326,11 @@ export default function ThreeDProductsPage() {
           return false;
         }
 
+        // Subcategory filter
+        if (selectedSubCategoryId && p.subCategoryId !== selectedSubCategoryId) {
+          return false;
+        }
+
         return true;
       })
       .sort((a, b) => {
@@ -317,7 +339,7 @@ export default function ThreeDProductsPage() {
         if (sortBy === 'rating') return (b.rating || 0) - (a.rating || 0);
         return (a.sortOrder ?? 999) - (b.sortOrder ?? 999);
       });
-  }, [products, searchQuery, priceLimit, selectedColors, selectedMaterials, minRating, inStockOnly, onSaleOnly, sortBy]);
+  }, [products, searchQuery, priceLimit, selectedColors, selectedMaterials, minRating, inStockOnly, onSaleOnly, sortBy, selectedSubCategoryId]);
 
   const hasActiveFilters =
     searchQuery ||
@@ -326,7 +348,8 @@ export default function ThreeDProductsPage() {
     selectedMaterials.length > 0 ||
     minRating > 0 ||
     inStockOnly ||
-    onSaleOnly;
+    onSaleOnly ||
+    selectedSubCategoryId;
 
   const resetAllFilters = () => {
     setSearchQuery('');
@@ -337,6 +360,7 @@ export default function ThreeDProductsPage() {
     setInStockOnly(false);
     setOnSaleOnly(false);
     setSortBy('featured');
+    setSelectedSubCategoryId('');
   };
 
   // Filter Sidebar UI Component
@@ -662,70 +686,37 @@ export default function ThreeDProductsPage() {
           </div>
 
           {/* Right Product Grid Area (9 Cols) */}
-          <div className="lg:col-span-9 space-y-4">
+          <div className="lg:col-span-9 space-y-6">
 
-            {/* Active Filter Badges Pill Bar */}
-            {hasActiveFilters && (
-              <div className="flex flex-wrap items-center gap-2 bg-white dark:bg-[#111218] border border-zinc-200/80 dark:border-zinc-800/80 p-3 rounded-xl shadow-sm text-xs">
-                <span className="text-zinc-400 font-bold text-[10px] uppercase">Active:</span>
-                {priceLimit < maxPrice && (
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-violet-50 dark:bg-violet-950/40 border border-violet-200 dark:border-violet-800/50 rounded-lg text-violet-700 dark:text-violet-300 font-semibold text-[11px]">
-                    Max ₹{priceLimit.toLocaleString('en-IN')}
-                    <button onClick={() => setPriceLimit(maxPrice)} className="hover:text-red-500">
-                      <X className="h-3 w-3" />
-                    </button>
-                  </span>
-                )}
-                {selectedColors.map((color) => (
-                  <span key={color} className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-violet-50 dark:bg-violet-950/40 border border-violet-200 dark:border-violet-800/50 rounded-lg text-violet-700 dark:text-violet-300 font-semibold text-[11px]">
-                    Color: {color}
-                    <button onClick={() => toggleColor(color)} className="hover:text-red-500">
-                      <X className="h-3 w-3" />
-                    </button>
-                  </span>
+            {/* Dynamic Subcategory Filter Pills */}
+            {subcategories.length > 0 && (
+              <div className="flex items-center gap-2 overflow-x-auto pb-2.5 scrollbar-none border-b border-zinc-200/80 dark:border-zinc-800/80 mb-2">
+                <button
+                  onClick={() => setSelectedSubCategoryId('')}
+                  className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition cursor-pointer border ${selectedSubCategoryId === ''
+                      ? 'bg-violet-600 border-violet-600 text-white shadow-md shadow-violet-600/10'
+                      : 'bg-white dark:bg-[#111218] border-zinc-200 dark:border-zinc-800 text-zinc-650 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-white'
+                    }`}
+                >
+                  All 3D Products
+                </button>
+                {subcategories.map((sub: any) => (
+                  <button
+                    key={sub.id}
+                    onClick={() => setSelectedSubCategoryId(sub.id)}
+                    className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition cursor-pointer border ${selectedSubCategoryId === sub.id
+                        ? 'bg-violet-600 border-violet-600 text-white shadow-md shadow-violet-600/10'
+                        : 'bg-white dark:bg-[#111218] border-zinc-200 dark:border-zinc-800 text-zinc-650 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-white'
+                      }`}
+                  >
+                    {sub.name}
+                  </button>
                 ))}
-                {selectedMaterials.map((mat) => (
-                  <span key={mat} className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-violet-50 dark:bg-violet-950/40 border border-violet-200 dark:border-violet-800/50 rounded-lg text-violet-700 dark:text-violet-300 font-semibold text-[11px]">
-                    Material: {mat}
-                    <button onClick={() => toggleMaterial(mat)} className="hover:text-red-500">
-                      <X className="h-3 w-3" />
-                    </button>
-                  </span>
-                ))}
-                {minRating > 0 && (
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-violet-50 dark:bg-violet-950/40 border border-violet-200 dark:border-violet-800/50 rounded-lg text-violet-700 dark:text-violet-300 font-semibold text-[11px]">
-                    Rating: {minRating}★ &amp; Up
-                    <button onClick={() => setMinRating(0)} className="hover:text-red-500">
-                      <X className="h-3 w-3" />
-                    </button>
-                  </span>
-                )}
-                {inStockOnly && (
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-violet-50 dark:bg-violet-950/40 border border-violet-200 dark:border-violet-800/50 rounded-lg text-violet-700 dark:text-violet-300 font-semibold text-[11px]">
-                    In Stock Only
-                    <button onClick={() => setInStockOnly(false)} className="hover:text-red-500">
-                      <X className="h-3 w-3" />
-                    </button>
-                  </span>
-                )}
-                {onSaleOnly && (
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-violet-50 dark:bg-violet-950/40 border border-violet-200 dark:border-violet-800/50 rounded-lg text-violet-700 dark:text-violet-300 font-semibold text-[11px]">
-                    On Sale
-                    <button onClick={() => setOnSaleOnly(false)} className="hover:text-red-500">
-                      <X className="h-3 w-3" />
-                    </button>
-                  </span>
-                )}
-                {searchQuery && (
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-violet-50 dark:bg-violet-950/40 border border-violet-200 dark:border-violet-800/50 rounded-lg text-violet-700 dark:text-violet-300 font-semibold text-[11px]">
-                    "{searchQuery}"
-                    <button onClick={() => setSearchQuery('')} className="hover:text-red-500">
-                      <X className="h-3 w-3" />
-                    </button>
-                  </span>
-                )}
               </div>
             )}
+
+            {/* Active Filter Badges Pill Bar */}
+
 
             {/* Product Cards Grid / Loading / Empty */}
             {isLoading ? (

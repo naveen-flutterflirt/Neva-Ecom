@@ -8,7 +8,9 @@ import {
   Trash2,
   X,
   Loader2,
-  AlertTriangle
+  AlertTriangle,
+  ChevronRight,
+  ChevronDown
 } from 'lucide-react';
 import Toast from '../../../../components/ui/Toast';
 import Pagination from '../../../../components/ui/Pagination';
@@ -21,12 +23,15 @@ interface Category {
   slug: string;
   description: string | null;
   status: 'active' | 'inactive';
+  parentId?: string | null;
+  parent_id?: string | null;
 }
 
 const BACKEND_URL = `${API_URL}/categories`;
 
 export default function AdminCategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
+  const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -47,11 +52,21 @@ export default function AdminCategoriesPage() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null);
 
+  // Tree Expand State
+  const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
+  const toggleExpand = (id: string) => {
+    setExpandedCategories(prev => ({
+      ...prev,
+      [id]: !prev[id]
+    }));
+  };
+
   // Form Input States
   const [name, setName] = useState('');
   const [slug, setSlug] = useState('');
   const [description, setDescription] = useState('');
   const [status, setStatus] = useState<'active' | 'inactive'>('active');
+  const [parentId, setParentId] = useState('');
   const [autoSlug, setAutoSlug] = useState(true);
 
   const showToast = (message: string) => {
@@ -61,23 +76,33 @@ export default function AdminCategoriesPage() {
     }, 3000);
   };
 
-  // Fetch Categories
+  // Fetch Categories and Products in parallel
   const fetchCategories = async () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(BACKEND_URL);
-      if (!response.ok) {
+      const [catRes, prodRes] = await Promise.all([
+        fetch(BACKEND_URL),
+        fetch(`${API_URL}/products`)
+      ]);
+
+      if (!catRes.ok) {
         throw new Error('Server responded with an error');
       }
-      const result = await response.json();
-      if (result.success) {
-        setCategories(result.data);
-      } else {
-        throw new Error(result.message || 'Failed to fetch categories');
+
+      const catData = await catRes.json();
+      if (catData.success) {
+        setCategories(catData.data);
+      }
+
+      if (prodRes.ok) {
+        const prodData = await prodRes.json();
+        if (prodData.success) {
+          setProducts(prodData.data || []);
+        }
       }
     } catch (err: any) {
-      console.warn('Backend connection failed, falling back to empty category state. Error:', err.message);
+      console.warn('Backend connection failed, falling back. Error:', err.message);
       setCategories([]);
     } finally {
       setLoading(false);
@@ -108,6 +133,7 @@ export default function AdminCategoriesPage() {
     setSlug('');
     setDescription('');
     setStatus('active');
+    setParentId('');
     setAutoSlug(true);
     setIsModalOpen(true);
   };
@@ -119,6 +145,7 @@ export default function AdminCategoriesPage() {
     setSlug(category.slug);
     setDescription(category.description || '');
     setStatus(category.status);
+    setParentId(category.parentId || category.parent_id || '');
     setAutoSlug(false);
     setIsModalOpen(true);
   };
@@ -136,7 +163,8 @@ export default function AdminCategoriesPage() {
       name,
       slug,
       description: description || null,
-      status
+      status,
+      parentId: parentId || null
     };
 
     try {
@@ -225,6 +253,7 @@ export default function AdminCategoriesPage() {
   }, [searchQuery]);
 
   const filteredCategories = categories.filter(category => {
+    if (category.parentId || category.parent_id) return false;
     const query = searchQuery.toLowerCase();
     return (
       category.name.toLowerCase().includes(query) ||
@@ -296,54 +325,145 @@ export default function AdminCategoriesPage() {
                       No categories found. Click "Add Category" to get started.
                     </td>
                   </tr>
-                ) : (
-                  paginatedCategories.map((category, index) => (
-                    <tr
-                      key={category.id}
-                      className={`hover:bg-zinc-50 transition-colors duration-150 ${deletingId === category.id ? 'opacity-40 pointer-events-none bg-red-50' : ''
-                        }`}
-                    >
-                      <td className="px-6 py-3.5 font-mono text-zinc-400 text-[11px] font-semibold">{(currentPage - 1) * itemsPerPage + index + 1}</td>
-                      <td className="px-6 py-3.5">
-                        <span className="font-semibold text-zinc-900 text-xs">{category.name}</span>
-                      </td>
-                      <td className="px-6 py-3.5 text-zinc-500 font-mono text-[11px]">{category.slug}</td>
-                      <td className="px-6 py-3.5 text-zinc-500 text-[11px] max-w-[200px]">
-                        <span className="block truncate">{category.description || '—'}</span>
-                      </td>
-                      <td className="px-6 py-3.5">
-                        <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold ${category.status === 'active'
-                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                            : 'bg-zinc-100 text-zinc-500 border border-zinc-200'
-                          }`}>
-                          <span className={`h-1.5 w-1.5 rounded-full ${category.status === 'active' ? 'bg-emerald-500' : 'bg-zinc-400'}`} />
-                          {category.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-3.5 text-right">
-                        <div className="flex items-center justify-end gap-1.5">
-                          <button
-                            onClick={() => openEditModal(category)}
-                            disabled={deletingId !== null}
-                            className="inline-flex items-center gap-1 px-2.5 py-1.5 text-[11px] font-semibold rounded-lg bg-violet-50 text-violet-700 hover:bg-violet-100 border border-violet-100 transition-colors disabled:opacity-30"
-                            title="Edit"
-                          >
-                            <Edit2 className="h-3 w-3" />
-                            Edit
-                          </button>
-                          <button
-                            onClick={() => openDeleteModal(category)}
-                            disabled={deletingId !== null}
-                            className="inline-flex items-center gap-1 px-2.5 py-1.5 text-[11px] font-semibold rounded-lg bg-red-50 text-red-600 hover:bg-red-100 border border-red-100 transition-colors disabled:opacity-30"
-                            title="Delete"
-                          >
-                            <Trash2 className="h-3 w-3" />
-                            Delete
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
+              ) : (
+                paginatedCategories.map((category, index) => {
+                    const subcats = categories.filter(c => c.parentId === category.id || c.parent_id === category.id);
+                    const isExpanded = !!expandedCategories[category.id];
+
+                    return (
+                      <React.Fragment key={category.id}>
+                        <tr
+                          className={`hover:bg-zinc-50 transition-colors duration-150 ${deletingId === category.id ? 'opacity-40 pointer-events-none bg-red-50' : ''
+                            }`}
+                        >
+                          <td className="px-6 py-3.5 font-mono text-zinc-400 text-[11px] font-semibold">{(currentPage - 1) * itemsPerPage + index + 1}</td>
+                          <td className="px-6 py-3.5">
+                            <div className="flex items-center gap-2">
+                              {subcats.length > 0 ? (
+                                <button
+                                  type="button"
+                                  onClick={() => toggleExpand(category.id)}
+                                  className="p-1 rounded-lg text-zinc-400 hover:text-zinc-650 hover:bg-zinc-100 transition shrink-0 cursor-pointer"
+                                >
+                                  {isExpanded ? (
+                                    <ChevronDown className="h-3.5 w-3.5 text-zinc-500" />
+                                  ) : (
+                                    <ChevronRight className="h-3.5 w-3.5 text-zinc-500" />
+                                  )}
+                                </button>
+                              ) : (
+                                <div className="w-5 h-5 shrink-0" />
+                              )}
+                              <span
+                                onClick={() => subcats.length > 0 && toggleExpand(category.id)}
+                                className={`font-semibold text-zinc-900 text-xs ${subcats.length > 0 ? 'cursor-pointer hover:text-violet-600 transition' : ''}`}
+                              >
+                                {category.name}
+                              </span>
+                              {subcats.length > 0 && (
+                                <span className="text-[9px] bg-violet-50 text-violet-750 px-1.5 py-0.5 rounded-lg border border-violet-100 font-bold">
+                                  {subcats.length} subcategories
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-6 py-3.5 text-zinc-500 font-mono text-[11px]">{category.slug}</td>
+                          <td className="px-6 py-3.5 text-zinc-500 text-[11px] max-w-[200px]">
+                            <span className="block truncate">{category.description || '—'}</span>
+                          </td>
+                          <td className="px-6 py-3.5">
+                            <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold ${category.status === 'active'
+                                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                : 'bg-zinc-100 text-zinc-500 border border-zinc-200'
+                              }`}>
+                              <span className={`h-1.5 w-1.5 rounded-full ${category.status === 'active' ? 'bg-emerald-500' : 'bg-zinc-400'}`} />
+                              {category.status}
+                            </span>
+                          </td>
+                          <td className="px-6 py-3.5 text-right">
+                            <div className="flex items-center justify-end gap-1.5">
+                              <button
+                                onClick={() => openEditModal(category)}
+                                disabled={deletingId !== null}
+                                className="inline-flex items-center gap-1 px-2.5 py-1.5 text-[11px] font-semibold rounded-lg bg-violet-50 text-violet-700 hover:bg-violet-100 border border-violet-100 transition-colors disabled:opacity-30"
+                                title="Edit"
+                              >
+                                <Edit2 className="h-3 w-3" />
+                                Edit
+                              </button>
+                              <button
+                                onClick={() => openDeleteModal(category)}
+                                disabled={deletingId !== null}
+                                className="inline-flex items-center gap-1 px-2.5 py-1.5 text-[11px] font-semibold rounded-lg bg-red-50 text-red-650 hover:bg-red-100 border border-red-100 transition-colors disabled:opacity-30"
+                                title="Delete"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                                Delete
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+
+                        {isExpanded && subcats.map((sub, subIdx) => {
+                          const count = products.filter(p => p.subCategoryId === sub.id).length;
+                          const isLast = subIdx === subcats.length - 1;
+
+                          return (
+                            <tr
+                              key={sub.id}
+                              className={`bg-zinc-50/20 border-b border-zinc-100/60 transition-colors duration-150 ${deletingId === sub.id ? 'opacity-40 pointer-events-none bg-red-50' : ''
+                                }`}
+                            >
+                              <td className="px-6 py-2.5 text-zinc-300 font-bold select-none text-right pr-8 text-[11px]">
+                                {isLast ? '└' : '├'}
+                              </td>
+                              <td className="px-6 py-2.5">
+                                <div className="flex items-center gap-2 pl-4 border-l border-dashed border-zinc-250 ml-1 py-1 relative">
+                                  <span className="font-semibold text-zinc-700 text-[11px]">{sub.name}</span>
+                                  <span className="px-1.5 py-0.2 bg-zinc-100 border border-zinc-200 text-zinc-500 rounded font-mono text-[9px] font-bold">
+                                    {count} {count === 1 ? 'item' : 'items'}
+                                  </span>
+                                </div>
+                              </td>
+                              <td className="px-6 py-2.5 text-zinc-450 font-mono text-[11px]">{sub.slug}</td>
+                              <td className="px-6 py-2.5 text-zinc-400 text-[11px]">Subcategory</td>
+                              <td className="px-6 py-2.5">
+                                <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold border ${sub.status === 'active'
+                                    ? 'bg-emerald-50 text-emerald-600 border-emerald-250'
+                                    : 'bg-zinc-100 text-zinc-500 border-zinc-200'
+                                  }`}>
+                                  <span className={`h-1 w-1 rounded-full ${sub.status === 'active' ? 'bg-emerald-400' : 'bg-zinc-400'}`} />
+                                  {sub.status}
+                                </span>
+                              </td>
+                              <td className="px-6 py-2.5 text-right">
+                                <div className="flex items-center justify-end gap-1.5">
+                                  <button
+                                    onClick={() => openEditModal(sub)}
+                                    disabled={deletingId !== null}
+                                    className="inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-semibold rounded-lg bg-zinc-50 text-zinc-650 hover:bg-zinc-100 border border-zinc-200 transition-colors disabled:opacity-30"
+                                    title="Edit"
+                                  >
+                                    <Edit2 className="h-2.5 w-2.5" />
+                                    Edit
+                                  </button>
+                                  <button
+                                    onClick={() => openDeleteModal(sub)}
+                                    disabled={deletingId !== null}
+                                    className="inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-semibold rounded-lg bg-red-50/50 text-red-650 hover:bg-red-100/70 border border-red-100 transition-colors disabled:opacity-30"
+                                    title="Delete"
+                                  >
+                                    <Trash2 className="h-2.5 w-2.5" />
+                                    Delete
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </React.Fragment>
+                    );
+                  })
                 )}
               </tbody>
             </table>

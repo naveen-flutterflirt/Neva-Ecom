@@ -23,6 +23,8 @@ interface Category {
   id: string;
   name: string;
   slug: string;
+  parentId?: string | null;
+  parent_id?: string | null;
 }
 
 interface ProductImage {
@@ -73,6 +75,11 @@ interface Product {
   keyFeatures?: { title: string; description: string }[];
   specifications?: Record<string, any>;
   sortOrder?: number;
+  subCategoryId?: string | null;
+  subCategory?: {
+    id: string;
+    name: string;
+  } | null;
 }
 
 const PRESET_COLOR_CHART = [
@@ -120,6 +127,7 @@ export default function AdminProductsPage() {
   const [name, setName] = useState('');
   const [sku, setSku] = useState('');
   const [categoryId, setCategoryId] = useState('');
+  const [subCategoryId, setSubCategoryId] = useState('');
   const [price, setPrice] = useState('');
   const [discountPrice, setDiscountPrice] = useState('');
   const [stock, setStock] = useState('');
@@ -281,6 +289,7 @@ export default function AdminProductsPage() {
     setName('');
     setSku('');
     setCategoryId(categories[0]?.id || '');
+    setSubCategoryId('');
     setPrice('');
     setDiscountPrice('');
     setStock('');
@@ -334,6 +343,7 @@ export default function AdminProductsPage() {
     setName(product.name);
     setSku(product.sku);
     setCategoryId(product.categoryId);
+    setSubCategoryId(product.subCategoryId || '');
     setPrice(product.price);
     setDiscountPrice(product.discountPrice || '');
     setStock(product.stock.toString());
@@ -392,11 +402,21 @@ export default function AdminProductsPage() {
 
     let parsedFeatures: { title: string; description: string }[] = [];
     if (product.keyFeatures) {
+      let rawFeatures: any = [];
       if (typeof product.keyFeatures === 'string') {
-        try { parsedFeatures = JSON.parse(product.keyFeatures); } catch (e) { parsedFeatures = []; }
+        try { rawFeatures = JSON.parse(product.keyFeatures); } catch (e) { rawFeatures = []; }
       } else if (Array.isArray(product.keyFeatures)) {
-        parsedFeatures = product.keyFeatures;
+        rawFeatures = product.keyFeatures;
       }
+      parsedFeatures = rawFeatures.map((feat: any) => {
+        if (typeof feat === 'string') {
+          return { title: feat, description: '' };
+        }
+        return {
+          title: feat?.title || '',
+          description: feat?.description || ''
+        };
+      });
     }
     setKeyFeatures(parsedFeatures);
     setSpecifications(product.specifications || {});
@@ -424,6 +444,7 @@ export default function AdminProductsPage() {
     formData.append('name', name);
     formData.append('sku', sku);
     formData.append('categoryId', categoryId);
+    formData.append('subCategoryId', subCategoryId || '');
     formData.append('price', price);
     formData.append('discountPrice', discountPrice);
     formData.append('stock', stock);
@@ -625,9 +646,15 @@ export default function AdminProductsPage() {
                           <span className="font-mono text-[11px] text-zinc-500 bg-zinc-100 px-1.5 py-0.5 rounded">{product.sku}</span>
                         </td>
                         <td className="px-6 py-3.5">
-                          <span className="text-[11px] bg-zinc-100 border border-zinc-200 rounded-md px-2 py-0.5 text-zinc-700 font-medium">
+                          <span className="text-[11px] bg-zinc-100 border border-zinc-200 rounded-md px-2 py-0.5 text-zinc-700 font-medium block w-fit">
                             {product.category?.name || '—'}
                           </span>
+                          {product.subCategory && (
+                            <span className="text-[10px] text-violet-600 bg-violet-50/60 border border-violet-100 rounded-lg px-2 py-0.5 font-medium inline-flex items-center gap-1 mt-1.5">
+                              <span className="h-1 w-1 rounded-full bg-violet-500 animate-pulse" />
+                              {product.subCategory.name}
+                            </span>
+                          )}
                         </td>
                         <td className="px-6 py-3.5">
                           {product.discountPrice ? (
@@ -755,7 +782,7 @@ export default function AdminProductsPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-[10px] font-semibold uppercase tracking-wider text-zinc-400 mb-1.5">
                     Category
@@ -764,17 +791,48 @@ export default function AdminProductsPage() {
                     value={categoryId}
                     required
                     disabled={isSaving}
-                    onChange={(e) => setCategoryId(e.target.value)}
+                    onChange={(e) => {
+                      setCategoryId(e.target.value);
+                      setSubCategoryId('');
+                    }}
                     className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs text-zinc-900 outline-none focus:border-violet-500 focus:bg-white disabled:opacity-60"
                   >
                     <option value="">Select Category</option>
-                    {categories.map((cat) => (
-                      <option key={cat.id} value={cat.id}>
-                        {cat.name}
-                      </option>
-                    ))}
+                    {categories
+                      .filter((cat) => !cat.parentId && !cat.parent_id)
+                      .map((cat) => (
+                        <option key={cat.id} value={cat.id}>
+                          {cat.name}
+                        </option>
+                      ))}
                   </select>
                 </div>
+
+                {categories.some(c => c.parentId === categoryId || c.parent_id === categoryId) && (
+                  <div>
+                    <label className="block text-[10px] font-semibold uppercase tracking-wider text-zinc-400 mb-1.5">
+                      Subcategory
+                    </label>
+                    <select
+                      value={subCategoryId}
+                      disabled={isSaving}
+                      onChange={(e) => setSubCategoryId(e.target.value)}
+                      className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs text-zinc-900 outline-none focus:border-violet-500 focus:bg-white disabled:opacity-60"
+                    >
+                      <option value="">Select Subcategory (Optional)</option>
+                      {categories
+                        .filter((cat) => cat.parentId === categoryId || cat.parent_id === categoryId)
+                        .map((cat) => (
+                          <option key={cat.id} value={cat.id}>
+                            {cat.name}
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
 
                 <div>
                   <label className="block text-[10px] font-semibold uppercase tracking-wider text-zinc-400 mb-1.5">

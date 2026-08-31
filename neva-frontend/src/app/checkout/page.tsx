@@ -71,10 +71,53 @@ export default function CheckoutPage() {
 
   const [userId, setUserId] = useState<string | null>(null);
 
+  const [shippingFee, setShippingFee] = useState<number>(0);
+  const [isCalculatingShipping, setIsCalculatingShipping] = useState<boolean>(false);
+
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3500);
   };
+
+  // Calculate cart subtotal
+  const subtotal = cartItems.reduce((sum, item) => sum + Number(item.product.price) * item.quantity, 0);
+
+  // Dynamic Shipping Fee Calculator via Shiprocket API
+  useEffect(() => {
+    if (!pincode || pincode.trim().length !== 6) {
+      // Fallback local charge if pincode is incomplete
+      const localFee = subtotal === 0 ? 0 : 99;
+      setShippingFee(localFee);
+      return;
+    }
+
+    const fetchShippingRate = async () => {
+      setIsCalculatingShipping(true);
+      try {
+        const totalQuantity = cartItems.reduce((acc, item) => acc + item.quantity, 0);
+        const totalWeight = totalQuantity * 0.5; // Each product is 0.5 kg
+        const isCod = paymentMethod === 'cod';
+
+        const res = await apiClient(
+          `/shipping/calculate-rate?pincode=${pincode}&cod=${isCod}&subtotal=${subtotal}&weight=${totalWeight}`
+        );
+        if (res && res.success) {
+          setShippingFee(Number(res.shippingFee));
+        } else {
+          // Fallback flat fee
+          setShippingFee(subtotal === 0 ? 0 : 99);
+        }
+      } catch (err) {
+        console.error('Failed to retrieve shipping rate:', err);
+        setShippingFee(subtotal === 0 ? 0 : 99);
+      } finally {
+        setIsCalculatingShipping(false);
+      }
+    };
+
+    const timer = setTimeout(fetchShippingRate, 500); // debounce API call as user types pincode
+    return () => clearTimeout(timer);
+  }, [pincode, paymentMethod, subtotal]);
 
   // Pre-fill user data & saved default address into form fields on mount
   useEffect(() => {
@@ -161,12 +204,10 @@ export default function CheckoutPage() {
   }, []);
 
   // Calculate Order Prices
-  const subtotal = cartItems.reduce((sum, item) => sum + Number(item.product.price) * item.quantity, 0);
   const discountAmount = Math.round((subtotal * appliedDiscount) / 100);
-  const shippingFee = subtotal > 400 || subtotal === 0 ? 0 : 99;
   const codFee = paymentMethod === 'cod' ? 49 : 0;
   const gstTax = Math.round((subtotal - discountAmount) * 0.05);
-  const grandTotal = Math.max(0, subtotal - discountAmount + shippingFee + codFee + gstTax);
+  const grandTotal = Math.max(0, subtotal - discountAmount + shippingFee);
 
   // Apply Coupon Code
   const handleApplyCoupon = (e?: React.FormEvent) => {
@@ -185,7 +226,7 @@ export default function CheckoutPage() {
     } else if (code === 'FREESHIP') {
       setAppliedDiscount(5);
       setAppliedCouponName(code);
-      showToast('🚚 Extra 5% OFF + Free Shipping applied!');
+      showToast('Extra 5% OFF + Free Shipping applied!');
     } else {
       showToast('❌ Invalid or Expired Coupon Code. Try NEVA10');
     }
@@ -812,7 +853,9 @@ export default function CheckoutPage() {
 
                   <div className="flex justify-between">
                     <span>Express Delivery / Shipping</span>
-                    {shippingFee === 0 ? (
+                    {isCalculatingShipping ? (
+                      <span className="text-violet-600 dark:text-violet-400 font-semibold animate-pulse text-[11px]">Calculating...</span>
+                    ) : shippingFee === 0 ? (
                       <span className="text-emerald-600 dark:text-emerald-400 font-extrabold uppercase text-[10px]">FREE Shipping</span>
                     ) : (
                       <span className="font-mono text-zinc-900 dark:text-white font-semibold">₹{shippingFee}</span>
@@ -825,11 +868,11 @@ export default function CheckoutPage() {
                       <span className="font-mono font-semibold">+₹{codFee}</span>
                     </div>
                   )}
-
+                  {/* 
                   <div className="flex justify-between">
                     <span>Estimated GST Tax (18%)</span>
                     <span className="font-mono text-zinc-900 dark:text-white font-semibold">₹{gstTax.toLocaleString()}</span>
-                  </div>
+                  </div> */}
 
                   <div className="flex items-center justify-between text-sm font-black text-zinc-900 dark:text-white pt-3 border-t border-zinc-200 dark:border-zinc-800">
                     <span>Total Amount Payable</span>

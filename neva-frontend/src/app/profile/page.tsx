@@ -711,7 +711,7 @@ export default function ProfilePage() {
       return { step: 4, label: 'Delivered 🎉', badgeClass: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800/40' };
     }
     if (s === 'shipped' || s === 'ready_to_ship') {
-      return { step: 3, label: 'Shipped / Dispatched 🚚', badgeClass: 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-400 dark:border-indigo-800/40' };
+      return { step: 3, label: 'Shipped / Dispatched', badgeClass: 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-400 dark:border-indigo-800/40' };
     }
     if (s === 'in_production') {
       return { step: 2, label: 'In Production / Processing ⚙️', badgeClass: 'bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-950/40 dark:text-violet-300 dark:border-violet-800/40' };

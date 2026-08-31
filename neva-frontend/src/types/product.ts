@@ -54,4 +54,6 @@ export interface Product {
   specifications?: Record<string, any>;
   specs?: Record<string, string>;
   sortOrder?: number;
+  subCategoryId?: string | null;
+  subCategory?: { id: string; name: string } | null;
 }
