@@ -83,12 +83,16 @@ export default function CheckoutPage() {
   // Calculate checkout items subtotal
   const subtotal = checkoutItems.reduce((sum, item) => sum + Number(item.product.price) * item.quantity, 0);
 
-  // Dynamic Shipping Fee Calculator via Shiprocket API
+  // Shipping Fee Logic: Free if subtotal >= 300, otherwise 50
   useEffect(() => {
+    if (subtotal >= 300 || subtotal === 0) {
+      setShippingFee(0);
+      setIsCalculatingShipping(false);
+      return;
+    }
+
     if (!pincode || pincode.trim().length !== 6) {
-      // Fallback local charge if pincode is incomplete
-      const localFee = subtotal === 0 ? 0 : 99;
-      setShippingFee(localFee);
+      setShippingFee(50);
       return;
     }
 
@@ -96,7 +100,7 @@ export default function CheckoutPage() {
       setIsCalculatingShipping(true);
       try {
         const totalQuantity = checkoutItems.reduce((acc, item) => acc + item.quantity, 0);
-        const totalWeight = totalQuantity * 0.5; // Each product is 0.5 kg
+        const totalWeight = totalQuantity * 0.5;
         const isCod = paymentMethod === 'cod';
 
         const res = await apiClient(
@@ -105,18 +109,17 @@ export default function CheckoutPage() {
         if (res && res.success) {
           setShippingFee(Number(res.shippingFee));
         } else {
-          // Fallback flat fee
-          setShippingFee(subtotal === 0 ? 0 : 99);
+          setShippingFee(50);
         }
       } catch (err) {
         console.error('Failed to retrieve shipping rate:', err);
-        setShippingFee(subtotal === 0 ? 0 : 99);
+        setShippingFee(50);
       } finally {
         setIsCalculatingShipping(false);
       }
     };
 
-    const timer = setTimeout(fetchShippingRate, 500); // debounce API call as user types pincode
+    const timer = setTimeout(fetchShippingRate, 500);
     return () => clearTimeout(timer);
   }, [pincode, paymentMethod, subtotal, checkoutItems]);
 
@@ -229,7 +232,7 @@ export default function CheckoutPage() {
   const discountAmount = Math.round((subtotal * appliedDiscount) / 100);
   const codFee = paymentMethod === 'cod' ? 49 : 0;
   const gstTax = Math.round((subtotal - discountAmount) * 0.05);
-  const grandTotal = Math.max(0, subtotal - discountAmount + shippingFee);
+  const grandTotal = Math.max(0, subtotal - discountAmount + shippingFee + codFee);
 
   // Apply Coupon Code
   const handleApplyCoupon = (e?: React.FormEvent) => {
@@ -289,6 +292,7 @@ export default function CheckoutPage() {
       items: checkoutItems.map(i => ({
         id: i.product.id,
         name: i.product.name,
+        category: typeof i.product.category === 'object' ? (i.product.category as any)?.name : (i.product.category || 'E-Commerce Product'),
         price: Number(i.product.price),
         quantity: i.quantity,
         image: i.product.image || (i.product.images && i.product.images[0]?.imageUrl)
@@ -874,11 +878,11 @@ export default function CheckoutPage() {
                   )}
 
                   <div className="flex justify-between">
-                    <span>Express Delivery / Shipping</span>
+                    <span>Delivery Charges</span>
                     {isCalculatingShipping ? (
                       <span className="text-violet-600 dark:text-violet-400 font-semibold animate-pulse text-[11px]">Calculating...</span>
                     ) : shippingFee === 0 ? (
-                      <span className="text-emerald-600 dark:text-emerald-400 font-extrabold uppercase text-[10px]">FREE Shipping</span>
+                      <span className="text-emerald-600 dark:text-emerald-400 font-extrabold uppercase text-[10px]">FREE Delivery</span>
                     ) : (
                       <span className="font-mono text-zinc-900 dark:text-white font-semibold">₹{shippingFee}</span>
                     )}

@@ -63,10 +63,10 @@ export default function CartPage() {
   // Calculate invoice totals
   const subtotal = cartItems.reduce((acc, item) => acc + Number(item.product.price) * item.quantity, 0);
   const discountAmount = Math.round((subtotal * appliedDiscount) / 100);
-  const freeShippingThreshold = 1499;
-  const shippingFee = subtotal >= freeShippingThreshold || subtotal === 0 ? 0 : 99;
+  const freeShippingThreshold = 300;
+  const shippingFee = subtotal >= freeShippingThreshold || subtotal === 0 ? 0 : 50;
   const gstTax = Math.round((subtotal - discountAmount) * 0.18);
-  const grandTotal = Math.max(0, subtotal - discountAmount + shippingFee + gstTax);
+  const grandTotal = Math.max(0, subtotal - discountAmount + shippingFee);
   const neededForFreeShipping = Math.max(0, freeShippingThreshold - subtotal);
   const freeShippingProgress = Math.min(100, Math.round((subtotal / freeShippingThreshold) * 100));
 
@@ -211,11 +211,11 @@ export default function CartPage() {
                     >
                       {/* Left: Thumbnail & Details */}
                       <div className="flex items-center gap-3.5 min-w-0 flex-1">
-                        <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-xl overflow-hidden bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shrink-0">
+                        <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-xl overflow-hidden bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shrink-0 flex items-center justify-center p-1">
                           <img
                             src={itemImg}
                             alt={item.product.name}
-                            className="h-full w-full object-cover"
+                            className="h-full w-full object-contain"
                           />
                         </div>
 
@@ -318,10 +318,10 @@ export default function CartPage() {
                     )}
                   </div>
 
-                  <div className="flex justify-between text-zinc-500 dark:text-zinc-400 text-[11px]">
+                  {/* <div className="flex justify-between text-zinc-500 dark:text-zinc-400 text-[11px]">
                     <span>Estimated GST (18%)</span>
                     <span className="font-mono">₹{gstTax.toLocaleString('en-IN')}</span>
-                  </div>
+                  </div> */}
 
                   <div className="pt-3 border-t border-zinc-200 dark:border-zinc-800 flex justify-between items-center text-sm font-extrabold text-zinc-900 dark:text-white">
                     <span>Total Amount</span>

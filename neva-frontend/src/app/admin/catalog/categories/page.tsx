@@ -126,14 +126,14 @@ export default function AdminCategoriesPage() {
     }
   }, [name, autoSlug, modalMode]);
 
-  const openCreateModal = () => {
+  const openCreateModal = (parentCatId?: string) => {
     setModalMode('create');
     setSelectedCategoryId(null);
     setName('');
     setSlug('');
     setDescription('');
     setStatus('active');
-    setParentId('');
+    setParentId(typeof parentCatId === 'string' ? parentCatId : '');
     setAutoSlug(true);
     setIsModalOpen(true);
   };
@@ -276,7 +276,7 @@ export default function AdminCategoriesPage() {
           <p className="mt-1 text-sm text-zinc-500">Manage catalog categories.</p>
         </div>
         <button
-          onClick={openCreateModal}
+          onClick={() => openCreateModal()}
           className="inline-flex items-center justify-center gap-2 rounded-xl bg-violet-600 px-4 py-2.5 text-xs font-semibold text-white shadow-md hover:bg-violet-500 transition duration-200"
         >
           <Plus className="h-4 w-4" />
@@ -382,6 +382,18 @@ export default function AdminCategoriesPage() {
                           </td>
                           <td className="px-6 py-3.5 text-right">
                             <div className="flex items-center justify-end gap-1.5">
+                              <button
+                                onClick={() => {
+                                  if (!isExpanded) toggleExpand(category.id);
+                                  openCreateModal(category.id);
+                                }}
+                                disabled={deletingId !== null}
+                                className="inline-flex items-center gap-1 px-2.5 py-1.5 text-[11px] font-semibold rounded-lg bg-zinc-100 text-zinc-700 hover:bg-violet-50 hover:text-violet-700 border border-zinc-200 hover:border-violet-200 transition-colors disabled:opacity-30"
+                                title="Add Subcategory"
+                              >
+                                <Plus className="h-3 w-3" />
+                                Add Subcategory
+                              </button>
                               <button
                                 onClick={() => openEditModal(category)}
                                 disabled={deletingId !== null}
@@ -537,6 +549,27 @@ export default function AdminCategoriesPage() {
                   placeholder="e.g. pla-filament"
                   className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs text-zinc-900 outline-none focus:border-violet-500 focus:bg-white disabled:opacity-60"
                 />
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-semibold uppercase tracking-wider text-zinc-400 mb-1.5">
+                  Parent Category (Optional)
+                </label>
+                <select
+                  value={parentId}
+                  disabled={isSaving}
+                  onChange={(e) => setParentId(e.target.value)}
+                  className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs text-zinc-900 outline-none focus:border-violet-500 focus:bg-white disabled:opacity-60"
+                >
+                  <option value="">None (Top-Level Category)</option>
+                  {categories
+                    .filter((cat) => (!cat.parentId && !cat.parent_id) && cat.id !== selectedCategoryId)
+                    .map((cat) => (
+                      <option key={cat.id} value={cat.id}>
+                        {cat.name}
+                      </option>
+                    ))}
+                </select>
               </div>
 
               <div>

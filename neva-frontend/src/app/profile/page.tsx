@@ -33,10 +33,13 @@ import {
   Building,
   Plus,
   Trash2,
-  Edit3
+  Edit3,
+  FileText,
+  Lock
 } from 'lucide-react';
 import Toast from '../../components/ui/Toast';
 import { apiClient } from '../../lib/api';
+import { openAndPrintInvoice } from '../../lib/invoiceGenerator';
 
 declare global {
   interface Window {
@@ -71,6 +74,8 @@ interface SavedAddress {
 interface CustomPrintItem {
   id: string;
   requestId: string;
+  razorpayOrderId?: string | null;
+  razorpayPaymentId?: string | null;
   customerName: string;
   customerEmail: string;
   customerPhone: string;
@@ -101,15 +106,20 @@ interface EcomOrderItem {
   id: string;
   productId: string;
   productName: string;
+  category?: string;
   productImage?: string;
   quantity: number;
   unitPrice: number;
   totalPrice: number;
+  selectedColor?: string;
+  selectedMaterial?: string;
 }
 
 interface EcomOrder {
   id: string;
   orderNumber: string;
+  razorpayOrderId?: string | null;
+  razorpayPaymentId?: string | null;
   totalAmount: number;
   subtotal: number;
   shippingFee: number;
@@ -283,7 +293,6 @@ export default function ProfilePage() {
                 name: payingQuoteRequest.customerName || userInfo.name,
                 email: payingQuoteRequest.customerEmail || userInfo.email,
                 contact: payingQuoteRequest.customerPhone || userInfo.contactNumber || userInfo.whatsappNumber || '',
-                method: quotePaymentMethod === 'card' ? 'card' : quotePaymentMethod === 'upi' ? 'upi' : undefined
               },
               theme: { color: '#7c3aed' },
               handler: async function (response: any) {
@@ -565,6 +574,8 @@ export default function ProfilePage() {
             const mappedOrders: EcomOrder[] = ordersRes.data.map((o: any) => ({
               id: o.id,
               orderNumber: o.orderNumber || o.id,
+              razorpayOrderId: o.razorpayOrderId || o.razorpay_order_id || o.payment?.razorpayOrderId || null,
+              razorpayPaymentId: o.razorpayPaymentId || o.razorpay_payment_id || o.payment?.razorpayPaymentId || null,
               totalAmount: Number(o.totalAmount || 0),
               subtotal: Number(o.subtotal || 0),
               shippingFee: Number(o.shippingFee || 0),
@@ -580,10 +591,13 @@ export default function ProfilePage() {
                 id: it.id,
                 productId: it.productId,
                 productName: it.productName || 'Product',
+                category: it.category || it.productCategory || it.categoryName || ((it.productName || '').toLowerCase().includes('iot') ? 'Smart IoT Electronics' : '3D Printed Articles'),
                 productImage: it.productImage || '',
                 quantity: Number(it.quantity || 1),
                 unitPrice: Number(it.unitPrice || 0),
                 totalPrice: Number(it.totalPrice || 0),
+                selectedColor: it.selectedColor || it.color || null,
+                selectedMaterial: it.selectedMaterial || it.material || null,
               })) : [],
             }));
             setEcomOrders(mappedOrders);
@@ -602,6 +616,8 @@ export default function ProfilePage() {
           const mappedData: CustomPrintItem[] = printRes.data.map((item: any) => ({
             id: item.id,
             requestId: item.requestId || item.id,
+            razorpayOrderId: item.razorpayOrderId || item.razorpay_order_id || item.payment?.razorpayOrderId || null,
+            razorpayPaymentId: item.razorpayPaymentId || item.razorpay_payment_id || item.payment?.razorpayPaymentId || null,
             customerName: item.customerName,
             customerEmail: item.customerEmail,
             customerPhone: item.customerPhone,
@@ -659,6 +675,96 @@ export default function ProfilePage() {
     a.click();
     document.body.removeChild(a);
     showToast(`✓ Downloading ${fileName || '3D file'}... 💾`);
+  };
+
+  const handleDownloadInvoice = (req: CustomPrintItem) => {
+    const totalAmount = Number(req.quotePrice || 0) * (req.quantity || 1);
+    const gstAmount = Math.round(totalAmount * 0.18);
+    const subtotal = Math.max(0, totalAmount - gstAmount);
+
+    const fullAddr = req.addressLine1
+      ? `${req.addressLine1}${req.addressLine2 ? ', ' + req.addressLine2 : ''}, ${req.city || ''}, ${req.state || ''} - ${req.zipCode || ''}`
+      : userInfo.address || 'Address provided upon checkout';
+
+    openAndPrintInvoice({
+      invoiceNumber: `INV-2026-${req.requestId ? req.requestId.replace(/\D/g, '').slice(-5) : req.id.slice(0, 5).toUpperCase()}`,
+      invoiceDate: new Date(req.createdAt).toLocaleDateString('en-IN', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+      }),
+      orderNumber: `ORD-REQ-${req.requestId || req.id.slice(0, 6)}`,
+      requestId: req.requestId,
+      razorpayOrderId: (req as any).razorpayOrderId,
+      razorpayPaymentId: (req as any).razorpayPaymentId,
+      paymentMethod: 'Razorpay Online UPI / Card',
+      paymentStatus: req.status === 'in_production' || req.status === 'completed' ? 'paid' : 'pending',
+      customerName: req.customerName || userInfo.name || 'Customer',
+      customerEmail: req.customerEmail || userInfo.email,
+      customerPhone: req.customerPhone || userInfo.whatsappNumber || userInfo.contactNumber || 'N/A',
+      billingAddress: fullAddr,
+      shippingAddress: fullAddr,
+      shippingPhone: req.customerPhone || userInfo.whatsappNumber || userInfo.contactNumber,
+      items: [
+        {
+          name: `Custom 3D Print Service (${req.fileName})`,
+          category: 'Custom 3D Printing',
+          fileName: req.fileName,
+          productCode: `3DP-${(req.requestId || req.id).slice(-4).toUpperCase()}`,
+          technology: 'FDM Additive',
+          material: req.material,
+          color: req.color,
+          layerHeight: req.quality || req.height || '0.2mm (6 Inch)',
+          infill: req.infill || 20,
+          quantity: req.quantity || 1,
+          unitPrice: Number(req.quotePrice || 0),
+          totalPrice: totalAmount,
+        },
+      ],
+      subtotal,
+      gstAmount,
+      shippingFee: 0,
+      grandTotal: totalAmount,
+    });
+
+    showToast('✓ Opening Tax Invoice PDF Preview... 📄');
+  };
+
+  const handleDownloadEcomInvoice = (ord: EcomOrder) => {
+    const totalAmount = Number(ord.totalAmount || 0);
+    const gstAmount = Math.round(totalAmount * 0.18);
+    const subtotal = Math.max(0, totalAmount - gstAmount);
+
+    openAndPrintInvoice({
+      invoiceNumber: `INV-2026-${ord.orderNumber.replace(/\D/g, '').slice(-5) || '89412'}`,
+      invoiceDate: ord.createdAt,
+      orderNumber: ord.orderNumber,
+      razorpayOrderId: ord.razorpayOrderId || (ord as any).payment?.razorpayOrderId,
+      razorpayPaymentId: ord.razorpayPaymentId || (ord as any).payment?.razorpayPaymentId,
+      paymentMethod: ord.paymentMethod || 'Razorpay UPI',
+      paymentStatus: ord.paymentStatus || 'paid',
+      customerName: userInfo.name || 'Customer',
+      customerEmail: userInfo.email || 'N/A',
+      customerPhone: userInfo.whatsappNumber || userInfo.contactNumber || 'N/A',
+      billingAddress: ord.shippingAddress || userInfo.address || 'Address specified in profile',
+      shippingAddress: ord.shippingAddress || userInfo.address || 'Address specified in profile',
+      items: ord.items.map((it: any, idx: number) => ({
+        name: it.productName,
+        category: it.category || it.productCategory || it.categoryName || ((it.productName || '').toLowerCase().includes('iot') ? 'Smart IoT Electronics' : '3D Printed Articles'),
+        color: it.selectedColor || it.color || undefined,
+        material: it.selectedMaterial || it.material || undefined,
+        productCode: `PRD-00${idx + 1}`,
+        quantity: it.quantity,
+        unitPrice: it.unitPrice,
+        totalPrice: it.totalPrice || (it.unitPrice * it.quantity),
+      })),
+      subtotal,
+      gstAmount,
+      shippingFee: ord.shippingFee || 0,
+      grandTotal: totalAmount,
+    });
+
+    showToast('✓ Opening Tax Invoice PDF Preview... 📄');
   };
 
   const getStatusConfig = (rawStatus: string) => {
@@ -1014,6 +1120,17 @@ export default function ProfilePage() {
                               ₹{ord.totalAmount.toLocaleString()}
                             </span>
                           </div>
+
+                          {ord.orderStatus === 'delivered' && (
+                            <button
+                              onClick={() => handleDownloadEcomInvoice(ord)}
+                              className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white border border-emerald-500 rounded-xl text-xs font-bold transition active:scale-95 flex items-center gap-1.5 shrink-0 cursor-pointer shadow-sm"
+                              title="Download Tax Invoice"
+                            >
+                              <FileText className="h-3.5 w-3.5" />
+                              <span>Invoice</span>
+                            </button>
+                          )}
                         </div>
                       </div>
 
@@ -1240,16 +1357,18 @@ export default function ProfilePage() {
                             </button>
                           )}
 
-                          {req.fileUrl && (
+                          {req.status === 'completed' && (
                             <button
-                              onClick={() => handleDownload(req.fileUrl, req.fileName)}
-                              className="p-2.5 bg-violet-600 hover:bg-violet-500 text-white rounded-xl shadow-md shadow-violet-600/20 transition active:scale-95"
-                              title="Download 3D Model File"
+                              onClick={() => handleDownloadInvoice(req)}
+                              className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white border border-emerald-500 rounded-xl text-xs font-bold shadow-md shadow-emerald-600/20 transition active:scale-95 flex items-center gap-1.5 shrink-0 cursor-pointer"
+                              title="Print & Download Tax Invoice PDF"
                             >
-                              <Download className="h-4 w-4" />
+                              <FileText className="h-4 w-4" />
+                              <span>Invoice</span>
                             </button>
                           )}
-                        </div>
+
+                         </div>
                       </div>
 
                       {/* QUOTE APPROVED HIGHLIGHT BANNER WITH PAY NOW BUTTON */}

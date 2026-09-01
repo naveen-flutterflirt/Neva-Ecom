@@ -108,8 +108,18 @@ export default function OrderSuccessPage() {
                   <p className="text-zinc-700 dark:text-zinc-300 font-medium pt-0.5 line-clamp-2">{order.customer?.address}</p>
                 </div>
                 <div>
-                  <span className="text-[10px] uppercase font-bold text-zinc-400 block">Payment Method</span>
-                  <p className="text-zinc-700 dark:text-zinc-300 font-bold uppercase pt-0.5">{order.payment?.method} ({order.payment?.status})</p>
+                  <span className="text-[10px] uppercase font-bold text-zinc-400 block">Payment Details</span>
+                  <p className="text-zinc-700 dark:text-zinc-300 font-bold uppercase pt-0.5">{order.payment?.method || 'Razorpay Gateway'} ({order.payment?.status || 'Paid'})</p>
+                  {(order.payment?.razorpayOrderId || order.razorpayOrderId) && (
+                    <p className="text-[10px] font-mono text-purple-600 dark:text-purple-400 font-semibold pt-0.5">
+                      RZP Order: {order.payment?.razorpayOrderId || order.razorpayOrderId}
+                    </p>
+                  )}
+                  {(order.payment?.razorpayPaymentId || order.razorpayPaymentId) && (
+                    <p className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 font-semibold">
+                      Pay ID: {order.payment?.razorpayPaymentId || order.razorpayPaymentId}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
