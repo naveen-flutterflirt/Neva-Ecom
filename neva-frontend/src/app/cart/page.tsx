@@ -40,16 +40,16 @@ export default function CartPage() {
     const code = couponCode.trim().toUpperCase();
     if (!code) return;
 
-    if (code === 'NEVA10' || code === 'WELCOME10' || code === 'NIVAIOT') {
+    if (code === 'NIVA10' || code === 'WELCOME10' || code === 'NIVAIOT') {
       setAppliedDiscount(10);
       setAppliedCouponName(code);
       showToast('🎉 10% Discount Coupon Applied Successfully!');
-    } else if (code === 'NEVA15' || code === 'FESTIVE15') {
+    } else if (code === 'NIVA15' || code === 'FESTIVE15') {
       setAppliedDiscount(15);
       setAppliedCouponName(code);
       showToast('✨ 15% OFF Special Coupon Applied!');
     } else {
-      showToast('❌ Invalid Coupon Code. Try NEVA10');
+      showToast('❌ Invalid Coupon Code. Try NIVA10');
     }
   };
 

@@ -38,7 +38,7 @@ interface Order {
 const INITIAL_MOCK_ORDERS: Order[] = [];
 
 import { apiClient } from '../../../lib/api';
-
+import { openAndPrintInvoice } from '../../../lib/invoiceGenerator';
 import Pagination from '../../../components/ui/Pagination';
 
 export default function AdminOrdersPage() {
@@ -76,8 +76,10 @@ export default function AdminOrdersPage() {
 
       if (ordersRes && ordersRes.success && Array.isArray(ordersRes.data)) {
         ordersRes.data.forEach((o: any) => {
+          const rawStatus = o.orderStatus === 'pending' ? 'confirmed' : o.orderStatus;
+          const isDelivered = rawStatus === 'delivered';
           allOrders.push({
-            id: o.orderNumber || o.id,
+            id: (o.orderNumber || o.id || '').replace('NEVA-', 'NIVA-'),
             customerName: o.customerName || 'Customer',
             customerEmail: o.customerEmail || 'n/a',
             shippingAddress: o.shippingAddress || 'n/a',
@@ -89,8 +91,8 @@ export default function AdminOrdersPage() {
                 }))
               : [],
             totalAmount: Number(o.totalAmount || 0),
-            paymentStatus: o.paymentStatus || 'pending',
-            status: o.orderStatus === 'pending' ? 'confirmed' : o.orderStatus,
+            paymentStatus: (isDelivered || o.paymentStatus === 'paid') ? 'paid' : (o.paymentStatus || 'pending'),
+            status: rawStatus,
             createdAt: new Date(o.createdAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }),
           });
         });
@@ -100,7 +102,7 @@ export default function AdminOrdersPage() {
         customPrintRes.data.forEach((cp: any) => {
           if (cp.quotePrice || cp.status !== 'pending_review') {
             allOrders.push({
-              id: cp.requestId || cp.id,
+              id: (cp.requestId || cp.id || '').replace('NEVA-', 'NIVA-'),
               customerName: cp.customerName || 'Customer',
               customerEmail: cp.customerEmail || 'n/a',
               shippingAddress: cp.addressLine1 ? `${cp.addressLine1}, ${cp.city || ''}` : 'As specified',
@@ -147,7 +149,11 @@ export default function AdminOrdersPage() {
   const handleStatusChange = async (id: string, newStatus: Order['status']) => {
     setOrders(prev => prev.map(order => {
       if (order.id === id) {
-        return { ...order, status: newStatus };
+        return {
+          ...order,
+          status: newStatus,
+          paymentStatus: newStatus === 'delivered' ? 'paid' : order.paymentStatus
+        };
       }
       return order;
     }));
@@ -457,8 +463,38 @@ export default function AdminOrdersPage() {
 
             <div className="pt-4 border-t border-zinc-100 flex items-center justify-end gap-2 shrink-0">
               <button
-                onClick={() => showToast('Mock PDF Invoice downloaded! 📄')}
-                className="inline-flex items-center gap-1 bg-violet-650 hover:bg-violet-600 text-white rounded-xl px-3 py-2 text-xs font-semibold transition mr-auto"
+                onClick={() => {
+                  const itemsSubtotal = selectedOrder.items.reduce((acc, it) => acc + (it.price * it.quantity), 0);
+                  const shippingFee = selectedOrder.totalAmount < 300 ? 50 : 0;
+                  const isDelivered = selectedOrder.status === 'delivered';
+                  
+                  openAndPrintInvoice({
+                    invoiceNumber: `INV-2026-${selectedOrder.id.replace(/\D/g, '').slice(-5) || '89412'}`,
+                    invoiceDate: selectedOrder.createdAt,
+                    orderNumber: selectedOrder.id,
+                    paymentMethod: 'Razorpay UPI / COD',
+                    paymentStatus: (isDelivered || selectedOrder.paymentStatus === 'paid') ? 'paid' : (selectedOrder.paymentStatus || 'pending'),
+                    customerName: selectedOrder.customerName,
+                    customerEmail: selectedOrder.customerEmail,
+                    customerPhone: 'Specified in Profile',
+                    billingAddress: selectedOrder.shippingAddress,
+                    shippingAddress: selectedOrder.shippingAddress,
+                    items: selectedOrder.items.map((it, idx) => ({
+                      name: it.name,
+                      category: (it.name || '').toLowerCase().includes('iot') ? 'Smart IoT Electronics' : '3D Printed Articles',
+                      productCode: `PRD-00${idx + 1}`,
+                      quantity: it.quantity,
+                      unitPrice: it.price,
+                      totalPrice: it.price * it.quantity,
+                    })),
+                    subtotal: itemsSubtotal,
+                    gstAmount: Math.round(selectedOrder.totalAmount * 0.18),
+                    shippingFee,
+                    grandTotal: selectedOrder.totalAmount,
+                  });
+                  showToast('✓ Opening Tax Invoice PDF Preview... 📄');
+                }}
+                className="inline-flex items-center gap-1 bg-violet-600 hover:bg-violet-500 text-white rounded-xl px-3 py-2 text-xs font-semibold transition mr-auto shadow-sm"
               >
                 <Download className="h-4 w-4" />
                 Download Invoice

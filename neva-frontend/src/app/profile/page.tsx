@@ -582,7 +582,7 @@ export default function ProfilePage() {
               codFee: Number(o.codFee || 0),
               gstTax: Number(o.gstTax || 0),
               paymentMethod: (o.paymentMethod || 'UPI').toUpperCase(),
-              paymentStatus: o.paymentStatus || 'pending',
+              paymentStatus: (o.orderStatus === 'delivered' || o.paymentStatus === 'paid') ? 'paid' : (o.paymentStatus || 'pending'),
               orderStatus: o.orderStatus || 'pending',
               shippingAddress: o.shippingAddress || 'No address provided',
               trackingNumber: o.trackingNumber || null,
@@ -731,9 +731,10 @@ export default function ProfilePage() {
   };
 
   const handleDownloadEcomInvoice = (ord: EcomOrder) => {
-    const totalAmount = Number(ord.totalAmount || 0);
+    const itemsSubtotal = ord.items.reduce((acc, it) => acc + (Number(it.totalPrice) || (Number(it.unitPrice) * Number(it.quantity))), 0);
+    const shippingFee = Number(ord.shippingFee !== undefined ? ord.shippingFee : (itemsSubtotal < 300 ? 50 : 0));
+    const totalAmount = Number(ord.totalAmount || (itemsSubtotal + shippingFee));
     const gstAmount = Math.round(totalAmount * 0.18);
-    const subtotal = Math.max(0, totalAmount - gstAmount);
 
     openAndPrintInvoice({
       invoiceNumber: `INV-2026-${ord.orderNumber.replace(/\D/g, '').slice(-5) || '89412'}`,
@@ -742,7 +743,7 @@ export default function ProfilePage() {
       razorpayOrderId: ord.razorpayOrderId || (ord as any).payment?.razorpayOrderId,
       razorpayPaymentId: ord.razorpayPaymentId || (ord as any).payment?.razorpayPaymentId,
       paymentMethod: ord.paymentMethod || 'Razorpay UPI',
-      paymentStatus: ord.paymentStatus || 'paid',
+      paymentStatus: (ord.orderStatus === 'delivered' || ord.paymentStatus === 'paid') ? 'paid' : (ord.paymentStatus || 'pending'),
       customerName: userInfo.name || 'Customer',
       customerEmail: userInfo.email || 'N/A',
       customerPhone: userInfo.whatsappNumber || userInfo.contactNumber || 'N/A',
@@ -758,9 +759,9 @@ export default function ProfilePage() {
         unitPrice: it.unitPrice,
         totalPrice: it.totalPrice || (it.unitPrice * it.quantity),
       })),
-      subtotal,
+      subtotal: itemsSubtotal,
       gstAmount,
-      shippingFee: ord.shippingFee || 0,
+      shippingFee,
       grandTotal: totalAmount,
     });
 
@@ -1368,7 +1369,7 @@ export default function ProfilePage() {
                             </button>
                           )}
 
-                         </div>
+                        </div>
                       </div>
 
                       {/* QUOTE APPROVED HIGHLIGHT BANNER WITH PAY NOW BUTTON */}

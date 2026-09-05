@@ -149,7 +149,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-600 shadow-[0_4px_12px_rgba(124,58,237,0.2)]">
             <LayoutDashboard className="h-5 w-5 text-white" />
           </div>
-          <span className="text-lg font-black tracking-wider text-zinc-900">NEVA ADMIN</span>
+          <span className="text-lg font-black tracking-wider text-zinc-900">NIVA ADMIN</span>
         </Link>
         <button
           onClick={() => setIsMobileOpen(false)}

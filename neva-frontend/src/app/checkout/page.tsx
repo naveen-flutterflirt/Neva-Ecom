@@ -17,6 +17,7 @@ import Toast from '../../components/ui/Toast';
 import { Skeleton } from '../../components/ui/Skeleton';
 
 import { API_URL, apiClient } from '../../lib/api';
+import { INDIAN_STATES_AND_DISTRICTS } from '../../data/indiaData';
 
 declare global {
   interface Window {
@@ -55,8 +56,15 @@ export default function CheckoutPage() {
   const [address, setAddress] = useState('');
   const [landmark, setLandmark] = useState('');
   const [city, setCity] = useState('');
-  const [stateName, setStateName] = useState('Delhi');
+  const [stateName, setStateName] = useState('');
   const [addressType, setAddressType] = useState<'home' | 'work' | 'other'>('home');
+
+  const availableDistricts = stateName ? (INDIAN_STATES_AND_DISTRICTS[stateName] || []) : [];
+
+  const handleStateChange = (newState: string) => {
+    setStateName(newState);
+    setCity('');
+  };
 
   // Payment Selection State
   const [paymentMethod, setPaymentMethod] = useState<'upi' | 'card' | 'cod' | 'netbanking'>('upi');
@@ -107,13 +115,13 @@ export default function CheckoutPage() {
           `/shipping/calculate-rate?pincode=${pincode}&cod=${isCod}&subtotal=${subtotal}&weight=${totalWeight}`
         );
         if (res && res.success) {
-          setShippingFee(Number(res.shippingFee));
+          setShippingFee(subtotal >= 300 ? 0 : Number(res.shippingFee));
         } else {
-          setShippingFee(50);
+          setShippingFee(subtotal >= 300 ? 0 : 50);
         }
       } catch (err) {
         console.error('Failed to retrieve shipping rate:', err);
-        setShippingFee(50);
+        setShippingFee(subtotal >= 300 ? 0 : 50);
       } finally {
         setIsCalculatingShipping(false);
       }
@@ -154,7 +162,7 @@ export default function CheckoutPage() {
             if (def.street || def.address) setAddress(def.street || def.address || '');
             if (def.landmark) setLandmark(def.landmark || '');
             if (def.city) setCity(def.city || '');
-            if (def.state) setStateName(def.state || 'Delhi');
+            if (def.state) setStateName(def.state || '');
             if (def.pincode) setPincode(def.pincode || '');
             if (def.type) setAddressType(def.type || 'home');
           }
@@ -230,9 +238,9 @@ export default function CheckoutPage() {
 
   // Calculate Order Prices
   const discountAmount = Math.round((subtotal * appliedDiscount) / 100);
-  const codFee = paymentMethod === 'cod' ? 49 : 0;
-  const gstTax = Math.round((subtotal - discountAmount) * 0.05);
-  const grandTotal = Math.max(0, subtotal - discountAmount + shippingFee + codFee);
+  const codFee = 0;
+  const effectiveShippingFee = subtotal >= 300 || subtotal === 0 ? 0 : shippingFee;
+  const grandTotal = Math.max(0, subtotal - discountAmount + effectiveShippingFee);
 
   // Apply Coupon Code
   const handleApplyCoupon = (e?: React.FormEvent) => {
@@ -240,11 +248,11 @@ export default function CheckoutPage() {
     const code = couponCode.trim().toUpperCase();
     if (!code) return;
 
-    if (code === 'NEVA10' || code === 'WELCOME10') {
+    if (code === 'NIVA10' || code === 'WELCOME10') {
       setAppliedDiscount(10);
       setAppliedCouponName(code);
-      showToast('🎉 Coupon NEVA10 applied! 10% Discount unlocked!');
-    } else if (code === 'NEVA15' || code === 'FESTIVE15') {
+      showToast('🎉 Coupon NIVA10 applied! 10% Discount unlocked!');
+    } else if (code === 'NIVA15' || code === 'FESTIVE15') {
       setAppliedDiscount(15);
       setAppliedCouponName(code);
       showToast('✨ Special 15% OFF Coupon Applied!');
@@ -253,7 +261,7 @@ export default function CheckoutPage() {
       setAppliedCouponName(code);
       showToast('Extra 5% OFF + Free Shipping applied!');
     } else {
-      showToast('❌ Invalid or Expired Coupon Code. Try NEVA10');
+      showToast('❌ Invalid or Expired Coupon Code. Try NIVA10');
     }
   };
 
@@ -274,8 +282,8 @@ export default function CheckoutPage() {
       return;
     }
 
-    if (!fullName || !phone || !pincode || !address || !city) {
-      showToast('⚠️ Please fill in all required shipping details');
+    if (!fullName || !phone || !pincode || !address || !stateName || !city) {
+      showToast('⚠️ Please fill in all required details, including State & District');
       return;
     }
 
@@ -287,7 +295,7 @@ export default function CheckoutPage() {
     setIsSubmitting(true);
 
     const orderPayload = {
-      orderId: `NEVA-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`,
+      orderId: `NIVA-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`,
       userId: userId || undefined,
       items: checkoutItems.map(i => ({
         id: i.product.id,
@@ -314,7 +322,7 @@ export default function CheckoutPage() {
         discount: discountAmount,
         shipping: shippingFee,
         codFee,
-        gstTax,
+        // gstTax,
         total: grandTotal
       },
       createdAt: new Date().toISOString()
@@ -350,7 +358,7 @@ export default function CheckoutPage() {
             key: razorpayKey,
             amount: razorpayOrder.amount,
             currency: razorpayOrder.currency,
-            name: 'NEVA E-Commerce',
+            name: 'NIVA E-Commerce',
             description: `Payment for Order #${orderPayload.orderId}`,
             image: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=120&q=80',
             order_id: razorpayOrder.id,
@@ -699,37 +707,49 @@ export default function CheckoutPage() {
 
                   <div className="space-y-1.5">
                     <label className="block text-[11px] font-bold text-zinc-700 dark:text-zinc-300">
-                      City <span className="text-red-500">*</span>
+                      State <span className="text-red-500">*</span>
                     </label>
-                    <input
-                      type="text"
+                    <select
                       required
-                      value={city}
-                      onChange={(e) => setCity(e.target.value)}
-                      placeholder="New Delhi / Bengaluru"
-                      className="w-full rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/60 px-3 py-2 text-xs font-semibold outline-none focus:border-purple-500 focus:bg-white dark:focus:bg-zinc-900 transition"
-                    />
+                      value={stateName}
+                      onChange={(e) => handleStateChange(e.target.value)}
+                      className="w-full rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/60 px-3 py-2 text-xs font-semibold outline-none focus:border-purple-500 focus:bg-white dark:focus:bg-zinc-900 transition cursor-pointer"
+                    >
+                      <option value="" disabled>-- Select State --</option>
+                      {Object.keys(INDIAN_STATES_AND_DISTRICTS).map((st) => (
+                        <option key={st} value={st}>
+                          {st}
+                        </option>
+                      ))}
+                    </select>
                   </div>
 
                   <div className="space-y-1.5">
                     <label className="block text-[11px] font-bold text-zinc-700 dark:text-zinc-300">
-                      State <span className="text-red-500">*</span>
+                      District / City <span className="text-red-500">*</span>
                     </label>
-                    <select
-                      value={stateName}
-                      onChange={(e) => setStateName(e.target.value)}
-                      className="w-full rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/60 px-3 py-2 text-xs font-semibold outline-none focus:border-purple-500 focus:bg-white dark:focus:bg-zinc-900 transition"
-                    >
-                      <option value="Delhi">Delhi / NCR</option>
-                      <option value="Karnataka">Karnataka</option>
-                      <option value="Maharashtra">Maharashtra</option>
-                      <option value="Tamil Nadu">Tamil Nadu</option>
-                      <option value="Telangana">Telangana</option>
-                      <option value="Uttar Pradesh">Uttar Pradesh</option>
-                      <option value="West Bengal">West Bengal</option>
-                      <option value="Gujarat">Gujarat</option>
-                      <option value="Other">Other State</option>
-                    </select>
+                    {availableDistricts.length > 0 ? (
+                      <select
+                        required
+                        value={city}
+                        onChange={(e) => setCity(e.target.value)}
+                        className="w-full rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/60 px-3 py-2 text-xs font-semibold outline-none focus:border-purple-500 focus:bg-white dark:focus:bg-zinc-900 transition cursor-pointer"
+                      >
+                        <option value="">-- Select District / City --</option>
+                        {availableDistricts.map((dist) => (
+                          <option key={dist} value={dist}>
+                            {dist}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <select
+                        disabled
+                        className="w-full rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-900/40 px-3 py-2 text-xs font-semibold text-zinc-400 outline-none cursor-not-allowed"
+                      >
+                        <option value="">-- Select State First --</option>
+                      </select>
+                    )}
                   </div>
                 </div>
               </div>

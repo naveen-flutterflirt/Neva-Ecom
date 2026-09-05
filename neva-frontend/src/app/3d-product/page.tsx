@@ -174,7 +174,19 @@ export default function ThreeDProductsPage() {
         showToast(`⚠️ "${product.name}" is already in your cart!`);
         return;
       }
-      dispatch(addToCart({ product, quantity: 1 }));
+      const pPrice = Number(product.price || 0);
+      const pDisc = product.discountPrice ? Number(product.discountPrice) : null;
+      const sellingPrice = (pDisc && pDisc > 0) ? Math.min(pPrice, pDisc) : pPrice;
+      const mrpPrice = (pDisc && pDisc > 0) ? Math.max(pPrice, pDisc) : null;
+
+      dispatch(addToCart({
+        product: {
+          ...product,
+          price: sellingPrice,
+          discountPrice: mrpPrice,
+        },
+        quantity: 1
+      }));
       showToast(`✓ Added "${product.name}" to cart!`);
     } catch (err) {
       console.error('Failed to update cart:', err);
@@ -191,8 +203,17 @@ export default function ThreeDProductsPage() {
       return;
     }
 
+    const pPrice = Number(product.price || 0);
+    const pDisc = product.discountPrice ? Number(product.discountPrice) : null;
+    const sellingPrice = (pDisc && pDisc > 0) ? Math.min(pPrice, pDisc) : pPrice;
+    const mrpPrice = (pDisc && pDisc > 0) ? Math.max(pPrice, pDisc) : null;
+
     localStorage.setItem('neva-buynow-item', JSON.stringify({
-      product,
+      product: {
+        ...product,
+        price: sellingPrice,
+        discountPrice: mrpPrice,
+      },
       quantity: 1
     }));
     router.push('/checkout?buyNow=true');

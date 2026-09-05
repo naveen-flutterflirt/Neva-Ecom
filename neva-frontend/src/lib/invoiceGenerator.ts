@@ -91,12 +91,14 @@ export function generateInvoiceHTML(data: DynamicInvoiceData): string {
     addressLine2: 'Bhopal, Madhya Pradesh - 462022',
     gstin: '27AAAAA0000A1Z5',
     email: 'nivashop.in@gmail.com',
-    phone: '+91 98765 43210',
-    website: 'www.nevashop.in',
+    phone: '+91 9131450933',
+    website: 'www.nivashop.in',
     ...data.companyDetails,
   };
 
   const isPaid = (data.paymentStatus || '').toLowerCase() === 'paid';
+  const itemsSubtotal = data.items.reduce((acc, item) => acc + (Number(item.totalPrice) || (Number(item.unitPrice) * Number(item.quantity))), 0);
+  const formattedSubtotal = itemsSubtotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const formattedGrandTotal = data.grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const amountInWords = numberToWordsINR(data.grandTotal);
 
@@ -110,7 +112,7 @@ export function generateInvoiceHTML(data: DynamicInvoiceData): string {
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Tax Invoice - ${data.orderNumber} | NIVASHOP</title>
+  <title>Tax Invoice - ${data.orderNumber.replace('NEVA-', 'NIVA-')} | NIVASHOP</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
   <style>
     * {
@@ -149,7 +151,7 @@ export function generateInvoiceHTML(data: DynamicInvoiceData): string {
       align-items: center;
       gap: 30px;
       padding: 32px 40px 24px;
-      border-bottom: 2px solid #6d28d9;
+      border-bottom: 2px solid #e2e8f0;
       background: #ffffff;
     }
 
@@ -192,13 +194,13 @@ export function generateInvoiceHTML(data: DynamicInvoiceData): string {
       font-size: 28px;
       font-weight: 900;
       letter-spacing: 0.5px;
-      color: #111827;
+      color: #0f172a;
     }
 
     .invoice-heading .receipt {
       font-size: 11px;
       letter-spacing: 5px;
-      color: #6d28d9;
+      color: #64748b;
       font-weight: 800;
       margin-top: 2px;
     }
@@ -212,7 +214,7 @@ export function generateInvoiceHTML(data: DynamicInvoiceData): string {
       grid-template-columns: repeat(4, 1fr);
       gap: 15px;
       background: #f8fafc;
-      border-bottom: 1px solid #e5e7eb;
+      border-bottom: 1px solid #e2e8f0;
       padding: 18px 40px;
     }
 
@@ -220,7 +222,7 @@ export function generateInvoiceHTML(data: DynamicInvoiceData): string {
       display: block;
       font-size: 10px;
       font-weight: 800;
-      color: #6d28d9;
+      color: #64748b;
       text-transform: uppercase;
       letter-spacing: 0.7px;
       margin-bottom: 3px;
@@ -294,7 +296,7 @@ export function generateInvoiceHTML(data: DynamicInvoiceData): string {
     .box-label {
       font-size: 10px;
       font-weight: 800;
-      color: #6d28d9;
+      color: #475569;
       text-transform: uppercase;
       letter-spacing: 1px;
     }
@@ -342,13 +344,14 @@ export function generateInvoiceHTML(data: DynamicInvoiceData): string {
       border-collapse: separate;
       border-spacing: 0;
       overflow: hidden;
-      border: 1px solid #e5e7eb;
+      border: 1px solid #e2e8f0;
       border-radius: 12px;
     }
 
     thead {
-      background: #6d28d9;
-      color: white;
+      background: #f1f5f9;
+      color: #334155;
+      border-bottom: 2px solid #cbd5e1;
     }
 
     th {
@@ -420,10 +423,10 @@ export function generateInvoiceHTML(data: DynamicInvoiceData): string {
     .file-code {
       display: inline-block;
       padding: 2px 6px;
-      border: 1px solid #ddd6fe;
+      border: 1px solid #e2e8f0;
       border-radius: 5px;
-      background: #f5f3ff;
-      color: #6d28d9;
+      background: #f8fafc;
+      color: #475569;
       font-family: monospace;
       font-size: 9px;
       margin-top: 2px;
@@ -472,7 +475,7 @@ export function generateInvoiceHTML(data: DynamicInvoiceData): string {
     }
 
     .thank-you-title {
-      color: #6d28d9;
+      color: #0f172a;
       font-size: 13px;
       font-weight: 800;
       margin-bottom: 4px;
@@ -491,21 +494,31 @@ export function generateInvoiceHTML(data: DynamicInvoiceData): string {
     }
 
     .totals {
-      width: 320px;
+      width: 300px;
+    }
+
+    .total-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: #475569;
+      padding: 3px 6px;
+      font-weight: 600;
     }
 
     .grand-total {
-      padding: 16px 20px;
+      margin-top: 6px;
+      padding: 12px 16px;
       border-radius: 12px;
-      background: #f5f3ff;
-      border: 1.5px solid #ddd6fe;
-      color: #6d28d9;
-      font-size: 18px;
+      background: #f8fafc;
+      border: 1.5px solid #e2e8f0;
+      color: #0f172a;
+      font-size: 16px;
       font-weight: 900;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      box-shadow: 0 4px 12px rgba(109, 40, 217, 0.08);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
     }
 
     /* =========================
@@ -527,7 +540,7 @@ export function generateInvoiceHTML(data: DynamicInvoiceData): string {
     }
 
     .footer-title {
-      color: #6d28d9;
+      color: #475569;
       font-size: 10px;
       font-weight: 800;
       text-transform: uppercase;
@@ -721,7 +734,7 @@ export function generateInvoiceHTML(data: DynamicInvoiceData): string {
     <section class="order-summary-bar">
       <div class="meta-box">
         <label>Order ID</label>
-        <value>${data.orderNumber}</value>
+        <value>${data.orderNumber.replace('NEVA-', 'NIVA-')}</value>
         ${data.razorpayOrderId ? `<subval>RZP Order ID: <strong>${data.razorpayOrderId}</strong></subval>` : (data.requestId ? `<subval>Request: <strong>${data.requestId}</strong></subval>` : '')}
       </div>
 
@@ -850,8 +863,16 @@ export function generateInvoiceHTML(data: DynamicInvoiceData): string {
       </div>
 
       <div class="totals">
+        <div class="total-row">
+          <span>Items Subtotal:</span>
+          <span>₹${formattedSubtotal}</span>
+        </div>
+        <div class="total-row">
+          <span>Delivery Charge:</span>
+          <span>${data.shippingFee > 0 ? `₹${data.shippingFee.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '<strong style="color: #059669; font-weight: 800;">FREE</strong>'}</span>
+        </div>
         <div class="grand-total">
-          <span>TOTAL</span>
+          <span>GRAND TOTAL</span>
           <span>₹${formattedGrandTotal}</span>
         </div>
       </div>

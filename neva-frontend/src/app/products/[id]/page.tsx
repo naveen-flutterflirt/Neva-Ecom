@@ -165,14 +165,19 @@ export default function DynamicProductDetailsPage() {
   }
 
   // Price calculations
-  const basePrice = typeof product.price === 'string' ? parseFloat(product.price) : product.price;
+  const basePrice = typeof product.price === 'string' ? parseFloat(product.price) : Number(product.price || 0);
   const matAdj = product.materialVariants && product.materialVariants[selectedMaterialIdx] ? product.materialVariants[selectedMaterialIdx].priceAdjustment || 0 : 0;
   const colAdj = selectedColorIdx !== null && product.colorOptions && product.colorOptions[selectedColorIdx] ? product.colorOptions[selectedColorIdx].priceAdjustment || 0 : 0;
   const szAdj = product.sizeVariants && product.sizeVariants[selectedSizeIdx] ? product.sizeVariants[selectedSizeIdx].priceAdjustment || 0 : 0;
 
-  const finalPrice = basePrice + matAdj + colAdj + szAdj;
-  const rawDiscount = product.discountPrice ? (typeof product.discountPrice === 'string' ? parseFloat(product.discountPrice) : product.discountPrice) : null;
-  const finalDiscountPrice = rawDiscount ? rawDiscount + matAdj + colAdj + szAdj : null;
+  const rawDiscount = product.discountPrice ? (typeof product.discountPrice === 'string' ? parseFloat(product.discountPrice) : Number(product.discountPrice)) : null;
+  
+  // Selling price is always the lower value between price and discountPrice
+  const baseSellingPrice = (rawDiscount && rawDiscount > 0) ? Math.min(basePrice, rawDiscount) : basePrice;
+  const baseMrpPrice = (rawDiscount && rawDiscount > 0) ? Math.max(basePrice, rawDiscount) : null;
+
+  const finalSellingPrice = baseSellingPrice + matAdj + colAdj + szAdj;
+  const finalMrpPrice = baseMrpPrice ? baseMrpPrice + matAdj + colAdj + szAdj : null;
 
   const categoryName = typeof product.category === 'object' && product.category !== null ? product.category.name : (product.category || 'Product');
   const isIoT = product.isIoT || categoryName.toLowerCase().includes('iot');
@@ -191,7 +196,8 @@ export default function DynamicProductDetailsPage() {
       dispatch(addToCart({
         product: {
           ...product,
-          price: finalDiscountPrice || finalPrice,
+          price: finalSellingPrice,
+          discountPrice: finalMrpPrice,
         },
         quantity: 1,
       }));
@@ -207,7 +213,7 @@ export default function DynamicProductDetailsPage() {
     if (!product) return;
     const phone = '919131450933';
     const text = encodeURIComponent(
-      `Hello Nivashop! I would like to inquire about "${product.name}" (SKU: ${product.sku || 'N/A'}, Price: ₹${finalDiscountPrice || finalPrice}).`
+      `Hello Nivashop! I would like to inquire about "${product.name}" (SKU: ${product.sku || 'N/A'}, Price: ₹${finalSellingPrice}).`
     );
     window.open(`https://wa.me/${phone}?text=${text}`, '_blank');
   };
@@ -225,7 +231,8 @@ export default function DynamicProductDetailsPage() {
     localStorage.setItem('neva-buynow-item', JSON.stringify({
       product: {
         ...product,
-        price: finalDiscountPrice || finalPrice,
+        price: finalSellingPrice,
+        discountPrice: finalMrpPrice,
       },
       quantity: 1,
     }));
@@ -330,18 +337,18 @@ export default function DynamicProductDetailsPage() {
                 <span className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider block mb-0.5">Total Price</span>
                 <div className="flex items-baseline gap-2">
                   <span className="text-xl sm:text-2xl lg:text-3xl font-black font-mono text-zinc-900 dark:text-white tracking-tight">
-                    ₹{(finalDiscountPrice || finalPrice).toLocaleString()}
+                    ₹{finalSellingPrice.toLocaleString()}
                   </span>
-                  {finalDiscountPrice && (
+                  {finalMrpPrice && (
                     <span className="text-xs font-mono text-zinc-400 dark:text-zinc-500 line-through">
-                      ₹{finalPrice.toLocaleString()}
+                      ₹{finalMrpPrice.toLocaleString()}
                     </span>
                   )}
                 </div>
               </div>
-              {finalDiscountPrice && (
+              {finalMrpPrice && (
                 <span className="px-2.5 py-1 rounded-xl bg-purple-100 dark:bg-purple-500/20 border border-purple-200 dark:border-purple-500/40 text-purple-700 dark:text-purple-300 text-[10px] font-extrabold uppercase tracking-wider shadow-sm">
-                  SAVE {Math.round(((finalPrice - finalDiscountPrice) / finalPrice) * 100)}%
+                  SAVE {Math.round(((finalMrpPrice - finalSellingPrice) / finalMrpPrice) * 100)}%
                 </span>
               )}
             </div>
@@ -413,7 +420,7 @@ export default function DynamicProductDetailsPage() {
             <button
               type="button"
               onClick={() => {
-                const message = encodeURIComponent(`Hello NEVA 3D! I would like to request a custom color option for product: "${product.name}".`);
+                const message = encodeURIComponent(`Hello NIVA 3D! I would like to request a custom color option for product: "${product.name}".`);
                 window.open(`https://wa.me/919900000000?text=${message}`, '_blank');
               }}
               className="w-full py-2 rounded-xl border border-zinc-200 dark:border-zinc-800 hover:border-purple-500/50 bg-zinc-50 dark:bg-zinc-900/60 text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white text-xs font-bold transition flex items-center justify-center gap-2 uppercase tracking-wider"

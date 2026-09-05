@@ -57,7 +57,7 @@ export default function OrderSuccessPage() {
               Order Confirmed Successfully! 🎉
             </h1>
             <p className="text-xs sm:text-sm text-zinc-600 dark:text-zinc-400 max-w-md mx-auto">
-              Thank you for shopping with NEVA E-Commerce. Your order has been placed and is currently being processed by our team.
+              Thank you for shopping with NIVA E-Commerce. Your order has been placed and is currently being processed by our team.
             </p>
           </div>
 

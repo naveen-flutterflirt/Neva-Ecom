@@ -65,7 +65,7 @@ export default function AdminLoginPage() {
             <Shield className="h-7 w-7 text-violet-600" />
           </div>
           <h2 className="text-3xl font-extrabold tracking-tight text-zinc-900 sm:text-4xl">
-            Neva <span className="bg-gradient-to-r from-violet-600 to-cyan-600 bg-clip-text text-transparent">Admin</span>
+            Niva <span className="bg-gradient-to-r from-violet-600 to-cyan-600 bg-clip-text text-transparent">Admin</span>
           </h2>
           <p className="mt-2 text-sm text-zinc-500">
             Secure administrator authorization panel.
