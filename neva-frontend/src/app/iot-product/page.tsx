@@ -71,6 +71,7 @@ export default function IotProductsPage() {
   const [priceLimit, setPriceLimit] = useState<number>(10000);
   const [selectedColors, setSelectedColors] = useState<string[]>([]);
   const [selectedMaterials, setSelectedMaterials] = useState<string[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [minRating, setMinRating] = useState<number>(0);
   const [inStockOnly, setInStockOnly] = useState<boolean>(false);
   const [onSaleOnly, setOnSaleOnly] = useState<boolean>(false);
@@ -115,6 +116,7 @@ export default function IotProductsPage() {
             slug: p.slug,
             sku: p.sku,
             category: typeof p.category === 'object' && p.category !== null ? (p.category.name || 'IoT Product') : (p.category || 'IoT Product'),
+            subCategory: typeof p.subCategory === 'object' && p.subCategory !== null ? { id: p.subCategory.id || '', name: p.subCategory.name || '' } : null,
             price: typeof p.price === 'string' ? parseFloat(p.price) : p.price,
             discountPrice: p.discountPrice ? (typeof p.discountPrice === 'string' ? parseFloat(p.discountPrice) : p.discountPrice) : null,
             stock: p.stock || 0,
@@ -237,6 +239,20 @@ export default function IotProductsPage() {
     );
   };
 
+  // Dynamically extract sub-categories
+  const subCategoriesList = useMemo(() => {
+    const set = new Set<string>();
+    products.forEach((p) => {
+      const subCat = p.subCategory?.name || '';
+      if (subCat) set.add(subCat);
+    });
+    return Array.from(set).sort();
+  }, [products]);
+
+  const toggleCategory = (cat: string) => {
+    setSelectedCategory((prev) => (prev === cat ? '' : cat));
+  };
+
   // Dynamically extract material variants / specs
   const materialsList = useMemo(() => {
     const set = new Set<string>();
@@ -301,6 +317,14 @@ export default function IotProductsPage() {
           }
         }
 
+        // Category filter
+        if (selectedCategory) {
+          const subCat = p.subCategory?.name || '';
+          if (subCat !== selectedCategory) {
+            return false;
+          }
+        }
+
         // Material filter
         if (selectedMaterials.length > 0) {
           const pMats = Array.isArray(p.materialVariants)
@@ -333,13 +357,14 @@ export default function IotProductsPage() {
         if (sortBy === 'rating') return (b.rating || 0) - (a.rating || 0);
         return 0;
       });
-  }, [products, searchQuery, priceLimit, selectedColors, selectedMaterials, minRating, inStockOnly, onSaleOnly, sortBy]);
+  }, [products, searchQuery, priceLimit, selectedColors, selectedMaterials, selectedCategory, minRating, inStockOnly, onSaleOnly, sortBy]);
 
   const hasActiveFilters =
     searchQuery ||
     priceLimit < maxPrice ||
     selectedColors.length > 0 ||
     selectedMaterials.length > 0 ||
+    selectedCategory ||
     minRating > 0 ||
     inStockOnly ||
     onSaleOnly;
@@ -349,6 +374,7 @@ export default function IotProductsPage() {
     setPriceLimit(maxPrice);
     setSelectedColors([]);
     setSelectedMaterials([]);
+    setSelectedCategory('');
     setMinRating(0);
     setInStockOnly(false);
     setOnSaleOnly(false);
@@ -678,70 +704,36 @@ export default function IotProductsPage() {
           </div>
 
           {/* Right Product Grid Area (9 Cols) */}
-          <div className="lg:col-span-9 space-y-4">
+          <div className="lg:col-span-9 space-y-6">
 
-            {/* Active Filter Badges Pill Bar */}
-            {hasActiveFilters && (
-              <div className="flex flex-wrap items-center gap-2 bg-white dark:bg-[#111218] border border-zinc-200/80 dark:border-zinc-800/80 p-3 rounded-xl shadow-sm text-xs">
-                <span className="text-zinc-400 font-bold text-[10px] uppercase">Active:</span>
-                {priceLimit < maxPrice && (
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-violet-50 dark:bg-violet-950/40 border border-violet-200 dark:border-violet-800/50 rounded-lg text-violet-700 dark:text-violet-300 font-semibold text-[11px]">
-                    Max ₹{priceLimit.toLocaleString('en-IN')}
-                    <button onClick={() => setPriceLimit(maxPrice)} className="hover:text-red-500">
-                      <X className="h-3 w-3" />
-                    </button>
-                  </span>
-                )}
-                {selectedColors.map((color) => (
-                  <span key={color} className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-violet-50 dark:bg-violet-950/40 border border-violet-200 dark:border-violet-800/50 rounded-lg text-violet-700 dark:text-violet-300 font-semibold text-[11px]">
-                    Color: {color}
-                    <button onClick={() => toggleColor(color)} className="hover:text-red-500">
-                      <X className="h-3 w-3" />
-                    </button>
-                  </span>
+            {/* Dynamic Subcategory Filter Pills */}
+            {subCategoriesList.length > 0 && (
+              <div className="flex items-center gap-2 overflow-x-auto pb-2.5 scrollbar-none border-b border-zinc-200/80 dark:border-zinc-800/80 mb-2">
+                <button
+                  onClick={() => setSelectedCategory('')}
+                  className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition cursor-pointer border ${selectedCategory === ''
+                    ? 'bg-violet-600 border-violet-600 text-white shadow-md shadow-violet-600/10'
+                    : 'bg-white dark:bg-[#111218] border-zinc-200 dark:border-zinc-800 text-zinc-650 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-white'
+                    }`}
+                >
+                  All IoT Products
+                </button>
+                {subCategoriesList.map((cat: string) => (
+                  <button
+                    key={cat}
+                    onClick={() => setSelectedCategory(cat)}
+                    className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition cursor-pointer border ${selectedCategory === cat
+                      ? 'bg-violet-600 border-violet-600 text-white shadow-md shadow-violet-600/10'
+                      : 'bg-white dark:bg-[#111218] border-zinc-200 dark:border-zinc-800 text-zinc-650 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-white'
+                      }`}
+                  >
+                    {cat}
+                  </button>
                 ))}
-                {selectedMaterials.map((mat) => (
-                  <span key={mat} className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-violet-50 dark:bg-violet-950/40 border border-violet-200 dark:border-violet-800/50 rounded-lg text-violet-700 dark:text-violet-300 font-semibold text-[11px]">
-                    Spec: {mat}
-                    <button onClick={() => toggleMaterial(mat)} className="hover:text-red-500">
-                      <X className="h-3 w-3" />
-                    </button>
-                  </span>
-                ))}
-                {minRating > 0 && (
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-violet-50 dark:bg-violet-950/40 border border-violet-200 dark:border-violet-800/50 rounded-lg text-violet-700 dark:text-violet-300 font-semibold text-[11px]">
-                    Rating: {minRating}★ &amp; Up
-                    <button onClick={() => setMinRating(0)} className="hover:text-red-500">
-                      <X className="h-3 w-3" />
-                    </button>
-                  </span>
-                )}
-                {inStockOnly && (
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-violet-50 dark:bg-violet-950/40 border border-violet-200 dark:border-violet-800/50 rounded-lg text-violet-700 dark:text-violet-300 font-semibold text-[11px]">
-                    In Stock Only
-                    <button onClick={() => setInStockOnly(false)} className="hover:text-red-500">
-                      <X className="h-3 w-3" />
-                    </button>
-                  </span>
-                )}
-                {onSaleOnly && (
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-violet-50 dark:bg-violet-950/40 border border-violet-200 dark:border-violet-800/50 rounded-lg text-violet-700 dark:text-violet-300 font-semibold text-[11px]">
-                    On Sale
-                    <button onClick={() => setOnSaleOnly(false)} className="hover:text-red-500">
-                      <X className="h-3 w-3" />
-                    </button>
-                  </span>
-                )}
-                {searchQuery && (
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-violet-50 dark:bg-violet-950/40 border border-violet-200 dark:border-violet-800/50 rounded-lg text-violet-700 dark:text-violet-300 font-semibold text-[11px]">
-                    "{searchQuery}"
-                    <button onClick={() => setSearchQuery('')} className="hover:text-red-500">
-                      <X className="h-3 w-3" />
-                    </button>
-                  </span>
-                )}
               </div>
             )}
+
+
 
             {/* Product Cards Grid / Loading / Empty */}
             {isLoading ? (

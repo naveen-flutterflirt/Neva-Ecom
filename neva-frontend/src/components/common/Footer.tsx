@@ -140,6 +140,15 @@ export default function Footer() {
                     <span>9131450933</span>
                   </a>
                 </li>
+                <li>
+                  <div className="flex items-start gap-1.5 font-semibold text-zinc-700 dark:text-zinc-200 pt-1">
+                    <svg className="h-3.5 w-3.5 text-zinc-400 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                      <circle cx="12" cy="10" r="3"></circle>
+                    </svg>
+                    <span>Bhopal, Bengalore</span>
+                  </div>
+                </li>
               </ul>
             </div>
 

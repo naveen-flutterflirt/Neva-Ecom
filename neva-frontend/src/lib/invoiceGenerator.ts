@@ -85,11 +85,11 @@ function numberToWordsINR(num: number): string {
 
 export function generateInvoiceHTML(data: DynamicInvoiceData): string {
   const company = {
-    name: 'NIVASHOP',
+    name: 'FlutterFlirt Private Limited',
     logoUrl: typeof window !== 'undefined' ? `${window.location.origin}/logobgg.png` : '/logobgg.png',
-    addressLine1: 'Indrapuri',
-    addressLine2: 'Bhopal, Madhya Pradesh - 462022',
-    gstin: '27AAAAA0000A1Z5',
+    addressLine1: 'Bhopal, Bengalore',
+    addressLine2: '',
+    gstin: '23AAGCF2353L1ZO',
     email: 'nivashop.in@gmail.com',
     phone: '+91 9131450933',
     website: 'www.nivashop.in',
@@ -717,8 +717,9 @@ export function generateInvoiceHTML(data: DynamicInvoiceData): string {
         ${company.logoUrl ? `<img src="${company.logoUrl}" alt="NIVASHOP Logo" class="brand-logo-img" />` : ''}
 
         <div class="company-details">
-          <div class="company-address-line">${company.addressLine1 || 'Indrapuri'}</div>
-          <div class="company-address-line">${company.addressLine2 || 'Bhopal, Madhya Pradesh - 462022'}</div>
+          <div class="company-address-line" style="font-weight: 900; font-size: 13px; color: #111827; margin-bottom: 2px;">${company.name}</div>
+          <div class="company-address-line">${company.addressLine1}</div>
+          ${company.addressLine2 ? `<div class="company-address-line">${company.addressLine2}</div>` : ''}
           <div class="company-address-line gst-line">GSTIN: ${company.gstin}</div>
           <div class="company-address-line">${company.email} &bull; ${company.phone}</div>
         </div>
@@ -726,7 +727,6 @@ export function generateInvoiceHTML(data: DynamicInvoiceData): string {
 
       <div class="invoice-heading">
         <h1>TAX INVOICE</h1>
-        <div class="receipt">/ BILL OF SUPPLY</div>
       </div>
     </header>
 
