@@ -100,7 +100,7 @@ export default function CheckoutPage() {
     }
 
     if (!pincode || pincode.trim().length !== 6) {
-      setShippingFee(50);
+      setShippingFee(0); // setShippingFee(50);
       return;
     }
 
@@ -117,11 +117,11 @@ export default function CheckoutPage() {
         if (res && res.success) {
           setShippingFee(subtotal >= 300 ? 0 : Number(res.shippingFee));
         } else {
-          setShippingFee(subtotal >= 300 ? 0 : 50);
+          setShippingFee(0); // setShippingFee(subtotal >= 300 ? 0 : 50);
         }
       } catch (err) {
         console.error('Failed to retrieve shipping rate:', err);
-        setShippingFee(subtotal >= 300 ? 0 : 50);
+        setShippingFee(0); // setShippingFee(subtotal >= 300 ? 0 : 50);
       } finally {
         setIsCalculatingShipping(false);
       }
