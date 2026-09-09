@@ -64,7 +64,7 @@ export default function CartPage() {
   const subtotal = cartItems.reduce((acc, item) => acc + Number(item.product.price) * item.quantity, 0);
   const discountAmount = Math.round((subtotal * appliedDiscount) / 100);
   const freeShippingThreshold = 300;
-  const shippingFee = 0; // subtotal >= freeShippingThreshold || subtotal === 0 ? 0 : 50;
+  const shippingFee = subtotal >= freeShippingThreshold || subtotal === 0 ? 0 : 50;
   const gstTax = Math.round((subtotal - discountAmount) * 0.18);
   const grandTotal = Math.max(0, subtotal - discountAmount + shippingFee);
   const neededForFreeShipping = Math.max(0, freeShippingThreshold - subtotal);
