@@ -146,14 +146,23 @@ export default function AdminCustomersPage() {
   };
 
   // Delete customer
-  const handleDeleteCustomer = (id: string, name: string) => {
+  const handleDeleteCustomer = async (id: string, name: string) => {
     if (window.confirm(`Are you sure you want to delete customer "${name}"?`)) {
-      setCustomers(prev => prev.filter(c => c.id !== id));
-      if (selectedCustomer?.id === id) {
-        setIsDetailOpen(false);
-        setSelectedCustomer(null);
+      try {
+        const res = await apiClient(`/auth/customers/${id}`, { method: 'DELETE' });
+        if (res.success || res.message) {
+          setCustomers(prev => prev.filter(c => c.id !== id));
+          if (selectedCustomer?.id === id) {
+            setIsDetailOpen(false);
+            setSelectedCustomer(null);
+          }
+          showToast(`✓ Customer "${name}" deleted successfully! 🗑️`);
+        } else {
+          showToast(`❌ Failed to delete customer: ${res.message}`);
+        }
+      } catch (err) {
+        showToast('❌ Failed to delete customer due to server error');
       }
-      showToast(`✓ Customer "${name}" deleted successfully! 🗑️`);
     }
   };
 

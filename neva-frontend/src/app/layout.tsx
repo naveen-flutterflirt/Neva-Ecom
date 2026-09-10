@@ -12,9 +12,24 @@ const plusJakartaSans = Plus_Jakarta_Sans({
   display: 'swap',
 });
 
-export const metadata = {
-  title: 'NIVASHOP - Premium 3D Printed Accessories & IoT Hardware',
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  metadataBase: new URL('https://nivashop.in'),
+  title: {
+    default: 'NIVASHOP - Premium 3D Printed Accessories & IoT Hardware',
+    template: '%s | NIVASHOP'
+  },
   description: 'Shop premium 3D printed desk accessories, custom filaments, and developer-ready smart IoT hardware for creators at NIVASHOP.',
+  keywords: ['3D printed accessories', 'IoT hardware', 'custom filaments', 'desk accessories', 'NIVASHOP', '3D printing India', 'smart home devices', 'developer hardware'],
+  authors: [{ name: 'NIVASHOP' }],
+  creator: 'NIVASHOP',
+  publisher: 'NIVASHOP',
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
   icons: {
     icon: '/logobgg.png',
     shortcut: '/logobgg.png',
@@ -23,6 +38,8 @@ export const metadata = {
   openGraph: {
     title: 'NIVASHOP - Premium 3D Printed Accessories & IoT Hardware',
     description: 'Shop premium 3D printed desk accessories, custom filaments, and developer-ready smart IoT hardware for creators at NIVASHOP.',
+    url: 'https://nivashop.in',
+    siteName: 'NIVASHOP',
     images: [
       {
         url: '/logobgg.png',
@@ -31,6 +48,25 @@ export const metadata = {
         alt: 'NIVASHOP Logo',
       },
     ],
+    locale: 'en_IN',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'NIVASHOP - Premium 3D Printed Accessories & IoT Hardware',
+    description: 'Shop premium 3D printed desk accessories, custom filaments, and developer-ready smart IoT hardware for creators at NIVASHOP.',
+    images: ['/logobgg.png'],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
   },
 };
 
