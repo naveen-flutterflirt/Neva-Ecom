@@ -133,6 +133,8 @@ export default function IotProductsPage() {
             keyFeatures: safeParseJSON(p.keyFeatures, []),
             specifications: safeParseJSON(p.specifications, {}),
             specs: safeParseJSON(p.specifications, {}),
+            averageRating: p.averageRating,
+            reviewCount: p.reviewCount,
           }));
 
         setProducts(iotList);

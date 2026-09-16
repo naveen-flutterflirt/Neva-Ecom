@@ -231,7 +231,7 @@ export default function Hero() {
                                 className={`${heroVideoClassName} absolute inset-0 z-10 transition-opacity duration-500`}
                             >
                                 <source src="/yetii.webm" type="video/webm" />
-                                <source src="/yeti_dada.mp4" type="video/mp4" />
+                                {/* <source src="/yeti_dada.mp4" type="video/mp4" /> */}
                             </video>
                         </div>
                     </motion.div>

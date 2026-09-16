@@ -19,6 +19,7 @@ import {
   ShieldCheck,
   Search,
   Copy,
+  Sparkles,
   Check,
   Zap,
   Box,
@@ -40,6 +41,8 @@ import {
 import Toast from '../../components/ui/Toast';
 import { apiClient } from '../../lib/api';
 import { openAndPrintInvoice } from '../../lib/invoiceGenerator';
+import ReviewModal from '../../components/product/ReviewModal';
+import { Star, Edit2, Trash2 as TrashIcon } from 'lucide-react';
 
 declare global {
   interface Window {
@@ -130,6 +133,7 @@ interface EcomOrder {
   orderStatus: 'pending' | 'confirmed' | 'in_production' | 'ready_to_ship' | 'shipped' | 'delivered' | 'cancelled';
   shippingAddress: string;
   trackingNumber?: string | null;
+  iotKitCode?: string | null;
   createdAt: string;
   items: EcomOrderItem[];
 }
@@ -161,6 +165,12 @@ export default function ProfilePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [selectedTab, setSelectedTab] = useState<'my_orders' | 'custom_orders' | 'account' | 'addresses'>('my_orders');
+
+  // Review Modal State
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+  const [reviewProductName, setReviewProductName] = useState('');
+  const [editingReview, setEditingReview] = useState<any>(null);
+  const [userReviews, setUserReviews] = useState<any[]>([]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -277,7 +287,7 @@ export default function ProfilePage() {
         });
 
         if (orderRes && orderRes.success && orderRes.order) {
-          const razorpayKey = orderRes.key || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_TSnKuVgteVheGX';
+          const razorpayKey = orderRes.key || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
           const razorpayOrder = orderRes.order;
 
           if (scriptLoaded && typeof window !== 'undefined' && window.Razorpay) {
@@ -586,6 +596,7 @@ export default function ProfilePage() {
               orderStatus: o.orderStatus || 'pending',
               shippingAddress: o.shippingAddress || 'No address provided',
               trackingNumber: o.trackingNumber || null,
+              iotKitCode: o.iotKitCode || o.iot_kit_code || null,
               createdAt: new Date(o.createdAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }),
               items: Array.isArray(o.items) ? o.items.map((it: any) => ({
                 id: it.id,
@@ -652,15 +663,46 @@ export default function ProfilePage() {
 
           setCustomRequests(userFiltered);
         }
+
+        // 3. Fetch user reviews
+        if (currentUserId) {
+          try {
+            const revRes = await apiClient(`/reviews?userId=${currentUserId}`);
+            if (revRes && revRes.data) {
+              setUserReviews(revRes.data);
+            }
+          } catch (e) {
+            console.warn('Failed to fetch user reviews:', e);
+          }
+        }
       } catch (err) {
         console.error('Failed to load profile data:', err);
       } finally {
         setIsLoading(false);
       }
     };
-
+    
+    // Initial fetch
     loadProfileData();
+
+    // Attach function to window so we can trigger it from ReviewModal success if needed
+    (window as any).refreshProfileData = loadProfileData;
+
   }, []);
+
+  const handleDeleteReview = async (reviewId: string) => {
+    if (!confirm('Are you sure you want to delete this review?')) return;
+    try {
+      await apiClient(`/reviews/${reviewId}`, { method: 'DELETE' });
+      showToast('✓ Review deleted successfully!');
+      if (typeof window !== 'undefined' && (window as any).refreshProfileData) {
+        (window as any).refreshProfileData();
+      }
+    } catch (err) {
+      console.error('Error deleting review:', err);
+      showToast('⚠️ Failed to delete review.');
+    }
+  };
 
   const handleDownload = (fileUrl?: string | null, fileName?: string) => {
     if (!fileUrl) {
@@ -886,6 +928,17 @@ export default function ProfilePage() {
 
   return (
     <main className="min-h-screen bg-zinc-50 dark:bg-black pt-24 pb-20 text-zinc-900 dark:text-zinc-100 font-sans selection:bg-violet-500 selection:text-white">
+      <ReviewModal 
+        isOpen={isReviewModalOpen} 
+        onClose={() => setIsReviewModalOpen(false)} 
+        productName={reviewProductName} 
+        existingReview={editingReview}
+        onSuccess={() => {
+          if (typeof window !== 'undefined' && (window as any).refreshProfileData) {
+            (window as any).refreshProfileData();
+          }
+        }}
+      />
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 space-y-6 sm:space-y-8">
 
         {/* Top Breadcrumb Bar */}
@@ -1212,30 +1265,101 @@ export default function ProfilePage() {
                       <div className="space-y-2">
                         <span className="text-[10px] font-extrabold text-zinc-400 uppercase tracking-wider block">Items Purchased ({ord.items.length}):</span>
                         <div className="divide-y divide-zinc-200/60 dark:divide-zinc-800/60 bg-zinc-50/60 dark:bg-zinc-900/40 rounded-2xl border border-zinc-200/80 dark:border-zinc-800/80 p-3 sm:p-4 space-y-2">
-                          {ord.items.map((item, idx) => (
-                            <div key={idx} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 pb-2 text-xs">
-                              <div className="flex items-center gap-3 min-w-0">
-                                {item.productImage ? (
-                                  <img src={item.productImage} alt={item.productName} className="h-11 w-11 rounded-xl object-contain bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 shrink-0 p-0.5" />
-                                ) : (
-                                  <div className="h-11 w-11 rounded-xl bg-violet-100 dark:bg-violet-950/60 text-violet-600 flex items-center justify-center shrink-0 border border-violet-200 dark:border-violet-800">
-                                    <Package className="h-5 w-5" />
+                          {ord.items.map((item, idx) => {
+                            const existingReview = userReviews.find(r => r.productName === item.productName);
+
+                            return (
+                              <div key={idx} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 pb-2 text-xs">
+                                <div className="flex items-center gap-3 min-w-0">
+                                  {item.productImage ? (
+                                    <img src={item.productImage} alt={item.productName} className="h-11 w-11 rounded-xl object-contain bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 shrink-0 p-0.5" />
+                                  ) : (
+                                    <div className="h-11 w-11 rounded-xl bg-violet-100 dark:bg-violet-950/60 text-violet-600 flex items-center justify-center shrink-0 border border-violet-200 dark:border-violet-800">
+                                      <Package className="h-5 w-5" />
+                                    </div>
+                                  )}
+                                  <div className="truncate">
+                                    <span className="font-bold text-zinc-900 dark:text-white block truncate text-xs sm:text-sm">{item.productName}</span>
+                                    <span className="text-[10px] text-zinc-400 font-mono">Unit Price: ₹{item.unitPrice}</span>
                                   </div>
-                                )}
-                                <div className="truncate">
-                                  <span className="font-bold text-zinc-900 dark:text-white block truncate text-xs sm:text-sm">{item.productName}</span>
-                                  <span className="text-[10px] text-zinc-400 font-mono">Unit Price: ₹{item.unitPrice}</span>
+                                </div>
+
+                                <div className="flex flex-col items-end gap-2 shrink-0 border-t border-zinc-100 dark:border-zinc-800/40 pt-2 sm:border-0 sm:pt-0">
+                                  <div className="flex items-center gap-4">
+                                    <span className="text-zinc-500 dark:text-zinc-400 font-mono text-xs">Qty: <strong className="text-zinc-900 dark:text-white font-bold">{item.quantity}</strong></span>
+                                    <span className="font-mono font-black text-violet-600 dark:text-violet-400 text-xs sm:text-sm">₹{item.totalPrice.toLocaleString()}</span>
+                                  </div>
+                                  
+                                  {existingReview ? (
+                                    <div className="flex flex-col items-end gap-1 mt-1 bg-zinc-50 dark:bg-zinc-900/50 p-2 rounded-lg border border-zinc-200 dark:border-zinc-800 w-full sm:w-auto">
+                                      <div className="flex items-center gap-1 text-[10px] text-zinc-500">
+                                        <span className="font-bold text-zinc-700 dark:text-zinc-300">Your Review:</span>
+                                        <div className="flex items-center">
+                                          <span className="font-bold text-amber-500 mr-0.5">{existingReview.rating}</span>
+                                          <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                                        </div>
+                                      </div>
+                                      <div className="flex items-center gap-2 mt-1">
+                                        <button
+                                          onClick={() => {
+                                            setReviewProductName(item.productName);
+                                            setEditingReview(existingReview);
+                                            setIsReviewModalOpen(true);
+                                          }}
+                                          className="text-[10px] flex items-center gap-1 font-bold text-blue-600 hover:text-blue-700 transition-colors"
+                                        >
+                                          <Edit2 className="h-3 w-3" /> Edit
+                                        </button>
+                                        <button
+                                          onClick={() => handleDeleteReview(existingReview.id)}
+                                          className="text-[10px] flex items-center gap-1 font-bold text-red-500 hover:text-red-600 transition-colors"
+                                        >
+                                          <TrashIcon className="h-3 w-3" /> Delete
+                                        </button>
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <button
+                                      onClick={() => {
+                                        setReviewProductName(item.productName);
+                                        setEditingReview(null);
+                                        setIsReviewModalOpen(true);
+                                      }}
+                                      className="px-3 py-1.5 rounded-lg border border-[#ff611d] text-[#ff611d] hover:bg-[#ff611d] hover:text-white text-[11px] font-bold tracking-wider transition-colors shadow-sm flex items-center gap-1 mt-1"
+                                    >
+                                      <Star className="h-3.5 w-3.5" />
+                                      Rate & Review
+                                    </button>
+                                  )}
                                 </div>
                               </div>
-
-                              <div className="flex items-center justify-between sm:justify-end gap-4 shrink-0 border-t border-zinc-100 dark:border-zinc-800/40 pt-2 sm:border-0 sm:pt-0">
-                                <span className="text-zinc-500 dark:text-zinc-400 font-mono text-xs">Qty: <strong className="text-zinc-900 dark:text-white font-bold">{item.quantity}</strong></span>
-                                <span className="font-mono font-black text-violet-600 dark:text-violet-400 text-xs sm:text-sm">₹{item.totalPrice.toLocaleString()}</span>
-                              </div>
-                            </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       </div>
+
+                      {ord.iotKitCode && (
+                        <div className="mt-4 p-4 rounded-xl border border-violet-200 dark:border-violet-800/50 bg-violet-50/50 dark:bg-violet-900/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                          <div className="flex items-center gap-3">
+                            <div className="h-10 w-10 bg-violet-100 dark:bg-violet-900/40 text-violet-600 dark:text-violet-400 rounded-full flex items-center justify-center shrink-0">
+                              <Sparkles className="h-5 w-5" />
+                            </div>
+                            <div>
+                              <h4 className="text-xs font-bold text-zinc-900 dark:text-white uppercase tracking-wider">Your IoT Kit Activation Code</h4>
+                              <p className="text-[10px] text-zinc-500 dark:text-zinc-400">Use this 12-digit code to access your premium kits and tutorials.</p>
+                            </div>
+                          </div>
+                          <div 
+                            onClick={() => copyToClipboard(ord.iotKitCode!, 'IoT Kit Code')}
+                            className="bg-white dark:bg-zinc-900 border border-violet-200 dark:border-violet-700/50 px-4 py-2.5 rounded-lg flex items-center gap-3 cursor-pointer hover:border-violet-400 transition-colors shadow-sm group"
+                          >
+                            <span className="font-mono text-sm sm:text-base font-black tracking-widest text-violet-600 dark:text-violet-400">{ord.iotKitCode}</span>
+                            <div className="bg-violet-100 dark:bg-violet-900/50 p-1.5 rounded-md text-violet-600 dark:text-violet-400 group-hover:scale-110 transition-transform">
+                              <Copy className="h-3.5 w-3.5" />
+                            </div>
+                          </div>
+                        </div>
+                      )}
 
 
                     </div>

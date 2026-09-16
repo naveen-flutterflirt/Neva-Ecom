@@ -108,6 +108,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       ],
     },
     {
+      title: 'IoT Kits',
+      icon: Boxes,
+      items: [
+        { name: 'All Kits', href: '/admin/iot-kits', icon: Boxes },
+        { name: 'Add Kit', href: '/admin/iot-kits/add', icon: Sparkles },
+      ],
+    },
+    {
       title: 'Custom Print / POD',
       icon: Hammer,
       items: [

@@ -142,6 +142,8 @@ export default function ThreeDProductsPage() {
             keyFeatures: safeParseJSON(p.keyFeatures, []),
             specifications: safeParseJSON(p.specifications, {}),
             specs: safeParseJSON(p.specifications, {}),
+            averageRating: p.averageRating,
+            reviewCount: p.reviewCount,
             sortOrder: p.sortOrder !== undefined && p.sortOrder !== null ? Number(p.sortOrder) : 999,
             subCategoryId: p.subCategoryId || null,
           }));

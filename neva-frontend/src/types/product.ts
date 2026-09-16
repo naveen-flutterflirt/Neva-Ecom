@@ -41,6 +41,8 @@ export interface Product {
   stock?: number;
   status?: 'draft' | 'active' | 'out_of_stock';
   rating?: number;
+  averageRating?: number | string;
+  reviewCount?: number;
   image?: string;
   images?: ProductImageItem[];
   badge?: string;

@@ -112,7 +112,7 @@ export default function ProductCard({ product, onQuickShop, onQuickView, onAddTo
     >
       {/* Dynamic Image Container - Perfect Square Aspect Ratio */}
       <div className="relative aspect-square w-full overflow-hidden bg-zinc-100 dark:bg-zinc-900/60 border-b border-zinc-100 dark:border-zinc-800/50 group/img">
-        <Link href={`/products/${product.id}`} className="w-full h-full block">
+        <Link href={isIoT ? `/iot-kits/${product.id}` : `/products/${product.id}`} className="w-full h-full block">
           <img
             src={getDisplayImage()}
             alt={product.name}
@@ -136,14 +136,21 @@ export default function ProductCard({ product, onQuickShop, onQuickView, onAddTo
             {categoryName}
           </span>
 
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1.5 ml-auto">
             <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
-            <span className="text-xs font-bold text-zinc-700 dark:text-zinc-300">{product.rating || 4.9}</span>
+            <span className="text-xs font-bold text-zinc-700 dark:text-zinc-300">
+              {product.reviewCount && product.reviewCount > 0 
+                ? Number(product.averageRating).toFixed(1) 
+                : Number(product.rating || 4.9).toFixed(1)}
+            </span>
+            {product.reviewCount ? (
+              <span className="text-[10px] text-zinc-400">({product.reviewCount})</span>
+            ) : null}
           </div>
         </div>
 
         {/* Title */}
-        <Link href={`/products/${product.id}`}>
+        <Link href={isIoT ? `/iot-kits/${product.id}` : `/products/${product.id}`}>
           <h3 className="text-sm font-bold text-zinc-900 dark:text-white group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors duration-200 line-clamp-2 cursor-pointer leading-snug">
             {product.name}
           </h3>

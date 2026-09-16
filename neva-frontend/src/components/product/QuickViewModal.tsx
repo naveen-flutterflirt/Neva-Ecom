@@ -97,10 +97,24 @@ export default function QuickViewModal({ product, onClose, onAddToCart }: QuickV
 
               {/* Rating */}
               <div className="flex items-center gap-1.5 mb-4">
-                <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
-                <span className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">
-                  {product.rating || 4.9}
+                <div className="flex items-center text-amber-400">
+                  {[...Array(5)].map((_, i) => {
+                    const hasReviews = product.reviewCount && product.reviewCount > 0;
+                    const rating = hasReviews ? Number(product.averageRating) : Number(product.rating || 4.9);
+                    const filled = i < Math.round(rating);
+                    return (
+                      <Star key={i} className={`h-3 w-3 ${filled ? 'fill-amber-400 text-amber-400' : 'text-zinc-300 dark:text-zinc-700'}`} />
+                    );
+                  })}
+                </div>
+                <span className="text-xs font-bold text-zinc-800 dark:text-zinc-200">
+                  {product.reviewCount && product.reviewCount > 0 
+                    ? Number(product.averageRating).toFixed(1) 
+                    : Number(product.rating || 4.9).toFixed(1)}
                 </span>
+                {product.reviewCount ? (
+                  <span className="text-[10px] text-zinc-500">({product.reviewCount} Reviews)</span>
+                ) : null}
                 <span className="text-xs text-zinc-400 dark:text-zinc-500">•</span>
                 <span className="text-xs font-medium text-violet-500 dark:text-violet-400">
                   SKU: {product.sku || 'N/A'}

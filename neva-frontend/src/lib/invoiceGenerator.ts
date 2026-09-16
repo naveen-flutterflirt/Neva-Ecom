@@ -87,7 +87,7 @@ export function generateInvoiceHTML(data: DynamicInvoiceData): string {
   const company = {
     name: 'FlutterFlirt Private Limited',
     logoUrl: typeof window !== 'undefined' ? `${window.location.origin}/logobgg.png` : '/logobgg.png',
-    addressLine1: 'Bhopal, Bengalore',
+    addressLine1: 'Bhopal, Bangalore',
     addressLine2: '',
     gstin: '23AAGCF2353L1ZO',
     email: 'nivashop.in@gmail.com',

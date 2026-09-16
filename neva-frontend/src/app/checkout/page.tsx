@@ -303,7 +303,8 @@ export default function CheckoutPage() {
         category: typeof i.product.category === 'object' ? (i.product.category as any)?.name : (i.product.category || 'E-Commerce Product'),
         price: Number(i.product.price),
         quantity: i.quantity,
-        image: i.product.image || (i.product.images && i.product.images[0]?.imageUrl)
+        image: i.product.image || (i.product.images && i.product.images[0]?.imageUrl),
+        isIoT: Boolean(i.product.isIoT || i.product.id?.toString().startsWith('kit-'))
       })),
       customer: {
         name: fullName,
@@ -350,7 +351,7 @@ export default function CheckoutPage() {
           throw new Error(orderRes.message || 'Failed to create Razorpay payment order');
         }
 
-        const razorpayKey = orderRes.key || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_TSnKuVgteVheGX';
+        const razorpayKey = orderRes.key || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
         const razorpayOrder = orderRes.order;
 
         if (scriptLoaded && typeof window !== 'undefined' && window.Razorpay) {
