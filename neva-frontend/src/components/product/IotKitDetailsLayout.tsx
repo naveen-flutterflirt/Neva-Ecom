@@ -231,14 +231,14 @@ export default function IotKitDetailsLayout({
 
           <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 gap-1.5 sm:gap-2">
             {whatsIncluded.map((comp: any, idx: number) => (
-              <div key={idx} className="flex flex-col items-center justify-center p-1 sm:p-1.5 bg-[#F8FAFC] dark:bg-[#131720] border border-zinc-100 dark:border-zinc-800/50 rounded-xl hover:border-zinc-300 dark:hover:border-zinc-700 transition">
+              <div key={idx} className="relative flex flex-col items-center justify-center p-1 sm:p-1.5 bg-[#F8FAFC] dark:bg-[#131720] border border-zinc-100 dark:border-zinc-800/50 rounded-xl hover:border-zinc-300 dark:hover:border-zinc-700 transition">
                 <div className="w-full aspect-square rounded overflow-hidden flex items-center justify-center">
                   <img src={comp.image || comp.img} alt={comp.name} className="object-contain w-full h-full mix-blend-multiply dark:mix-blend-normal filter dark:invert-[.8]" />
                 </div>
-                <span className="text-[10px] sm:text-[11px] font-bold text-center text-zinc-900 dark:text-zinc-200 leading-tight mt-0.5 px-1 pb-1">
+                <span className="text-[10px] sm:text-[11px] font-bold text-center text-zinc-900 dark:text-zinc-200 leading-tight mt-1 px-1">
                   {comp.name}
                 </span>
-                <div className="absolute top-1.5 right-1.5 bg-violet-600/90 backdrop-blur-sm text-white text-[9px] font-black px-1.5 py-0.5 rounded-md shadow-sm">
+                <div className="mt-1.5 mb-1 bg-slate-200/80 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-[9px] sm:text-[10px] font-bold px-2.5 py-0.5 rounded-full shadow-sm">
                   {(() => {
                     const q = comp.quantity || comp.qty || '';
                     if (!q) return '';
