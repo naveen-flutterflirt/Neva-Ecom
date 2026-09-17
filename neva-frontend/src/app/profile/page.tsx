@@ -1345,8 +1345,20 @@ export default function ProfilePage() {
                               <Sparkles className="h-5 w-5" />
                             </div>
                             <div>
-                              <h4 className="text-xs font-bold text-zinc-900 dark:text-white uppercase tracking-wider">Your IoT Kit Activation Code</h4>
-                              <p className="text-[10px] text-zinc-500 dark:text-zinc-400">Use this 12-digit code to access your premium kits and tutorials.</p>
+                              <h4 className="text-xs font-bold text-zinc-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
+                                Your IoT Kit Activation Code
+                              </h4>
+                              <p className="text-[10px] text-zinc-500 dark:text-zinc-400 mt-0.5">
+                                Use this 12-digit code to access your premium kits and tutorials.{' '}
+                                <a 
+                                  href="https://www.flutterflirt.com/iot-labs" 
+                                  target="_blank" 
+                                  rel="noopener noreferrer" 
+                                  className="text-violet-600 dark:text-violet-400 font-bold hover:underline inline-flex items-center gap-1 ml-2 text-sm animate-pulse"
+                                >
+                                  Visit Site ➔
+                                </a>
+                              </p>
                             </div>
                           </div>
                           <div 
