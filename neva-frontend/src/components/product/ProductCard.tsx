@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Eye, Star, Cpu, Layers, ShoppingBag, Box, Zap } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAppSelector } from '../../store';
@@ -113,11 +114,12 @@ export default function ProductCard({ product, onQuickShop, onQuickView, onAddTo
       {/* Dynamic Image Container - Perfect Square Aspect Ratio */}
       <div className="relative aspect-square w-full overflow-hidden bg-zinc-100 dark:bg-zinc-900/60 border-b border-zinc-100 dark:border-zinc-800/50 group/img">
         <Link href={isIoT ? `/iot-kits/${product.id}` : `/products/${product.id}`} className="w-full h-full block">
-          <img
+          <Image
             src={getDisplayImage()}
             alt={product.name}
+            width={800}
+            height={800}
             className="h-full w-full cursor-pointer object-cover object-center "
-            loading="lazy"
           />
         </Link>
       </div>

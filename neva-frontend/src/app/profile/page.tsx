@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   User,
@@ -1272,7 +1273,7 @@ export default function ProfilePage() {
                               <div key={idx} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 pb-2 text-xs">
                                 <div className="flex items-center gap-3 min-w-0">
                                   {item.productImage ? (
-                                    <img src={item.productImage} alt={item.productName} className="h-11 w-11 rounded-xl object-contain bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 shrink-0 p-0.5" />
+                                    <Image src={item.productImage} alt={item.productName} width={44} height={44} className="h-11 w-11 rounded-xl object-contain bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 shrink-0 p-0.5" />
                                   ) : (
                                     <div className="h-11 w-11 rounded-xl bg-violet-100 dark:bg-violet-950/60 text-violet-600 flex items-center justify-center shrink-0 border border-violet-200 dark:border-violet-800">
                                       <Package className="h-5 w-5" />
@@ -1661,7 +1662,7 @@ export default function ProfilePage() {
                                 <div className="h-14 w-full rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700/60 overflow-hidden relative flex items-center justify-center">
                                   {ref.img ? (
                                     <>
-                                      <img src={ref.img} alt={ref.label} className="h-full w-full object-contain p-0.5" />
+                                      <Image src={ref.img} alt={ref.label} width={200} height={200} className="h-full w-full object-contain p-0.5" />
                                       <button
                                         onClick={() => setPreviewImage(ref.img || null)}
                                         className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 transition flex items-center justify-center text-white"
@@ -2196,7 +2197,7 @@ export default function ProfilePage() {
             >
               <X className="h-4 w-4" />
             </button>
-            <img src={previewImage} alt="Reference Preview" className="w-full h-auto max-h-[80vh] object-contain rounded-2xl" />
+            <Image src={previewImage} alt="Reference Preview" width={800} height={800} className="w-full h-auto max-h-[80vh] object-contain rounded-2xl" />
           </div>
         </div>
       )}

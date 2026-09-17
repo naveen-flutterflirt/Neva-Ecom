@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { Product } from '../../types/product';
 import {
   Star,
@@ -61,9 +62,11 @@ export default function IotKitDetailsLayout({
         {/* Left: Product Image */}
         <div className="lg:col-span-6 space-y-3">
           <div className="relative aspect-square max-h-[440px] sm:max-h-[480px] w-full max-w-[500px] mx-auto rounded-3xl overflow-hidden bg-white dark:bg-[#0d0e15] border border-zinc-200/90 dark:border-zinc-800/90 shadow-md dark:shadow-2xl flex items-center justify-center group">
-            <img
+            <Image
               src={currentImg}
               alt={product.name}
+              width={800}
+              height={800}
               className="w-full h-full object-contain"
             />
             {/* Unboxing overlay button */}
@@ -83,7 +86,7 @@ export default function IotKitDetailsLayout({
                     : 'border-zinc-200/80 dark:border-zinc-800/80 hover:border-purple-300 dark:hover:border-purple-800 opacity-70 hover:opacity-100'
                     }`}
                 >
-                  <img src={img.imageUrl} alt="" className="w-full h-full object-contain rounded-xl p-1" />
+                  <Image src={img.imageUrl} alt="" width={200} height={200} className="w-full h-full object-contain rounded-xl p-1" />
                 </button>
               ))
             ) : (
@@ -91,7 +94,7 @@ export default function IotKitDetailsLayout({
                 type="button"
                 className="aspect-square rounded-2xl border border-purple-500 ring-2 ring-purple-500/50 p-1 bg-white dark:bg-[#0d0e14]"
               >
-                <img src={product.image || ''} alt="" className="w-full h-full object-contain rounded-xl p-1" />
+                <Image src={product.image || ''} alt="" width={200} height={200} className="w-full h-full object-contain rounded-xl p-1" />
               </button>
             )}
           </div>
@@ -233,7 +236,7 @@ export default function IotKitDetailsLayout({
             {whatsIncluded.map((comp: any, idx: number) => (
               <div key={idx} className="relative flex flex-col items-center justify-center p-1 sm:p-1.5 bg-[#F8FAFC] dark:bg-[#131720] border border-zinc-100 dark:border-zinc-800/50 rounded-xl hover:border-zinc-300 dark:hover:border-zinc-700 transition">
                 <div className="w-full aspect-square rounded overflow-hidden flex items-center justify-center">
-                  <img src={comp.image || comp.img} alt={comp.name} className="object-contain w-full h-full mix-blend-multiply dark:mix-blend-normal filter dark:invert-[.8]" />
+                  <Image src={comp.image || comp.img} alt={comp.name} width={200} height={200} className="object-contain w-full h-full mix-blend-multiply dark:mix-blend-normal filter dark:invert-[.8]" />
                 </div>
                 <span className="text-[10px] sm:text-[11px] font-bold text-center text-zinc-900 dark:text-zinc-200 leading-tight mt-1 px-1">
                   {comp.name}

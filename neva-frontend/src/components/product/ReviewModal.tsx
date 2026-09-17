@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
+import Image from 'next/image';
 import { Star, Image as ImageIcon, X, Upload } from 'lucide-react';
 import { apiClient } from '../../lib/api';
 
@@ -184,7 +185,7 @@ export default function ReviewModal({ isOpen, onClose, productName, existingRevi
           <div className="flex flex-wrap gap-3">
             {selectedImages.map((img, idx) => (
               <div key={idx} className="relative h-16 w-16 rounded-lg border border-zinc-200 dark:border-zinc-800 overflow-hidden group">
-                <img src={img} alt={`Upload ${idx}`} className="w-full h-full object-cover" />
+                <Image src={img} alt={`Upload ${idx}`} width={100} height={100} className="w-full h-full object-cover" />
                 <button
                   type="button"
                   onClick={() => removeImage(idx)}

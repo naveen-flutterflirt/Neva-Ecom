@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Star, Cpu, Layers, Info, ShoppingCart } from 'lucide-react';
 import { Product } from '../../types/product';
@@ -64,9 +65,11 @@ export default function QuickViewModal({ product, onClose, onAddToCart }: QuickV
 
           {/* Left Side: Product Image Display */}
           <div className="relative w-full md:w-1/2 aspect-square md:aspect-auto md:h-auto overflow-hidden bg-zinc-100 dark:bg-zinc-950">
-            <img
+            <Image
               src={getImage()}
               alt={product.name}
+              width={800}
+              height={800}
               className="h-full w-full object-cover"
             />
 

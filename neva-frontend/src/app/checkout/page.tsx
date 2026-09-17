@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -866,9 +867,11 @@ export default function CheckoutPage() {
                 <div className="space-y-3 max-h-[260px] overflow-y-auto pr-1 scrollbar-thin">
                   {checkoutItems.map((item) => (
                     <div key={item.product.id} className="flex items-center gap-3 bg-zinc-50/70 dark:bg-zinc-900/40 p-2.5 rounded-2xl border border-zinc-200/60 dark:border-zinc-800/60">
-                      <img
+                      <Image
                         src={item.product.image || (item.product.images && item.product.images[0]?.imageUrl) || ''}
                         alt={item.product.name}
+                        width={48}
+                        height={48}
                         className="h-12 w-12 rounded-xl object-contain bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 shrink-0"
                       />
                       <div className="flex-1 min-w-0">

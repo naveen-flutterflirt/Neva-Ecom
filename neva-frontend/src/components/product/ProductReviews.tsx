@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { Star, CheckCircle2, User, ThumbsUp, MessageSquare } from 'lucide-react';
 import { apiClient } from '../../lib/api';
 
@@ -165,7 +166,7 @@ export default function ProductReviews({ productId, productName }: ProductReview
                       onClick={() => setSelectedImage(img)}
                       className="h-16 w-16 sm:h-20 sm:w-20 rounded-xl overflow-hidden border border-zinc-200 dark:border-zinc-800 cursor-pointer hover:opacity-80 transition-opacity"
                     >
-                      <img src={img} alt="Review Attachment" className="w-full h-full object-cover" />
+                      <Image src={img} alt="Review Attachment" width={200} height={200} className="w-full h-full object-cover" />
                     </div>
                   ))}
                 </div>
@@ -207,9 +208,11 @@ export default function ProductReviews({ productId, productName }: ProductReview
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
             </button>
-            <img 
+            <Image 
               src={selectedImage} 
               alt="Expanded view" 
+              width={1200}
+              height={1200}
               className="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl"
               onClick={(e) => e.stopPropagation()}
             />

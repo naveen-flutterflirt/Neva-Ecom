@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { productImages } from '../../data/heroContent';
 
@@ -36,7 +37,7 @@ export default function BreakoutImages() {
                     whileHover={{ scale: 1.06, rotate: -4, zIndex: 50 }}
                     className="group absolute left-0 top-0 z-20 h-48 w-36 cursor-pointer overflow-hidden rounded-2xl border border-zinc-200/50 dark:border-white/15 shadow-[0_0_25px_rgba(167,139,250,0.35),6px_8px_30px_rgba(0,0,0,0.15)] dark:shadow-[0_0_25px_rgba(167,139,250,0.35),6px_8px_30px_rgba(0,0,0,0.5)] transition-shadow duration-300 hover:shadow-[0_0_35px_rgba(167,139,250,0.6)] sm:h-52 sm:w-38 lg:h-64 lg:w-44 xl:h-68 xl:w-48 2xl:h-72 2xl:w-52"
                 >
-                    <img src={productImages[0]} alt="Eco-friendly Violet PLA Filament" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                    <Image src={productImages[0]} alt="Eco-friendly Violet PLA Filament" width={400} height={400} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" />
                     {/* Dynamic Label Badge */}
                     <div className="absolute bottom-3 left-3 right-3 translate-y-8 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100 z-30">
                         <div className="rounded-lg border border-violet-500/30 bg-white/85 dark:bg-zinc-950/85 px-2 py-1.5 text-center text-[9px] font-bold uppercase tracking-wider text-violet-400 backdrop-blur-sm">
@@ -62,7 +63,7 @@ export default function BreakoutImages() {
                     className="group absolute right-0 top-8 z-30 h-48 w-36 cursor-pointer overflow-hidden rounded-2xl border border-zinc-200/50 dark:border-white/15 shadow-[0_0_25px_rgba(34,211,238,0.35),8px_10px_35px_rgba(0,0,0,0.15)] dark:shadow-[0_0_25px_rgba(34,211,238,0.35),8px_10px_35px_rgba(0,0,0,0.5)] transition-shadow duration-300 hover:shadow-[0_0_35px_rgba(34,211,238,0.6)] sm:h-52 sm:w-38 lg:h-64 lg:w-44 xl:h-68 xl:w-48 2xl:h-72 2xl:w-52"
                     style={{ animation: 'floatB 5.2s ease-in-out infinite 0.9s' }}
                 >
-                    <img src={productImages[1]} alt="Premium Smart IoT Microcontroller Board" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                    <Image src={productImages[1]} alt="Premium Smart IoT Microcontroller Board" width={400} height={400} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" />
                     {/* Dynamic Label Badge */}
                     <div className="absolute bottom-3 left-3 right-3 translate-y-8 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100 z-30">
                         <div className="rounded-lg border border-cyan-500/30 bg-white/85 dark:bg-zinc-950/85 px-2 py-1.5 text-center text-[9px] font-bold uppercase tracking-wider text-cyan-400 backdrop-blur-sm">
@@ -88,7 +89,7 @@ export default function BreakoutImages() {
                     className="group absolute bottom-14 left-2 z-20 h-48 w-36 cursor-pointer overflow-hidden rounded-2xl border border-zinc-200/50 dark:border-white/15 shadow-[0_0_25px_rgba(244,114,182,0.35),6px_8px_30px_rgba(0,0,0,0.15)] dark:shadow-[0_0_25px_rgba(244,114,182,0.35),6px_8px_30px_rgba(0,0,0,0.4)] transition-shadow duration-300 hover:shadow-[0_0_35px_rgba(244,114,182,0.6)] sm:h-52 sm:w-38 lg:h-64 lg:w-44 xl:h-68 xl:w-48 2xl:h-72 2xl:w-52"
                     style={{ animation: 'floatC 5.8s ease-in-out infinite 1.2s' }}
                 >
-                    <img src={productImages[2]} alt="Vibrant Pink PLA Filament Spool" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                    <Image src={productImages[2]} alt="Vibrant Pink PLA Filament Spool" width={400} height={400} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" />
                     {/* Dynamic Label Badge */}
                     <div className="absolute bottom-3 left-3 right-3 translate-y-8 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100 z-30">
                         <div className="rounded-lg border border-pink-500/30 bg-white/85 dark:bg-zinc-950/85 px-2 py-1.5 text-center text-[9px] font-bold uppercase tracking-wider text-pink-400 backdrop-blur-sm">
@@ -114,7 +115,7 @@ export default function BreakoutImages() {
                     className="group absolute bottom-0 right-2 z-10 h-48 w-36 cursor-pointer overflow-hidden rounded-2xl border border-zinc-200/50 dark:border-white/15 shadow-[0_0_25px_rgba(251,191,36,0.35),8px_12px_40px_rgba(0,0,0,0.15)] dark:shadow-[0_0_25px_rgba(251,191,36,0.35),8px_12px_40px_rgba(0,0,0,0.55)] transition-shadow duration-300 hover:shadow-[0_0_40px_rgba(251,191,36,0.6)] sm:h-52 sm:w-38 lg:h-64 lg:w-44 xl:h-68 xl:w-48 2xl:h-72 2xl:w-52"
                     style={{ animation: 'floatD 6s ease-in-out infinite 1.5s' }}
                 >
-                    <img src={productImages[3]} alt="Smart IoT Developer Expansion Module" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                    <Image src={productImages[3]} alt="Smart IoT Developer Expansion Module" width={400} height={400} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" />
                     {/* Dynamic Label Badge */}
                     <div className="absolute bottom-3 left-3 right-3 translate-y-8 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100 z-30">
                         <div className="rounded-lg border border-amber-500/30 bg-white/85 dark:bg-zinc-950/85 px-2 py-1.5 text-center text-[9px] font-bold uppercase tracking-wider text-amber-400 backdrop-blur-sm">

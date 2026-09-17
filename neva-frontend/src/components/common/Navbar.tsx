@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import {
   Search,
@@ -548,7 +549,7 @@ export default function Navbar() {
                           className="flex items-center gap-3.5 p-2.5 rounded-2xl border border-zinc-200/60 dark:border-zinc-800/60 bg-zinc-50/50 dark:bg-zinc-900/40 hover:bg-violet-50/80 dark:hover:bg-violet-950/40 hover:border-violet-300 dark:hover:border-violet-800 transition-all duration-200 group"
                         >
                           <div className="h-12 w-12 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-1 overflow-hidden shrink-0">
-                            <img src={primaryImg} alt={item.name} className="w-full h-full object-contain" />
+                            <Image src={primaryImg} alt={item.name} width={48} height={48} className="w-full h-full object-contain" />
                           </div>
                           <div className="flex-1 min-w-0">
                             <h4 className="text-xs sm:text-sm font-bold text-zinc-900 dark:text-white group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors truncate">
