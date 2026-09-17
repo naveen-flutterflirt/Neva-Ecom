@@ -97,7 +97,7 @@ export default function IotKitsPage() {
   return (
     <main className="min-h-screen bg-zinc-50/60 dark:bg-[#090a0f] pt-24 pb-20 text-zinc-900 dark:text-zinc-100 font-sans transition-colors duration-200">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-8">
-        
+
         {/* Breadcrumb & Header */}
         <div className="flex flex-col border-b border-zinc-200/80 dark:border-zinc-800/80 pb-5">
           <div className="flex items-center gap-2 text-xs font-semibold text-zinc-500 dark:text-zinc-400 mb-2">
@@ -129,14 +129,15 @@ export default function IotKitsPage() {
             No IoT kits found.
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6 pb-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
+          <div className="flex flex-wrap justify-center sm:justify-start gap-5 sm:gap-6 pb-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
             {kits.map((kit) => (
-              <ProductCard
-                key={kit.id}
-                product={kit}
-                onAddToCart={() => handleAddToCart(kit)}
-                onBuyNow={() => handleBuyNow(kit)}
-              />
+              <div key={kit.id} className="w-full max-w-[340px] sm:max-w-none sm:w-[280px] lg:w-[320px] shrink-0 flex">
+                <ProductCard
+                  product={kit}
+                  onAddToCart={() => handleAddToCart(kit)}
+                  onBuyNow={() => handleBuyNow(kit)}
+                />
+              </div>
             ))}
           </div>
         )}
