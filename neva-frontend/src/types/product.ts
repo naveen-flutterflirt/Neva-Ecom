@@ -47,6 +47,7 @@ export interface Product {
   images?: ProductImageItem[];
   badge?: string;
   isIoT?: boolean;
+  isKit?: boolean;
   description?: string | null;
   materialVariants?: MaterialVariantItem[];
   colorOptions?: ColorOptionItem[];
