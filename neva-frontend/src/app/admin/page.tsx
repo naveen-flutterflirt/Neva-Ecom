@@ -211,8 +211,9 @@ export default function AdminDashboardPage() {
         const d = parseOrderDate(o.createdAt);
         const diffDays = Math.floor((now.getTime() - d.getTime()) / (1000 * 3600 * 24));
         let weekIdx = 3 - Math.floor(diffDays / 7);
-        if (weekIdx < 0) weekIdx = 0;
-        if (weekIdx > 3) weekIdx = 3;
+        
+        // Skip orders older than 4 weeks or in the future
+        if (weekIdx < 0 || weekIdx > 3) return;
 
         const rev = Number(o.totalAmount || 0);
         const itemQty = Array.isArray(o.items) && o.items.length > 0
@@ -238,16 +239,22 @@ export default function AdminDashboardPage() {
       orders.forEach(o => {
         if (o.orderStatus === 'cancelled') return;
         const d = parseOrderDate(o.createdAt);
-        const mName = monthNames[d.getMonth()];
-        const bucket = buckets.find(b => b.label === mName);
-        if (bucket) {
-          const rev = Number(o.totalAmount || 0);
-          const itemQty = Array.isArray(o.items) && o.items.length > 0
-            ? o.items.reduce((sum: number, it: any) => sum + (Number(it.quantity) || 1), 0)
-            : 1;
+        
+        // Calculate exact month difference to ensure we only include the last 6 months (not same month from previous years)
+        const monthDiff = (now.getFullYear() - d.getFullYear()) * 12 + (now.getMonth() - d.getMonth());
+        
+        if (monthDiff >= 0 && monthDiff < 6) {
+          const mName = monthNames[d.getMonth()];
+          const bucket = buckets.find(b => b.label === mName);
+          if (bucket) {
+            const rev = Number(o.totalAmount || 0);
+            const itemQty = Array.isArray(o.items) && o.items.length > 0
+              ? o.items.reduce((sum: number, it: any) => sum + (Number(it.quantity) || 1), 0)
+              : 1;
 
-          bucket.revenue += rev;
-          bucket.orders += itemQty;
+            bucket.revenue += rev;
+            bucket.orders += itemQty;
+          }
         }
       });
 
