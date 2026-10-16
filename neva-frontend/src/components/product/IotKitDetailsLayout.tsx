@@ -14,7 +14,13 @@ import {
   LayoutGrid,
   ChevronDown,
   CheckCircle2,
-  Code
+  Code,
+  FileText,
+  Download,
+  BookOpen,
+  Sparkles,
+  X,
+  ExternalLink
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -45,10 +51,23 @@ export default function IotKitDetailsLayout({
   const whatsIncluded = (product as any).whatsIncluded || [];
   const projects = (product as any).projects || [];
   const faqs = (product as any).faqs || [];
+  const ebookUrl = (product as any).ebookUrl || null;
 
   useEffect(() => {
     if (selectedImage) setCurrentImg(selectedImage);
   }, [selectedImage]);
+
+  const triggerDownload = () => {
+    if (!ebookUrl) return;
+    const safeName = `${product.name.replace(/[^a-zA-Z0-9]/g, '_')}_Manual.pdf`;
+    const downloadUrl = `/api/download?url=${encodeURIComponent(ebookUrl)}&filename=${encodeURIComponent(safeName)}`;
+    const a = document.createElement('a');
+    a.href = downloadUrl;
+    a.download = safeName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
 
   const discountPercent = finalMrpPrice
     ? Math.round(((finalMrpPrice - finalSellingPrice) / finalMrpPrice) * 100)
@@ -145,6 +164,47 @@ export default function IotKitDetailsLayout({
             {product.description || 'A complete hands-on kit to build exciting real-world projects. Perfect for students, educators, and hobbyists. Includes high-quality components, project guide, and online resources.'}
           </p>
 
+          {/* Eye-catching E-Book Highlight Banner */}
+          {ebookUrl && (
+            <motion.div
+              initial={{ scale: 0.98, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-violet-50/80 via-white to-cyan-50/60 dark:bg-zinc-900/60 border border-violet-200/80 dark:border-violet-800/40 p-3.5 sm:p-4 shadow-sm hover:border-violet-300 dark:hover:border-violet-700 transition-colors"
+            >
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-xl bg-violet-100 dark:bg-violet-900/40 text-violet-600 dark:text-violet-400 flex items-center justify-center shrink-0 border border-violet-200/60 dark:border-violet-700/50">
+                    <BookOpen className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10.5px] font-bold uppercase tracking-wider text-violet-600 dark:text-violet-400 flex items-center gap-1">
+                        <Sparkles className="h-3 w-3" /> Free Kit Manual Included
+                      </span>
+                    </div>
+                    <p className="text-sm font-bold text-zinc-900 dark:text-white leading-tight mt-0.5">
+                      Step-by-Step IoT Project E-Book
+                    </p>
+                    <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                      Circuit diagrams, pinouts & sample code
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={triggerDownload}
+                    className="px-3.5 py-1.5 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-xs font-bold shadow-sm shadow-violet-600/20 flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer"
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                    <span>Download</span>
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
           <div className="flex flex-wrap items-center gap-3 pt-2">
 
 
@@ -219,6 +279,8 @@ export default function IotKitDetailsLayout({
         >
           FAQs
         </button>
+
+
       </div>
 
       {/* Tab Content */}
@@ -246,8 +308,8 @@ export default function IotKitDetailsLayout({
                     const q = comp.quantity || comp.qty || '';
                     if (!q) return '';
                     const lowerQ = String(q).toLowerCase();
-                    return (lowerQ.includes('pc') || lowerQ.includes('piece') || lowerQ.includes('set')) 
-                      ? q 
+                    return (lowerQ.includes('pc') || lowerQ.includes('piece') || lowerQ.includes('set'))
+                      ? q
                       : `${q} pcs`;
                   })()}
                 </div>
@@ -291,7 +353,7 @@ export default function IotKitDetailsLayout({
             <h2 className="text-3xl font-black text-[#0B1527] dark:text-white tracking-tight">Frequently Asked Questions</h2>
             <p className="text-zinc-500 dark:text-zinc-400 mt-3 text-sm">Got questions? We've got answers.</p>
           </div>
-          
+
           <div className="space-y-3">
             {faqs.map((faq: any, idx: number) => {
               const isOpen = openFaqIndex === idx;
@@ -326,6 +388,7 @@ export default function IotKitDetailsLayout({
           </div>
         </div>
       )}
+
 
     </div>
   );

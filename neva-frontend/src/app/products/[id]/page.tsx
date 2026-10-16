@@ -65,7 +65,7 @@ export default function DynamicProductDetailsPage() {
             image: 'https://images.unsplash.com/photo-1558346490-a72e53ae2d4f?auto=format&fit=crop&w=800&q=80',
             images: [{ imageUrl: 'https://images.unsplash.com/photo-1558346490-a72e53ae2d4f?auto=format&fit=crop&w=800&q=80' }],
             isIoT: true,
-            description: 'If you tell me your current FlutterFlirt backend auth flow and NivaShop backend auth flow (JWT/session/Firebase/etc.), I can show you the exact implementation for your Node.js projects, including the token flow and APIs.',
+            description: 'Explore our complete IoT kit with premium electronic components, sensors, and microcontroller boards.',
             materialVariants: [],
             colorOptions: [],
             sizeVariants: [],

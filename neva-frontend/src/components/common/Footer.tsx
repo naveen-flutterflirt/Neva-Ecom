@@ -116,7 +116,7 @@ export default function Footer() {
                 </li>
                 <li>
                   <Link href="/iot-product" className="font-semibold text-zinc-700 hover:text-violet-600 dark:text-zinc-200 dark:hover:text-white transition-colors block">
-                    IoT Hardware
+                    IoT Products
                   </Link>
                 </li>
               </ul>

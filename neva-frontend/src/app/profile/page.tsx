@@ -20,7 +20,6 @@ import {
   ShieldCheck,
   Search,
   Copy,
-  Sparkles,
   Check,
   Zap,
   Box,
@@ -1338,42 +1337,6 @@ export default function ProfilePage() {
                           })}
                         </div>
                       </div>
-
-                      {ord.iotKitCode && (
-                        <div className="mt-4 p-4 rounded-xl border border-violet-200 dark:border-violet-800/50 bg-violet-50/50 dark:bg-violet-900/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                          <div className="flex items-center gap-3">
-                            <div className="h-10 w-10 bg-violet-100 dark:bg-violet-900/40 text-violet-600 dark:text-violet-400 rounded-full flex items-center justify-center shrink-0">
-                              <Sparkles className="h-5 w-5" />
-                            </div>
-                            <div>
-                              <h4 className="text-xs font-bold text-zinc-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
-                                Your IoT Kit Activation Code
-                              </h4>
-                              <p className="text-[10px] text-zinc-500 dark:text-zinc-400 mt-0.5">
-                                Use this 12-digit code to access your premium kits and tutorials.{' '}
-                                <a 
-                                  href="https://www.flutterflirt.com/iot-labs" 
-                                  target="_blank" 
-                                  rel="noopener noreferrer" 
-                                  className="text-violet-600 dark:text-violet-400 font-bold hover:underline inline-flex items-center gap-1 ml-2 text-sm animate-pulse"
-                                >
-                                  Visit Site ➔
-                                </a>
-                              </p>
-                            </div>
-                          </div>
-                          <div 
-                            onClick={() => copyToClipboard(ord.iotKitCode!, 'IoT Kit Code')}
-                            className="bg-white dark:bg-zinc-900 border border-violet-200 dark:border-violet-700/50 px-4 py-2.5 rounded-lg flex items-center gap-3 cursor-pointer hover:border-violet-400 transition-colors shadow-sm group"
-                          >
-                            <span className="font-mono text-sm sm:text-base font-black tracking-widest text-violet-600 dark:text-violet-400">{ord.iotKitCode}</span>
-                            <div className="bg-violet-100 dark:bg-violet-900/50 p-1.5 rounded-md text-violet-600 dark:text-violet-400 group-hover:scale-110 transition-transform">
-                              <Copy className="h-3.5 w-3.5" />
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
 
                     </div>
                   );

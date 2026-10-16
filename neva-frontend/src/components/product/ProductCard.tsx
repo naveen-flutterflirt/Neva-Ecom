@@ -3,8 +3,8 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Eye, Star, Cpu, Layers, ShoppingBag, Box, Zap } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Eye, Star, Cpu, Layers, ShoppingBag, Box, Zap, FileText, Download, Sparkles } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAppSelector } from '../../store';
 import { Product } from '../../types/product';
 
@@ -120,9 +120,75 @@ export default function ProductCard({ product, onQuickShop, onQuickView, onAddTo
             alt={product.name}
             width={800}
             height={800}
-            className="h-full w-full cursor-pointer object-cover object-center "
+            className="h-full w-full cursor-pointer object-cover object-center"
           />
         </Link>
+
+        {/* Sleek Animated Professional E-Book Badge & Direct Download */}
+        {product.ebookUrl && (
+          <motion.div
+            initial={{ opacity: 0, x: -28 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{
+              type: 'spring',
+              stiffness: 260,
+              damping: 20,
+              delay: 0.15
+            }}
+            className="absolute top-2.5 left-2.5 z-20"
+          >
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const safeName = `${product.name.replace(/[^a-zA-Z0-9]/g, '_')}_Manual.pdf`;
+                const downloadUrl = `/api/download?url=${encodeURIComponent(product.ebookUrl!)}&filename=${encodeURIComponent(safeName)}`;
+                const a = document.createElement('a');
+                a.href = downloadUrl;
+                a.download = safeName;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+              }}
+              className="group/ebook relative overflow-hidden inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/95 dark:bg-zinc-900/90 backdrop-blur-md border border-zinc-200/90 dark:border-zinc-700/80 text-zinc-700 dark:text-zinc-200 shadow-sm hover:border-violet-400 dark:hover:border-violet-500 cursor-pointer"
+              title="Download Free Kit E-Book Manual (PDF)"
+            >
+              {/* Continuous smooth marquee shine animation */}
+              <motion.span
+                animate={{ x: ['-100%', '240%'] }}
+                transition={{
+                  repeat: Infinity,
+                  duration: 2.4,
+                  ease: 'easeInOut',
+                  repeatDelay: 1.2,
+                }}
+                className="absolute inset-0 w-1/2 h-full bg-gradient-to-r from-transparent via-violet-400/20 dark:via-violet-300/15 to-transparent -skew-x-12 pointer-events-none"
+              />
+
+              <div className="flex items-center justify-center w-4 h-4 rounded-full bg-violet-100 dark:bg-violet-900/40 text-violet-600 dark:text-violet-400 shrink-0">
+                <FileText className="h-2.5 w-2.5" />
+              </div>
+
+              {/* Gently animated blinking / breathing text */}
+              <motion.span
+                animate={{ opacity: [1, 0.45, 1] }}
+                transition={{
+                  repeat: Infinity,
+                  duration: 1.8,
+                  ease: 'easeInOut',
+                }}
+                className="text-[11px] font-bold tracking-tight text-zinc-900 dark:text-zinc-100 whitespace-nowrap"
+              >
+                Free E-Book
+              </motion.span>
+
+
+
+              <Download className="h-3 w-3 text-zinc-400 group-hover/ebook:text-violet-600 dark:group-hover/ebook:text-violet-400 shrink-0" />
+            </button>
+          </motion.div>
+        )}
       </div>
 
       {/* Details Content */}
@@ -142,8 +208,8 @@ export default function ProductCard({ product, onQuickShop, onQuickView, onAddTo
           <div className="flex items-center gap-1.5 ml-auto">
             <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
             <span className="text-xs font-bold text-zinc-700 dark:text-zinc-300">
-              {product.reviewCount && product.reviewCount > 0 
-                ? Number(product.averageRating).toFixed(1) 
+              {product.reviewCount && product.reviewCount > 0
+                ? Number(product.averageRating).toFixed(1)
                 : Number(product.rating || 4.9).toFixed(1)}
             </span>
             {product.reviewCount ? (

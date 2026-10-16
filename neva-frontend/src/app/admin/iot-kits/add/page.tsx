@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus, Trash2, Image as ImageIcon, Save, AlertCircle } from 'lucide-react';
+import { Plus, Trash2, Image as ImageIcon, Save, AlertCircle, FileText } from 'lucide-react';
 import { apiClient } from '../../../../lib/api';
 import Toast from '../../../../components/ui/Toast';
 
@@ -21,6 +21,9 @@ export default function AddIotKitPage() {
 
   // Main Images
   const [images, setImages] = useState<File[]>([]);
+
+  // E-book PDF file
+  const [ebookFile, setEbookFile] = useState<File | null>(null);
 
   // What's Included
   const [whatsIncluded, setWhatsIncluded] = useState<{ name: string; quantity: string; imageFile: File | null }[]>([
@@ -90,6 +93,11 @@ export default function AddIotKitPage() {
       // Prepare Projects & FAQs
       formData.append('projects', JSON.stringify(projects.filter(p => p.trim() !== '')));
       formData.append('faqs', JSON.stringify(faqs.filter(f => f.question.trim() !== '')));
+
+      // Append E-book if provided
+      if (ebookFile) {
+        formData.append('ebook', ebookFile);
+      }
 
       const token = typeof window !== 'undefined' ? (localStorage.getItem('neva-admin-token') || localStorage.getItem('neva-token')) : '';
       const response = await apiClient('/iot-kits', {
@@ -186,6 +194,64 @@ export default function AddIotKitPage() {
               </label>
             )}
           </div>
+        </div>
+
+        {/* E-Book / Project Guide PDF */}
+        <div className="bg-white p-6 rounded-2xl border border-zinc-200 shadow-sm space-y-4">
+          <div className="flex items-center justify-between mb-2 border-b border-zinc-100 pb-2">
+            <div>
+              <h2 className="text-sm font-bold text-zinc-900 uppercase tracking-wider flex items-center gap-2">
+                <FileText className="h-4 w-4 text-violet-600" />
+                Kit E-Book / Project Manual (PDF)
+              </h2>
+              <p className="text-xs text-zinc-500 mt-0.5">Upload a downloadable PDF guide for customers who buy or view this kit</p>
+            </div>
+            {ebookFile && (
+              <span className="text-xs font-semibold px-2.5 py-1 bg-emerald-50 text-emerald-600 rounded-full border border-emerald-200">
+                PDF Selected
+              </span>
+            )}
+          </div>
+
+          {ebookFile ? (
+            <div className="flex items-center justify-between p-3.5 bg-violet-50/60 border border-violet-200 rounded-xl">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-violet-600 text-white rounded-lg">
+                  <FileText className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-zinc-800 line-clamp-1">{ebookFile.name}</p>
+                  <p className="text-xs text-zinc-500">{(ebookFile.size / (1024 * 1024)).toFixed(2)} MB</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEbookFile(null)}
+                className="p-2 text-zinc-400 hover:text-red-500 hover:bg-white rounded-lg transition"
+                title="Remove E-Book"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            </div>
+          ) : (
+            <label className="border-2 border-dashed border-zinc-300 hover:border-violet-500 bg-zinc-50/50 hover:bg-violet-50/30 rounded-2xl p-6 flex flex-col items-center justify-center cursor-pointer transition group">
+              <div className="p-3 bg-white group-hover:bg-violet-600 text-zinc-400 group-hover:text-white rounded-2xl shadow-sm border border-zinc-200 group-hover:border-violet-600 transition-all mb-2">
+                <FileText className="h-6 w-6" />
+              </div>
+              <span className="text-sm font-bold text-zinc-700 group-hover:text-violet-700">Click to upload Kit E-Book (PDF)</span>
+              <span className="text-xs text-zinc-400 mt-1">Supports PDF up to 25MB</span>
+              <input
+                type="file"
+                accept="application/pdf,.pdf"
+                className="hidden"
+                onChange={(e) => {
+                  if (e.target.files?.[0]) {
+                    setEbookFile(e.target.files[0]);
+                  }
+                }}
+              />
+            </label>
+          )}
         </div>
 
         {/* What's Included */}

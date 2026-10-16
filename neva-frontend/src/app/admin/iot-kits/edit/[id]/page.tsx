@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { Plus, Trash2, Image as ImageIcon, Save, AlertCircle } from 'lucide-react';
+import { Plus, Trash2, Image as ImageIcon, Save, AlertCircle, FileText } from 'lucide-react';
 import { apiClient } from '../../../../../lib/api';
 import Toast from '../../../../../components/ui/Toast';
 
@@ -25,6 +25,11 @@ export default function EditIotKitPage() {
   const [existingImages, setExistingImages] = useState<{ id: string; imageUrl: string }[]>([]);
   // New Main Images
   const [images, setImages] = useState<File[]>([]);
+
+  // E-book PDF state
+  const [existingEbookUrl, setExistingEbookUrl] = useState<string | null>(null);
+  const [newEbookFile, setNewEbookFile] = useState<File | null>(null);
+  const [removeEbook, setRemoveEbook] = useState(false);
 
   // What's Included
   const [whatsIncluded, setWhatsIncluded] = useState<{ name: string; quantity: string; imageFile: File | null; image: string }[]>([]);
@@ -54,6 +59,9 @@ export default function EditIotKitPage() {
         setStatus(kit.status);
         
         setExistingImages(kit.images || []);
+        setExistingEbookUrl(kit.ebookUrl || null);
+        setRemoveEbook(false);
+        setNewEbookFile(null);
         
         const mappedWhatsIncluded = (kit.whatsIncluded || []).map((w: any) => ({
           name: w.name,
@@ -132,6 +140,13 @@ export default function EditIotKitPage() {
       // Prepare Projects & FAQs
       formData.append('projects', JSON.stringify(projects.filter(p => p.trim() !== '')));
       formData.append('faqs', JSON.stringify(faqs.filter(f => f.question.trim() !== '')));
+
+      // Handle E-book PDF
+      if (newEbookFile) {
+        formData.append('ebook', newEbookFile);
+      } else if (removeEbook) {
+        formData.append('removeEbook', 'true');
+      }
 
       const response = await apiClient(`/iot-kits/${id}`, {
         method: 'PUT',
@@ -240,6 +255,110 @@ export default function EditIotKitPage() {
               </label>
             )}
           </div>
+        </div>
+
+        {/* E-Book / Project Guide PDF */}
+        <div className="bg-white p-6 rounded-2xl border border-zinc-200 shadow-sm space-y-4">
+          <div className="flex items-center justify-between mb-2 border-b border-zinc-100 pb-2">
+            <div>
+              <h2 className="text-sm font-bold text-zinc-900 uppercase tracking-wider flex items-center gap-2">
+                <FileText className="h-4 w-4 text-violet-600" />
+                Kit E-Book / Project Manual (PDF)
+              </h2>
+              <p className="text-xs text-zinc-500 mt-0.5">Manage the downloadable PDF guide for customers for this IoT kit</p>
+            </div>
+            {((existingEbookUrl && !removeEbook) || newEbookFile) && (
+              <span className="text-xs font-semibold px-2.5 py-1 bg-emerald-50 text-emerald-600 rounded-full border border-emerald-200">
+                PDF Active
+              </span>
+            )}
+          </div>
+
+          {/* If new file selected */}
+          {newEbookFile ? (
+            <div className="flex items-center justify-between p-3.5 bg-violet-50/60 border border-violet-200 rounded-xl">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-violet-600 text-white rounded-lg">
+                  <FileText className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-zinc-800 line-clamp-1">{newEbookFile.name} (New)</p>
+                  <p className="text-xs text-zinc-500">{(newEbookFile.size / (1024 * 1024)).toFixed(2)} MB</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setNewEbookFile(null)}
+                className="p-2 text-zinc-400 hover:text-red-500 hover:bg-white rounded-lg transition"
+                title="Cancel New Upload"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            </div>
+          ) : existingEbookUrl && !removeEbook ? (
+            /* If existing eBook from database */
+            <div className="flex items-center justify-between p-3.5 bg-zinc-50 border border-zinc-200 rounded-xl">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-violet-100 text-violet-600 rounded-lg">
+                  <FileText className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-zinc-800">Current Kit E-Book (PDF)</p>
+                  <a
+                    href={existingEbookUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-violet-600 hover:underline inline-flex items-center gap-1 font-semibold"
+                  >
+                    Preview current PDF &rarr;
+                  </a>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <label className="px-3 py-1.5 bg-white border border-zinc-200 hover:border-violet-400 text-zinc-700 text-xs font-semibold rounded-lg cursor-pointer transition">
+                  Replace PDF
+                  <input
+                    type="file"
+                    accept="application/pdf,.pdf"
+                    className="hidden"
+                    onChange={(e) => {
+                      if (e.target.files?.[0]) {
+                        setNewEbookFile(e.target.files[0]);
+                      }
+                    }}
+                  />
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setRemoveEbook(true)}
+                  className="p-2 text-zinc-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition"
+                  title="Remove E-Book"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          ) : (
+            /* No eBook attached or marked removed */
+            <label className="border-2 border-dashed border-zinc-300 hover:border-violet-500 bg-zinc-50/50 hover:bg-violet-50/30 rounded-2xl p-6 flex flex-col items-center justify-center cursor-pointer transition group">
+              <div className="p-3 bg-white group-hover:bg-violet-600 text-zinc-400 group-hover:text-white rounded-2xl shadow-sm border border-zinc-200 group-hover:border-violet-600 transition-all mb-2">
+                <FileText className="h-6 w-6" />
+              </div>
+              <span className="text-sm font-bold text-zinc-700 group-hover:text-violet-700">Click to upload Kit E-Book (PDF)</span>
+              <span className="text-xs text-zinc-400 mt-1">Supports PDF up to 25MB</span>
+              <input
+                type="file"
+                accept="application/pdf,.pdf"
+                className="hidden"
+                onChange={(e) => {
+                  if (e.target.files?.[0]) {
+                    setNewEbookFile(e.target.files[0]);
+                    setRemoveEbook(false);
+                  }
+                }}
+              />
+            </label>
+          )}
         </div>
 
         {/* What's Included */}

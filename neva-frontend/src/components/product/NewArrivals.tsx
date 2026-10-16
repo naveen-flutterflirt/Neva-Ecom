@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
-import { ChevronLeft, ChevronRight, Sparkles, Loader2 } from 'lucide-react';
+import { Sparkles, Loader2 } from 'lucide-react';
 import { Product } from '../../types/product';
 import ProductCard from './ProductCard';
 import QuickViewModal from './QuickViewModal';
@@ -21,7 +21,6 @@ export default function NewArrivals() {
     const dispatch = useAppDispatch();
     const router = useRouter();
 
-    const scrollRef = useRef<HTMLDivElement>(null);
     const cartItems = useAppSelector((state) => state.cart.items);
 
     useEffect(() => {
@@ -42,18 +41,6 @@ export default function NewArrivals() {
             .catch(err => console.warn('Failed to fetch new arrivals from API:', err))
             .finally(() => setLoading(false));
     }, []);
-
-    const scrollLeft = () => {
-        if (scrollRef.current) {
-            scrollRef.current.scrollBy({ left: -380, behavior: 'smooth' });
-        }
-    };
-
-    const scrollRight = () => {
-        if (scrollRef.current) {
-            scrollRef.current.scrollBy({ left: 380, behavior: 'smooth' });
-        }
-    };
 
     const showToast = (message: string) => {
         setToastMessage(message);
@@ -117,55 +104,42 @@ export default function NewArrivals() {
                         </h2>
                     </div>
 
-                    {/* Left & Right Arrow Carousel Controls */}
-                    {liveProducts.length > 0 && (
-                        <div className="flex items-center gap-2 self-start sm:self-auto">
-                            <button
-                                onClick={scrollLeft}
-                                aria-label="Previous products"
-                                className="flex h-10 w-10 items-center justify-center rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white/80 dark:bg-zinc-900/80 text-zinc-700 dark:text-zinc-300 shadow-sm transition hover:bg-zinc-100 dark:hover:bg-zinc-800 active:scale-95 cursor-pointer"
-                            >
-                                <ChevronLeft className="h-5 w-5" />
-                            </button>
-                            <button
-                                onClick={scrollRight}
-                                aria-label="Next products"
-                                className="flex h-10 w-10 items-center justify-center rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white/80 dark:bg-zinc-900/80 text-zinc-700 dark:text-zinc-300 shadow-sm transition hover:bg-zinc-100 dark:hover:bg-zinc-800 active:scale-95 cursor-pointer"
-                            >
-                                <ChevronRight className="h-5 w-5" />
-                            </button>
-                        </div>
-                    )}
+                    <a
+                        href="/3d-product"
+                        className="text-xs font-bold text-violet-600 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300 flex items-center gap-1 transition-colors self-start sm:self-auto"
+                    >
+                        View All Products &rarr;
+                    </a>
                 </div>
 
-                {/* Horizontal Touch & Finger Drag Scroll Slider */}
+                {/* Horizontal Pure Smooth Marquee Slider */}
                 {loading ? (
                     <div className="flex items-stretch gap-6 overflow-hidden py-2">
                         {[1, 2, 3, 4].map((idx) => (
-                            <div key={idx} className="w-[85vw] sm:w-[340px] lg:w-[380px] shrink-0 flex">
+                            <div key={idx} className="w-[85vw] sm:w-[320px] lg:w-[340px] shrink-0 flex">
                                 <ProductCardSkeleton />
                             </div>
                         ))}
                     </div>
                 ) : (
-                    <div
-                        ref={scrollRef}
-                        className="flex items-stretch gap-6 overflow-x-auto scrollbar-none snap-x snap-mandatory py-2 scroll-smooth"
-                    >
-                        {liveProducts.map((product) => (
-                            <div
-                                key={product.id}
-                                className="w-[85vw] sm:w-[340px] lg:w-[380px] shrink-0 snap-start flex"
-                            >
-                                <ProductCard
-                                    product={product}
-                                    onQuickShop={handleAddToCart}
-                                    onQuickView={handleQuickView}
-                                    onAddToCart={handleAddToCart}
-                                    onBuyNow={handleBuyNow}
-                                />
-                            </div>
-                        ))}
+                    <div className="relative overflow-hidden w-full py-2">
+                        <div className="product-marquee-track flex items-stretch gap-6">
+                            {/* Set 1 & Set 2 for seamless infinite marquee scroll */}
+                            {[...liveProducts, ...liveProducts].map((product, index) => (
+                                <div
+                                    key={`${product.id}-${index}`}
+                                    className="w-[85vw] sm:w-[320px] lg:w-[340px] shrink-0 flex select-none"
+                                >
+                                    <ProductCard
+                                        product={product}
+                                        onQuickShop={handleAddToCart}
+                                        onQuickView={handleQuickView}
+                                        onAddToCart={handleAddToCart}
+                                        onBuyNow={handleBuyNow}
+                                    />
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 )}
             </div>

@@ -28,6 +28,7 @@ export default function IotKitsPage() {
             ...k,
             isIoT: true, // Flag for ProductCard/Details to know it's a kit
             isKit: true, // Specific flag to ensure routing to iot-kits
+            ebookUrl: k.ebookUrl || null,
             image: k.images && k.images.length > 0 ? k.images[0].imageUrl : '',
           }));
           setKits(mappedKits);
