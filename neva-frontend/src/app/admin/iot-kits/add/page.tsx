@@ -239,7 +239,7 @@ export default function AddIotKitPage() {
                 <FileText className="h-6 w-6" />
               </div>
               <span className="text-sm font-bold text-zinc-700 group-hover:text-violet-700">Click to upload Kit E-Book (PDF)</span>
-              <span className="text-xs text-zinc-400 mt-1">Supports PDF up to 25MB</span>
+              <span className="text-xs text-zinc-400 mt-1">Supports PDF up to 100MB</span>
               <input
                 type="file"
                 accept="application/pdf,.pdf"
