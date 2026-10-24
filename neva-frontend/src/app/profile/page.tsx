@@ -455,6 +455,12 @@ export default function ProfilePage() {
       return;
     }
 
+    const pincodeRegex = /^[1-9]\d{5}$/;
+    if (!pincodeRegex.test(addrPincode.trim())) {
+      showToast('⚠️ Please enter a valid 6-digit PIN code.');
+      return;
+    }
+
     let updatedList: SavedAddress[] = [];
 
     if (editingAddressId) {

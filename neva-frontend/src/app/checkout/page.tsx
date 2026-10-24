@@ -81,6 +81,16 @@ export default function CheckoutPage() {
 
   const [userId, setUserId] = useState<string | null>(null);
 
+  const [fieldErrors, setFieldErrors] = useState<{
+    fullName?: string;
+    phone?: string;
+    email?: string;
+    address?: string;
+    pincode?: string;
+    stateName?: string;
+    city?: string;
+  }>({});
+
   const [shippingFee, setShippingFee] = useState<number>(0);
   const [isCalculatingShipping, setIsCalculatingShipping] = useState<boolean>(false);
 
@@ -283,16 +293,52 @@ export default function CheckoutPage() {
       return;
     }
 
-    if (!fullName || !phone || !pincode || !address || !stateName || !city) {
-      showToast('⚠️ Please fill in all required details, including State & District');
+    const errors: typeof fieldErrors = {};
+
+    if (!fullName.trim()) {
+      errors.fullName = 'Full Name is required.';
+    }
+
+    const cleanedPhone = phone.replace(/[\s\-\+]/g, '').replace(/^91/, '');
+    const phoneRegex = /^[6-9]\d{9}$/;
+    if (!cleanedPhone) {
+      errors.phone = 'Mobile number is required.';
+    } else if (!phoneRegex.test(cleanedPhone)) {
+      errors.phone = 'Enter a valid 10-digit mobile number (starts with 6-9).';
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (email && !emailRegex.test(email.trim())) {
+      errors.email = 'Please enter a valid email address.';
+    }
+
+    if (!address.trim()) {
+      errors.address = 'Street address is required.';
+    }
+
+    const pincodeRegex = /^[1-9]\d{5}$/;
+    if (!pincode.trim()) {
+      errors.pincode = 'Pincode is required.';
+    } else if (!pincodeRegex.test(pincode.trim())) {
+      errors.pincode = 'Pincode must be exactly 6 digits.';
+    }
+
+    if (!stateName.trim()) {
+      errors.stateName = 'Please select your state.';
+    }
+
+    if (!city.trim()) {
+      errors.city = 'Please select your district / city.';
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      const firstError = Object.values(errors)[0];
+      showToast(`⚠️ ${firstError}`);
       return;
     }
 
-    if (phone.length < 10) {
-      showToast('⚠️ Please enter a valid 10-digit mobile number');
-      return;
-    }
-
+    setFieldErrors({});
     setIsSubmitting(true);
 
     const orderPayload = {
@@ -396,11 +442,7 @@ export default function CheckoutPage() {
                     }
                   };
 
-                  try {
-                    await apiClient('/orders', { method: 'POST', body: finalOrderPayload });
-                  } catch (dbErr) {
-                    console.warn('Database save error:', dbErr);
-                  }
+                  await apiClient('/orders', { method: 'POST', body: finalOrderPayload });
 
                   localStorage.setItem('neva-last-order', JSON.stringify(finalOrderPayload));
                   dispatch(clearCart());
@@ -461,20 +503,16 @@ export default function CheckoutPage() {
 
     // Cash on Delivery (COD) Flow
     try {
-      try {
-        await apiClient('/orders', { method: 'POST', body: orderPayload });
-      } catch (dbErr) {
-        console.warn('Database save error:', dbErr);
-      }
+      await apiClient('/orders', { method: 'POST', body: orderPayload });
 
       localStorage.setItem('neva-last-order', JSON.stringify(orderPayload));
       await new Promise(res => setTimeout(res, 800));
       dispatch(clearCart());
       showToast('🎉 COD Order Placed Successfully!');
       router.push(`/order-success?orderId=${orderPayload.orderId}`);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Order submission error:', error);
-      showToast('❌ Order placement failed. Please try again.');
+      showToast(`❌ ${error.message || 'Order placement failed. Please try again.'}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -558,7 +596,7 @@ export default function CheckoutPage() {
             </div>
           </div>
         ) : (
-          <form onSubmit={handlePlaceOrder} className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          <form noValidate onSubmit={handlePlaceOrder} className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
 
             {/* Left Column: Delivery Address & Payment (7 Cols) */}
             <div className="lg:col-span-7 space-y-6">
@@ -584,13 +622,22 @@ export default function CheckoutPage() {
                       <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
                       <input
                         type="text"
-                        required
                         value={fullName}
-                        onChange={(e) => setFullName(e.target.value)}
+                        onChange={(e) => {
+                          setFullName(e.target.value);
+                          if (fieldErrors.fullName) setFieldErrors(prev => ({ ...prev, fullName: undefined }));
+                        }}
                         placeholder="John Doe"
-                        className="w-full rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/60 pl-9 pr-3 py-2 text-xs font-semibold outline-none focus:border-purple-500 focus:bg-white dark:focus:bg-zinc-900 transition"
+                        className={`w-full rounded-xl border bg-zinc-50 dark:bg-zinc-900/60 pl-9 pr-3 py-2 text-xs font-semibold outline-none transition ${
+                          fieldErrors.fullName
+                            ? 'border-red-500 focus:border-red-600 focus:bg-white dark:focus:bg-zinc-900 bg-red-50/20'
+                            : 'border-zinc-200 dark:border-zinc-800 focus:border-purple-500 focus:bg-white dark:focus:bg-zinc-900'
+                        }`}
                       />
                     </div>
+                    {fieldErrors.fullName && (
+                      <p className="text-[10px] text-red-500 font-semibold">{fieldErrors.fullName}</p>
+                    )}
                   </div>
 
                   <div className="space-y-1.5">
@@ -601,13 +648,31 @@ export default function CheckoutPage() {
                       <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
                       <input
                         type="tel"
-                        required
+                        maxLength={10}
                         value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/\D/g, '');
+                          setPhone(val);
+                          if (val.length === 10 && /^[6-9]\d{9}$/.test(val)) {
+                            setFieldErrors(prev => ({ ...prev, phone: undefined }));
+                          }
+                        }}
+                        onBlur={() => {
+                          if (phone && phone.trim().length !== 10) {
+                            setFieldErrors(prev => ({ ...prev, phone: 'Mobile number must be exactly 10 digits.' }));
+                          }
+                        }}
                         placeholder="9876543210"
-                        className="w-full rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/60 pl-9 pr-3 py-2 text-xs font-semibold outline-none focus:border-purple-500 focus:bg-white dark:focus:bg-zinc-900 transition"
+                        className={`w-full rounded-xl border bg-zinc-50 dark:bg-zinc-900/60 pl-9 pr-3 py-2 text-xs font-semibold outline-none transition font-mono ${
+                          fieldErrors.phone
+                            ? 'border-red-500 focus:border-red-600 focus:bg-white dark:focus:bg-zinc-900 bg-red-50/20'
+                            : 'border-zinc-200 dark:border-zinc-800 focus:border-purple-500 focus:bg-white dark:focus:bg-zinc-900'
+                        }`}
                       />
                     </div>
+                    {fieldErrors.phone && (
+                      <p className="text-[10px] text-red-500 font-semibold">{fieldErrors.phone}</p>
+                    )}
                   </div>
 
                   <div className="sm:col-span-2 space-y-1.5">
@@ -619,11 +684,28 @@ export default function CheckoutPage() {
                       <input
                         type="email"
                         value={email}
-                        onChange={(e) => setEmail(e.target.value)}
+                        onChange={(e) => {
+                          setEmail(e.target.value);
+                          if (fieldErrors.email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e.target.value.trim())) {
+                            setFieldErrors(prev => ({ ...prev, email: undefined }));
+                          }
+                        }}
+                        onBlur={() => {
+                          if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+                            setFieldErrors(prev => ({ ...prev, email: 'Please enter a valid email address.' }));
+                          }
+                        }}
                         placeholder="john@example.com"
-                        className="w-full rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/60 pl-9 pr-3 py-2 text-xs font-semibold outline-none focus:border-purple-500 focus:bg-white dark:focus:bg-zinc-900 transition"
+                        className={`w-full rounded-xl border bg-zinc-50 dark:bg-zinc-900/60 pl-9 pr-3 py-2 text-xs font-semibold outline-none transition ${
+                          fieldErrors.email
+                            ? 'border-red-500 focus:border-red-600 focus:bg-white dark:focus:bg-zinc-900 bg-red-50/20'
+                            : 'border-zinc-200 dark:border-zinc-800 focus:border-purple-500 focus:bg-white dark:focus:bg-zinc-900'
+                        }`}
                       />
                     </div>
+                    {fieldErrors.email && (
+                      <p className="text-[10px] text-red-500 font-semibold">{fieldErrors.email}</p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -669,29 +751,64 @@ export default function CheckoutPage() {
                     <div className="relative">
                       <MapPin className="absolute left-3 top-3 h-4 w-4 text-zinc-400" />
                       <textarea
-                        required
                         rows={2}
                         value={address}
-                        onChange={(e) => setAddress(e.target.value)}
+                        onChange={(e) => {
+                          setAddress(e.target.value);
+                          if (fieldErrors.address) setFieldErrors(prev => ({ ...prev, address: undefined }));
+                        }}
                         placeholder="e.g. Flat 402, Sunshine Heights, MG Road"
-                        className="w-full rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/60 pl-9 pr-3 py-2 text-xs font-semibold outline-none focus:border-purple-500 focus:bg-white dark:focus:bg-zinc-900 transition resize-none"
+                        className={`w-full rounded-xl border bg-zinc-50 dark:bg-zinc-900/60 pl-9 pr-3 py-2 text-xs font-semibold outline-none transition resize-none ${
+                          fieldErrors.address
+                            ? 'border-red-500 focus:border-red-600 focus:bg-white dark:focus:bg-zinc-900 bg-red-50/20'
+                            : 'border-zinc-200 dark:border-zinc-800 focus:border-purple-500 focus:bg-white dark:focus:bg-zinc-900'
+                        }`}
                       />
                     </div>
+                    {fieldErrors.address && (
+                      <p className="text-[10px] text-red-500 font-semibold">{fieldErrors.address}</p>
+                    )}
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="block text-[11px] font-bold text-zinc-700 dark:text-zinc-300">
-                      Pincode / Postal Code <span className="text-red-500">*</span>
-                    </label>
+                    <div className="flex items-center justify-between">
+                      <label className="block text-[11px] font-bold text-zinc-700 dark:text-zinc-300">
+                        Pincode / Postal Code <span className="text-red-500">*</span>
+                      </label>
+                      {pincode && pincode.length === 6 && /^[1-9]\d{5}$/.test(pincode) && (
+                        <span className="text-[10px] font-bold text-emerald-500">✓ Valid 6-digit</span>
+                      )}
+                      {pincode && pincode.length > 0 && !/^[1-9]\d{5}$/.test(pincode) && (
+                        <span className="text-[10px] font-bold text-rose-500">{pincode.length < 6 ? `${pincode.length}/6 digits` : 'Invalid PIN'}</span>
+                      )}
+                    </div>
                     <input
                       type="text"
-                      required
+                      inputMode="numeric"
                       maxLength={6}
                       value={pincode}
-                      onChange={(e) => setPincode(e.target.value)}
+                      onChange={(e) => {
+                        const val = e.target.value.replace(/\D/g, '');
+                        setPincode(val);
+                        if (val.length === 6 && /^[1-9]\d{5}$/.test(val)) {
+                          setFieldErrors(prev => ({ ...prev, pincode: undefined }));
+                        }
+                      }}
+                      onBlur={() => {
+                        if (pincode && pincode.trim().length !== 6) {
+                          setFieldErrors(prev => ({ ...prev, pincode: 'Pincode must be exactly 6 digits.' }));
+                        }
+                      }}
                       placeholder="110001"
-                      className="w-full rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/60 px-3 py-2 text-xs font-semibold outline-none focus:border-purple-500 focus:bg-white dark:focus:bg-zinc-900 transition font-mono"
+                      className={`w-full rounded-xl border bg-zinc-50 dark:bg-zinc-900/60 px-3 py-2 text-xs font-semibold outline-none transition font-mono tracking-wider ${
+                        fieldErrors.pincode
+                          ? 'border-red-500 focus:border-red-600 focus:bg-white dark:focus:bg-zinc-900 bg-red-50/20'
+                          : 'border-zinc-200 dark:border-zinc-800 focus:border-purple-500 focus:bg-white dark:focus:bg-zinc-900'
+                      }`}
                     />
+                    {fieldErrors.pincode && (
+                      <p className="text-[10px] text-red-500 font-semibold">{fieldErrors.pincode}</p>
+                    )}
                   </div>
 
                   <div className="space-y-1.5">
@@ -712,10 +829,16 @@ export default function CheckoutPage() {
                       State <span className="text-red-500">*</span>
                     </label>
                     <select
-                      required
                       value={stateName}
-                      onChange={(e) => handleStateChange(e.target.value)}
-                      className="w-full rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/60 px-3 py-2 text-xs font-semibold outline-none focus:border-purple-500 focus:bg-white dark:focus:bg-zinc-900 transition cursor-pointer"
+                      onChange={(e) => {
+                        handleStateChange(e.target.value);
+                        if (fieldErrors.stateName) setFieldErrors(prev => ({ ...prev, stateName: undefined }));
+                      }}
+                      className={`w-full rounded-xl border bg-zinc-50 dark:bg-zinc-900/60 px-3 py-2 text-xs font-semibold outline-none transition cursor-pointer ${
+                        fieldErrors.stateName
+                          ? 'border-red-500 focus:border-red-600 focus:bg-white dark:focus:bg-zinc-900 bg-red-50/20'
+                          : 'border-zinc-200 dark:border-zinc-800 focus:border-purple-500 focus:bg-white dark:focus:bg-zinc-900'
+                      }`}
                     >
                       <option value="" disabled>-- Select State --</option>
                       {Object.keys(INDIAN_STATES_AND_DISTRICTS).map((st) => (
@@ -724,6 +847,9 @@ export default function CheckoutPage() {
                         </option>
                       ))}
                     </select>
+                    {fieldErrors.stateName && (
+                      <p className="text-[10px] text-red-500 font-semibold">{fieldErrors.stateName}</p>
+                    )}
                   </div>
 
                   <div className="space-y-1.5">
@@ -732,10 +858,16 @@ export default function CheckoutPage() {
                     </label>
                     {availableDistricts.length > 0 ? (
                       <select
-                        required
                         value={city}
-                        onChange={(e) => setCity(e.target.value)}
-                        className="w-full rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/60 px-3 py-2 text-xs font-semibold outline-none focus:border-purple-500 focus:bg-white dark:focus:bg-zinc-900 transition cursor-pointer"
+                        onChange={(e) => {
+                          setCity(e.target.value);
+                          if (fieldErrors.city) setFieldErrors(prev => ({ ...prev, city: undefined }));
+                        }}
+                        className={`w-full rounded-xl border bg-zinc-50 dark:bg-zinc-900/60 px-3 py-2 text-xs font-semibold outline-none transition cursor-pointer ${
+                          fieldErrors.city
+                            ? 'border-red-500 focus:border-red-600 focus:bg-white dark:focus:bg-zinc-900 bg-red-50/20'
+                            : 'border-zinc-200 dark:border-zinc-800 focus:border-purple-500 focus:bg-white dark:focus:bg-zinc-900'
+                        }`}
                       >
                         <option value="">-- Select District / City --</option>
                         {availableDistricts.map((dist) => (
@@ -751,6 +883,9 @@ export default function CheckoutPage() {
                       >
                         <option value="">-- Select State First --</option>
                       </select>
+                    )}
+                    {fieldErrors.city && (
+                      <p className="text-[10px] text-red-500 font-semibold">{fieldErrors.city}</p>
                     )}
                   </div>
                 </div>
@@ -933,6 +1068,7 @@ export default function CheckoutPage() {
                 {/* Submit Place Order Button */}
                 <button
                   type="submit"
+                  onClick={handlePlaceOrder}
                   disabled={isSubmitting}
                   className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-extrabold text-sm hover:from-purple-500 hover:to-indigo-500 transition-all duration-300 shadow-lg shadow-purple-500/25 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
                 >
