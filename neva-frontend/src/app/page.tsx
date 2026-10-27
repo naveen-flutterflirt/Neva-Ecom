@@ -5,6 +5,7 @@ import NewArrivals from '../components/product/NewArrivals';
 import TrendingProducts from '../components/product/TrendingProducts';
 import MarqueeSlide from '../components/product/slide';
 import SocialProofStrip from '../components/product/SocialProofStrip';
+import FloatingCouponDrawer from '../components/common/FloatingCouponDrawer';
 
 export default function Home() {
   const jsonLd = {
@@ -49,6 +50,7 @@ export default function Home() {
       <TrendingProducts />
       <MarqueeSlide />
       <SocialProofStrip />
+      <FloatingCouponDrawer />
     </main>
   );
 }
