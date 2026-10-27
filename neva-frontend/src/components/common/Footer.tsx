@@ -109,14 +109,14 @@ export default function Footer() {
                     Custom Print
                   </Link>
                 </li>
-                <li>
+                {/* <li>
                   <Link href="/3d-product" className="font-semibold text-zinc-700 hover:text-violet-600 dark:text-zinc-200 dark:hover:text-white transition-colors block">
                     3D Catalog
                   </Link>
-                </li>
+                </li> */}
                 <li>
                   <Link href="/iot-product" className="font-semibold text-zinc-700 hover:text-violet-600 dark:text-zinc-200 dark:hover:text-white transition-colors block">
-                    IoT Products
+                    IoT Components
                   </Link>
                 </li>
               </ul>

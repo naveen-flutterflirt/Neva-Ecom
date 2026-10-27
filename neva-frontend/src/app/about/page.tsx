@@ -119,11 +119,17 @@ export default function AboutPage() {
                 Send Custom Idea / CAD
                 <ArrowRight className="h-4 w-4" />
               </Link>
-              <Link
+              {/* <Link
                 href="/3d-product"
                 className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-white dark:bg-[#111218] border border-zinc-200 dark:border-white/10 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800 rounded-xl text-xs font-bold transition uppercase tracking-wider"
               >
                 Browse Product Catalog
+              </Link> */}
+              <Link
+                href="/iot-product"
+                className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-white dark:bg-[#111218] border border-zinc-200 dark:border-white/10 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800 rounded-xl text-xs font-bold transition uppercase tracking-wider"
+              >
+                Browse IoT Components
               </Link>
             </div>
           </div>

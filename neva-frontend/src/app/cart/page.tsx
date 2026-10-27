@@ -12,6 +12,8 @@ import { useAppDispatch, useAppSelector } from '../../store';
 import { removeFromCart, updateQuantity, clearCart } from '../../store/cartSlice';
 import Toast from '../../components/ui/Toast';
 import { Skeleton } from '../../components/ui/Skeleton';
+import CouponSection from '../../components/checkout/CouponSection';
+import { apiClient } from '../../lib/api';
 
 export default function CartPage() {
   const router = useRouter();
@@ -19,14 +21,67 @@ export default function CartPage() {
   const cartItems = useAppSelector((state) => state.cart.items);
 
   const [isMounted, setIsMounted] = useState(false);
-  const [couponCode, setCouponCode] = useState('');
-  const [appliedDiscount, setAppliedDiscount] = useState(0); // percentage
-  const [appliedCouponName, setAppliedCouponName] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState<{
+    code: string;
+    discountAmount: number;
+    description?: string;
+  } | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   useEffect(() => {
     setIsMounted(true);
+    // Restore coupon if saved in localStorage
+    try {
+      const saved = localStorage.getItem('neva-applied-coupon');
+      if (saved) {
+        setAppliedCoupon(JSON.parse(saved));
+      }
+    } catch (e) {}
   }, []);
+
+  // Calculate invoice totals
+  const subtotal = cartItems.reduce((acc, item) => acc + Number(item.product.price) * item.quantity, 0);
+
+  // Validate / calculate true discount once cart subtotal is available
+  useEffect(() => {
+    if (!subtotal || subtotal <= 0) return;
+    if (appliedCoupon && appliedCoupon.code) {
+      apiClient('/coupons/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          code: appliedCoupon.code,
+          subtotal: subtotal,
+        }),
+      }).then((res: any) => {
+        if (res && res.success && res.data) {
+          const discount = Number(res.data.discountAmount) || 0;
+          if (discount !== appliedCoupon.discountAmount) {
+            const fullCoupon = {
+              code: appliedCoupon.code,
+              discountAmount: discount,
+              description: res.data.description || res.message,
+            };
+            setAppliedCoupon(fullCoupon);
+            try {
+              localStorage.setItem('neva-applied-coupon', JSON.stringify(fullCoupon));
+            } catch (e) {}
+          }
+        } else {
+          setAppliedCoupon(null);
+          try {
+            localStorage.removeItem('neva-applied-coupon');
+          } catch (e) {}
+        }
+      }).catch((err: any) => {
+        console.warn('Coupon auto-validation in cart failed:', err);
+        setAppliedCoupon(null);
+        try {
+          localStorage.removeItem('neva-applied-coupon');
+        } catch (e) {}
+      });
+    }
+  }, [subtotal]);
 
   const showToast = (message: string) => {
     setToastMessage(message);
@@ -35,34 +90,22 @@ export default function CartPage() {
     }, 3000);
   };
 
-  const handleApplyCoupon = (e: React.FormEvent) => {
-    e.preventDefault();
-    const code = couponCode.trim().toUpperCase();
-    if (!code) return;
-
-    if (code === 'NIVA10' || code === 'WELCOME10' || code === 'NIVAIOT') {
-      setAppliedDiscount(10);
-      setAppliedCouponName(code);
-      showToast('🎉 10% Discount Coupon Applied Successfully!');
-    } else if (code === 'NIVA15' || code === 'FESTIVE15') {
-      setAppliedDiscount(15);
-      setAppliedCouponName(code);
-      showToast('✨ 15% OFF Special Coupon Applied!');
-    } else {
-      showToast('❌ Invalid Coupon Code. Try NIVA10');
-    }
+  const handleApplyCoupon = (data: { code: string; discountAmount: number; description?: string }) => {
+    setAppliedCoupon(data);
+    try {
+      localStorage.setItem('neva-applied-coupon', JSON.stringify(data));
+    } catch (e) {}
+    showToast(`🎉 Coupon "${data.code}" applied! Saved ₹${data.discountAmount}`);
   };
 
   const handleRemoveCoupon = () => {
-    setAppliedDiscount(0);
-    setAppliedCouponName('');
-    setCouponCode('');
+    setAppliedCoupon(null);
+    try {
+      localStorage.removeItem('neva-applied-coupon');
+    } catch (e) {}
     showToast('Coupon removed');
   };
-
-  // Calculate invoice totals
-  const subtotal = cartItems.reduce((acc, item) => acc + Number(item.product.price) * item.quantity, 0);
-  const discountAmount = Math.round((subtotal * appliedDiscount) / 100);
+  const discountAmount = appliedCoupon ? Math.min(subtotal, appliedCoupon.discountAmount) : 0;
   const freeShippingThreshold = 300;
   const shippingFee = subtotal >= freeShippingThreshold || subtotal === 0 ? 0 : 50;
   const gstTax = Math.round((subtotal - discountAmount) * 0.18);
@@ -166,12 +209,12 @@ export default function CartPage() {
               </p>
             </div>
             <div className="flex flex-wrap justify-center gap-3 pt-2">
-              <Link
+              {/* <Link
                 href="/3d-product"
                 className="px-6 py-3 rounded-xl bg-purple-600 text-white font-bold text-xs hover:bg-purple-700 transition shadow-lg shadow-purple-600/25"
               >
                 Browse 3D Products
-              </Link>
+              </Link> */}
               <Link
                 href="/iot-product"
                 className="px-6 py-3 rounded-xl bg-zinc-900 dark:bg-zinc-800 text-white font-bold text-xs hover:bg-zinc-800 transition"
@@ -197,7 +240,7 @@ export default function CartPage() {
                     : (item.product.category || 'Store Item');
 
                   const itemPrice = Number(item.product.price);
-                  const itemTotal = itemPrice * item.quantity;
+                  const itemTotal = Math.round(itemPrice * item.quantity);
                   const itemImg = item.product.image || (item.product.images && item.product.images[0]?.imageUrl) || 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=120&q=80';
 
                   return (
@@ -295,6 +338,14 @@ export default function CartPage() {
 
 
 
+                {/* Coupon Code Section */}
+                <CouponSection
+                  subtotal={subtotal}
+                  appliedCoupon={appliedCoupon}
+                  onApplyCoupon={handleApplyCoupon}
+                  onRemoveCoupon={handleRemoveCoupon}
+                />
+
                 {/* Price Breakdown */}
                 <div className="space-y-2.5 text-xs">
                   <div className="flex justify-between text-zinc-600 dark:text-zinc-400 font-medium">
@@ -302,9 +353,9 @@ export default function CartPage() {
                     <span className="font-mono text-zinc-900 dark:text-white">₹{subtotal.toLocaleString('en-IN')}</span>
                   </div>
 
-                  {appliedDiscount > 0 && (
+                  {appliedCoupon && discountAmount > 0 && (
                     <div className="flex justify-between text-emerald-600 font-bold">
-                      <span>Coupon Discount ({appliedDiscount}%)</span>
+                      <span>Coupon Discount ({appliedCoupon.code})</span>
                       <span className="font-mono">-₹{discountAmount.toLocaleString('en-IN')}</span>
                     </div>
                   )}

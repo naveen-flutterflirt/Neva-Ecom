@@ -38,7 +38,13 @@ export async function apiClient(endpoint: string, options: RequestOptions = {}) 
 
     return response.data;
   } catch (error: any) {
-    const message = error.response?.data?.message || error.message || 'Something went wrong';
-    throw new Error(message);
+    const errorData = error.response?.data || {};
+    const message = errorData.message || error.message || 'Something went wrong';
+    const customError: any = new Error(message);
+    customError.status = error.response?.status;
+    customError.requiresVerification = errorData.requiresVerification;
+    customError.email = errorData.email;
+    customError.data = errorData;
+    throw customError;
   }
 }

@@ -70,7 +70,7 @@ export default function Hero() {
     };
 
     return (
-        <div className="relative flex w-full flex-col items-center overflow-hidden bg-transparent pb-0 pt-8 lg:pb-12 lg:pt-10 text-zinc-950 dark:text-white">
+        <div className="relative flex w-full flex-col items-center overflow-hidden bg-transparent pb-0 pt-20 lg:pb-12 lg:pt-24 text-zinc-950 dark:text-white">
 
             {/* Promo Banner Carousel overlay */}
             <PromoBanner />
@@ -177,17 +177,17 @@ export default function Hero() {
                         className="mt-10 flex w-full flex-col items-center gap-4 sm:w-auto sm:flex-row"
                     >
                         <motion.a
-                            href="/3d-product"
+                            href="/iot-product?type=components"
                             whileHover={{ y: -3, scale: 1.02 }}
                             whileTap={{ scale: 0.97 }}
                             className="flex w-full items-center justify-center gap-2 rounded-xl border border-zinc-900 dark:border-white bg-zinc-900 dark:bg-white px-8 py-4 text-sm font-bold text-white dark:text-black shadow-[4px_4px_0px_0px_rgba(109,40,217,1)] transition-shadow hover:shadow-none sm:w-auto"
                         >
-                            Shop 3D Products
+                            Shop IoT Components
                             <ArrowRight className="h-4 w-4" />
                         </motion.a>
 
                         <motion.a
-                            href="/iot-product"
+                            href="/iot-product?type=products"
                             whileHover={{ y: -3, scale: 1.02, backgroundColor: 'rgba(39,39,42,0.85)' }}
                             whileTap={{ scale: 0.97 }}
                             className="flex w-full items-center justify-center rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900/60 px-8 py-4 text-sm font-bold text-black dark:text-zinc-300 backdrop-blur-sm transition-colors hover:bg-white hover:text-white dark:hover:bg-zinc-900/60 sm:w-auto"

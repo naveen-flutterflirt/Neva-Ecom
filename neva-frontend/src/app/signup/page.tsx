@@ -62,7 +62,7 @@ export default function SignupPage() {
 
     setLoading(true);
     try {
-      await apiClient('/auth/signup', {
+      const res = await apiClient('/auth/signup', {
         method: 'POST',
         body: {
           name: fullName.trim(),
@@ -73,28 +73,11 @@ export default function SignupPage() {
         },
       });
 
-      showToast('✓ Registration successful! Logging in... 🎉');
-
-      // Auto-login after successful registration
-      const signinRes = await apiClient('/auth/signin', {
-        method: 'POST',
-        body: {
-          emailOrNumber: email.trim(),
-          password: password,
-        },
-      });
-
-      localStorage.setItem('neva-token', signinRes.token);
-      if (signinRes.user) {
-        localStorage.setItem('neva-user', JSON.stringify(signinRes.user));
-      }
-      showToast('✓ Logged in successfully! 🎉');
-
-      window.dispatchEvent(new Event('neva-auth-change'));
+      showToast('✓ Account created! Redirecting to email verification... 📧');
 
       setTimeout(() => {
-        window.location.href = '/';
-      }, 1200);
+        router.push(`/verify-email?email=${encodeURIComponent(email.trim().toLowerCase())}`);
+      }, 1000);
     } catch (err: any) {
       showToast(`❌ ${err.message || 'Connection error. Please try again.'}`);
     } finally {

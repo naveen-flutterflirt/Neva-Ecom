@@ -96,7 +96,7 @@ export default function ProductCard({ product, onQuickShop, onQuickView, onAddTo
   // Helper to extract category name string
   const categoryName = typeof product.category === 'object' && product.category !== null
     ? product.category.name
-    : (product.category || (product.isIoT ? 'IoT Product' : '3D Product'));
+    : (product.category || (product.isIoT ? 'IoT Component' : '3D Product'));
 
   const numPrice = typeof product.price === 'string' ? parseFloat(product.price) : product.price;
   const numDiscountPrice = product.discountPrice ? (typeof product.discountPrice === 'string' ? parseFloat(product.discountPrice) : product.discountPrice) : null;

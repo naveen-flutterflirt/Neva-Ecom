@@ -56,7 +56,15 @@ export default function LoginPage() {
         window.location.href = '/';
       }, 1200);
     } catch (err: any) {
-      showToast(`❌ ${err.message || 'Connection error. Please try again.'}`);
+      if (err.requiresVerification || (err.message && err.message.toLowerCase().includes('verify your email'))) {
+        showToast('⚠️ Please verify your email address to continue.');
+        const redirectEmail = err.email || emailOrNumber.trim();
+        setTimeout(() => {
+          router.push(`/verify-email?email=${encodeURIComponent(redirectEmail)}`);
+        }, 1500);
+      } else {
+        showToast(`❌ ${err.message || 'Connection error. Please try again.'}`);
+      }
     } finally {
       setLoading(false);
     }

@@ -2,6 +2,7 @@ import React from 'react';
 import './globals.css';
 import Navbar from '../components/common/Navbar';
 import Footer from '../components/common/Footer';
+import WelcomeOfferModal from '../components/common/WelcomeOfferModal';
 import { Plus_Jakarta_Sans } from 'next/font/google';
 import ReduxProvider from '../components/providers/ReduxProvider';
 import { ThemeProvider } from '../components/providers/ThemeProvider';
@@ -97,6 +98,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ReduxProvider>
           <ThemeProvider>
             <Navbar />
+            <WelcomeOfferModal />
             <div className="flex-1 relative z-10">
               {children}
             </div>

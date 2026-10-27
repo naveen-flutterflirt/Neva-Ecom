@@ -32,7 +32,9 @@ import {
   ChevronRight,
   LayoutDashboard,
   Film,
-  Sparkles
+  Sparkles,
+  Cpu,
+  TicketPercent
 } from 'lucide-react';
 
 interface SidebarItem {
@@ -103,8 +105,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       icon: FolderTree,
       items: [
         { name: 'Categories', href: '/admin/catalog/categories', icon: Tags },
-        { name: 'Products', href: '/admin/catalog/products', icon: Boxes },
-
+        { name: 'IoT Products', href: '/admin/catalog/products?type=products', icon: Boxes },
+        { name: 'IoT Components', href: '/admin/catalog/products?type=components', icon: Cpu },
       ],
     },
     {
@@ -134,6 +136,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       icon: CreditCard,
       items: [
         { name: 'All Payments', href: '/admin/payments', icon: CheckCircle },
+      ],
+    },
+    {
+      title: 'Promotions',
+      icon: TicketPercent,
+      items: [
+        { name: 'Coupons & Offers', href: '/admin/coupons', icon: TicketPercent },
+        { name: 'Popup Deal Banner', href: '/admin/popup-banner', icon: Sparkles },
       ],
     },
     {

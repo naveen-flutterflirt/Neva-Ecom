@@ -4,6 +4,8 @@ import {
   Search, 
   Eye, 
   X,
+  Trash2,
+  AlertTriangle,
   CreditCard,
   Calendar,
   CheckCircle,
@@ -20,6 +22,8 @@ import Pagination from '../../../components/ui/Pagination';
 interface Transaction {
   id: string;
   orderId: string;
+  backendOrderId?: string;
+  isCustomPrint?: boolean;
   razorpayOrderId?: string;
   customerName: string;
   customerEmail: string;
@@ -48,6 +52,10 @@ export default function AdminPaymentsPage() {
   const [selectedTxn, setSelectedTxn] = useState<Transaction | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
 
+  // Delete Modal States
+  const [txnToDelete, setTxnToDelete] = useState<Transaction | null>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+
   const fetchLivePayments = async () => {
     try {
       setIsLoading(true);
@@ -74,6 +82,8 @@ export default function AdminPaymentsPage() {
         mappedTxns.push({
           id: o.razorpayPaymentId || `TXN-${1000 + idx}`,
           orderId: o.orderNumber || o.id,
+          backendOrderId: o.id || o.orderNumber,
+          isCustomPrint: false,
           razorpayOrderId: o.razorpayOrderId || undefined,
           customerName: o.customerName || 'Customer',
           customerEmail: o.customerEmail || 'n/a',
@@ -101,12 +111,15 @@ export default function AdminPaymentsPage() {
           const isTxnPresent = mappedTxns.some(t => t.orderId === (cp.requestId || cp.id));
           if (!isTxnPresent) {
             let txStatus: 'successful' | 'failed' | 'refunded' = 'successful';
-            if (cp.status === 'cancelled') txStatus = 'failed';
-            else if (cp.status === 'quote_sent' || cp.status === 'pending_review') txStatus = 'successful';
+            if (cp.status === 'cancelled' || cp.paymentStatus === 'failed') txStatus = 'failed';
+            else if (cp.paymentStatus === 'refunded') txStatus = 'refunded';
+            else if (cp.paymentStatus === 'paid' || cp.status === 'in_production' || cp.status === 'completed') txStatus = 'successful';
 
             mappedTxns.push({
               id: `CP-TXN-${cp.requestId ? cp.requestId.replace('#', '') : (2000 + idx)}`,
               orderId: cp.requestId || `#CR-${cp.id}`,
+              backendOrderId: cp.id,
+              isCustomPrint: true,
               customerName: cp.customerName || 'Customer',
               customerEmail: cp.customerEmail || 'n/a',
               paymentMethod: (cp.paymentMethod || 'UPI').toUpperCase(),
@@ -146,14 +159,60 @@ export default function AdminPaymentsPage() {
   };
 
   // Handle status update
-  const handleStatusChange = (id: string, newStatus: Transaction['status']) => {
+  const handleStatusChange = async (id: string, newStatus: Transaction['status']) => {
+    const target = transactions.find(t => t.id === id);
     setTransactions(prev => prev.map(txn => {
       if (txn.id === id) {
         return { ...txn, status: newStatus };
       }
       return txn;
     }));
-    showToast(`Payment status updated successfully! ⚡`);
+
+    // Map UI status to DB paymentStatus
+    const dbPaymentStatus = newStatus === 'successful' ? 'paid' : newStatus;
+
+    if (target?.backendOrderId) {
+      try {
+        if (target.isCustomPrint) {
+          await apiClient(`/custom-print/${target.backendOrderId}`, {
+            method: 'PUT',
+            body: { paymentStatus: dbPaymentStatus }
+          });
+        } else {
+          await apiClient(`/orders/${target.backendOrderId}/payment-status`, {
+            method: 'PUT',
+            body: { paymentStatus: dbPaymentStatus }
+          });
+        }
+        showToast(`Payment status updated to "${newStatus}" in database! ⚡`);
+      } catch (err) {
+        console.error('Failed to sync payment status with DB:', err);
+        showToast(`Payment status updated locally! ⚡`);
+      }
+    } else {
+      showToast(`Payment status updated successfully! ⚡`);
+    }
+  };
+
+  // Delete transaction handler
+  const handleDeleteConfirm = async () => {
+    if (!txnToDelete) return;
+    const target = txnToDelete;
+    setTransactions(prev => prev.filter(t => t.id !== target.id));
+    setIsDeleteModalOpen(false);
+    setTxnToDelete(null);
+
+    try {
+      if (target.isCustomPrint) {
+        await apiClient(`/custom-print/${target.backendOrderId || target.orderId}`, { method: 'DELETE' });
+      } else if (target.backendOrderId) {
+        await apiClient(`/orders/${target.backendOrderId}`, { method: 'DELETE' });
+      }
+      showToast(`Transaction ${target.id} deleted successfully! 🗑️`);
+    } catch (err) {
+      console.error('Failed to delete transaction from DB:', err);
+      showToast(`Transaction removed locally! 🗑️`);
+    }
   };
 
   // Filter transactions
@@ -317,7 +376,7 @@ export default function AdminPaymentsPage() {
                       </select>
                     </td>
                     <td className="px-6 py-3.5 text-center whitespace-nowrap">
-                      <div className="flex items-center justify-center">
+                      <div className="flex items-center justify-center gap-1.5">
                         <button
                           onClick={() => {
                             setSelectedTxn(txn);
@@ -327,6 +386,16 @@ export default function AdminPaymentsPage() {
                           title="View Details"
                         >
                           <Eye className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          onClick={() => {
+                            setTxnToDelete(txn);
+                            setIsDeleteModalOpen(true);
+                          }}
+                          className="p-1.5 bg-red-50 text-red-650 hover:bg-red-100 border border-red-150 rounded-lg transition-colors"
+                          title="Delete Transaction"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
                         </button>
                       </div>
                     </td>
@@ -441,6 +510,41 @@ export default function AdminPaymentsPage() {
                 className="rounded-xl border border-zinc-200 px-4 py-2 text-xs font-semibold text-zinc-650 hover:bg-zinc-50 transition"
               >
                 Close Logs
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {isDeleteModalOpen && txnToDelete && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-zinc-950/40 backdrop-blur-sm p-4">
+          <div className="relative w-full max-w-sm rounded-2xl bg-white border border-zinc-200 p-6 shadow-xl space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-full bg-red-100 text-red-600 flex items-center justify-center shrink-0">
+                <AlertTriangle className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-zinc-900">Delete Transaction</h3>
+                <p className="text-xs text-zinc-500 mt-0.5">Are you sure you want to delete payment record <span className="font-mono font-bold text-zinc-800">{txnToDelete.id}</span>?</p>
+              </div>
+            </div>
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-zinc-100">
+              <button
+                onClick={() => {
+                  setIsDeleteModalOpen(false);
+                  setTxnToDelete(null);
+                }}
+                className="rounded-xl border border-zinc-200 px-4 py-2 text-xs font-semibold text-zinc-650 hover:bg-zinc-50 transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteConfirm}
+                className="rounded-xl bg-red-600 px-4 py-2 text-xs font-semibold text-white shadow hover:bg-red-500 transition flex items-center gap-1.5"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                Delete Permanently
               </button>
             </div>
           </div>

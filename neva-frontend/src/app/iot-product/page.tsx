@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, Suspense } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import {
@@ -18,9 +18,8 @@ import {
   Tag,
   CheckSquare,
   Square,
-  Palette
 } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import ProductCard from '../../components/product/ProductCard';
 import QuickViewModal from '../../components/product/QuickViewModal';
 import Toast from '../../components/ui/Toast';
@@ -45,31 +44,23 @@ const safeParseJSON = (val: any, fallback: any = []) => {
   return fallback;
 };
 
-const defaultColorSwatches = [
-  { name: 'Violet', value: '#a855f7' },
-  { name: 'Cyan', value: '#22d3ee' },
-  { name: 'Pink', value: '#ec4899' },
-  { name: 'Green', value: '#10b981' },
-  { name: 'Blue', value: '#3b82f6' },
-  { name: 'Black', value: '#18181b' },
-  { name: 'White', value: '#ffffff' },
-  { name: 'Amber', value: '#f59e0b' },
-];
-
-export default function IotProductsPage() {
+function IotProductsContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const typeParam = searchParams.get('type'); // 'products' | 'components' | null
+
   const dispatch = useAppDispatch();
   const cartItems = useAppSelector((state) => state.cart.items);
+
 
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Filters state (Category removed, Color Circles added)
+  // Filters state
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'featured' | 'price-low' | 'price-high' | 'rating'>('featured');
   const [maxPrice, setMaxPrice] = useState<number>(10000);
   const [priceLimit, setPriceLimit] = useState<number>(10000);
-  const [selectedColors, setSelectedColors] = useState<string[]>([]);
   const [selectedMaterials, setSelectedMaterials] = useState<string[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [minRating, setMinRating] = useState<number>(0);
@@ -79,7 +70,6 @@ export default function IotProductsPage() {
   // Accordion Section States (All sections collapsed by default)
   const [openSections, setOpenSections] = useState({
     price: false,
-    colors: false,
     materials: false,
     rating: false,
     status: false,
@@ -115,7 +105,8 @@ export default function IotProductsPage() {
             name: p.name,
             slug: p.slug,
             sku: p.sku,
-            category: typeof p.category === 'object' && p.category !== null ? (p.category.name || 'IoT Product') : (p.category || 'IoT Product'),
+            categoryId: p.categoryId || (typeof p.category === 'object' && p.category !== null ? p.category.id : ''),
+            category: typeof p.category === 'object' && p.category !== null ? p.category : { name: p.category || 'IoT Product' },
             subCategory: typeof p.subCategory === 'object' && p.subCategory !== null ? { id: p.subCategory.id || '', name: p.subCategory.name || '' } : null,
             price: typeof p.price === 'string' ? parseFloat(p.price) : p.price,
             discountPrice: p.discountPrice ? (typeof p.discountPrice === 'string' ? parseFloat(p.discountPrice) : p.discountPrice) : null,
@@ -157,6 +148,12 @@ export default function IotProductsPage() {
   useEffect(() => {
     fetchProducts();
   }, []);
+
+  // When switching between IoT Products and IoT Components via Navbar, reset subcategory filter
+  useEffect(() => {
+    setSelectedCategory('');
+    setSearchQuery('');
+  }, [typeParam]);
 
   const handleAddToCart = (product: Product) => {
     try {
@@ -210,46 +207,24 @@ export default function IotProductsPage() {
     router.push('/checkout?buyNow=true');
   };
 
-  // Dynamically extract color options from products schema + standard swatches
-  const availableColorSwatches = useMemo(() => {
-    const map = new Map<string, string>();
-    defaultColorSwatches.forEach((c) => map.set(c.name.toLowerCase(), c.value));
+  const isComponentsOnly = typeParam === 'components';
+  const isProductsOnly = typeParam === 'products' || !typeParam; // Default to products if visiting /iot-product without query, or explicit products
 
-    products.forEach((p) => {
-      if (Array.isArray(p.colorOptions)) {
-        p.colorOptions.forEach((c: any) => {
-          if (typeof c === 'object' && c !== null && c.name && c.value) {
-            map.set(c.name.toLowerCase(), c.value);
-          } else if (typeof c === 'string') {
-            map.set(c.toLowerCase(), c);
-          }
-        });
-      }
-    });
-
-    const result: { name: string; value: string }[] = [];
-    map.forEach((value, nameKey) => {
-      const formattedName = nameKey.charAt(0).toUpperCase() + nameKey.slice(1);
-      result.push({ name: formattedName, value });
-    });
-    return result;
-  }, [products]);
-
-  const toggleColor = (colorName: string) => {
-    setSelectedColors((prev) =>
-      prev.includes(colorName) ? prev.filter((c) => c !== colorName) : [...prev, colorName]
-    );
-  };
-
-  // Dynamically extract sub-categories
+  // Dynamically extract sub-categories filtered by typeParam
   const subCategoriesList = useMemo(() => {
     const set = new Set<string>();
     products.forEach((p) => {
+      const catId = p.categoryId || (typeof p.category === 'object' && p.category !== null ? p.category.id : '');
+      const catName = typeof p.category === 'object' && p.category !== null ? (p.category.name || '') : String(p.category || '');
+      const isComp = catId === 'a65fd260-8438-4390-b1e6-30babd0c4e95' || catName.toLowerCase().includes('component');
+
+      if (isProductsOnly && isComp) return;
+      if (isComponentsOnly && !isComp) return;
       const subCat = p.subCategory?.name || '';
       if (subCat) set.add(subCat);
     });
     return Array.from(set).sort();
-  }, [products]);
+  }, [products, isProductsOnly, isComponentsOnly]);
 
   const toggleCategory = (cat: string) => {
     setSelectedCategory((prev) => (prev === cat ? '' : cat));
@@ -279,6 +254,14 @@ export default function IotProductsPage() {
   const processedProducts = useMemo(() => {
     return products
       .filter((p) => {
+        // Catalog Mode Filter (IoT Products vs IoT Components)
+        const catId = p.categoryId || (typeof p.category === 'object' && p.category !== null ? p.category.id : '');
+        const catName = typeof p.category === 'object' && p.category !== null ? (p.category.name || '') : String(p.category || '');
+        const isComp = catId === 'a65fd260-8438-4390-b1e6-30babd0c4e95' || catName.toLowerCase().includes('component');
+
+        if (isProductsOnly && isComp) return false;
+        if (isComponentsOnly && !isComp) return false;
+
         // Search filter
         const q = searchQuery.toLowerCase().trim();
         if (q && !(p.name.toLowerCase().includes(q) || (p.description && p.description.toLowerCase().includes(q)))) {
@@ -288,35 +271,6 @@ export default function IotProductsPage() {
         // Horizontal price slider filter
         if (Number(p.price) > priceLimit) {
           return false;
-        }
-
-        // Color circles filter
-        if (selectedColors.length > 0) {
-          const hasColorMatch = selectedColors.some((sc) => {
-            const scLower = sc.toLowerCase();
-
-            // 1. Check in colorOptions array if present
-            if (Array.isArray(p.colorOptions) && p.colorOptions.length > 0) {
-              const matchedInOpts = p.colorOptions.some((c: any) => {
-                if (!c) return false;
-                const nameStr = typeof c === 'object' ? String(c.name || '').toLowerCase() : String(c).toLowerCase();
-                const valStr = typeof c === 'object' ? String(c.value || '').toLowerCase() : '';
-                return nameStr.includes(scLower) || scLower.includes(nameStr) || valStr.includes(scLower);
-              });
-              if (matchedInOpts) return true;
-            }
-
-            // 2. Fallback search in product name, description, and specifications
-            const pName = (p.name || '').toLowerCase();
-            const pDesc = (p.description || '').toLowerCase();
-            const pSpecs = JSON.stringify(p.specifications || {}).toLowerCase();
-
-            return pName.includes(scLower) || pDesc.includes(scLower) || pSpecs.includes(scLower);
-          });
-
-          if (!hasColorMatch) {
-            return false;
-          }
         }
 
         // Category filter
@@ -359,12 +313,11 @@ export default function IotProductsPage() {
         if (sortBy === 'rating') return (b.rating || 0) - (a.rating || 0);
         return 0;
       });
-  }, [products, searchQuery, priceLimit, selectedColors, selectedMaterials, selectedCategory, minRating, inStockOnly, onSaleOnly, sortBy]);
+  }, [products, isProductsOnly, isComponentsOnly, searchQuery, priceLimit, selectedMaterials, selectedCategory, minRating, inStockOnly, onSaleOnly, sortBy]);
 
   const hasActiveFilters =
     searchQuery ||
     priceLimit < maxPrice ||
-    selectedColors.length > 0 ||
     selectedMaterials.length > 0 ||
     selectedCategory ||
     minRating > 0 ||
@@ -374,7 +327,6 @@ export default function IotProductsPage() {
   const resetAllFilters = () => {
     setSearchQuery('');
     setPriceLimit(maxPrice);
-    setSelectedColors([]);
     setSelectedMaterials([]);
     setSelectedCategory('');
     setMinRating(0);
@@ -390,13 +342,13 @@ export default function IotProductsPage() {
       {/* Search Input */}
       <div className="space-y-2">
         <label className="text-[11px] font-extrabold text-zinc-450 dark:text-zinc-500 uppercase tracking-widest block">
-          Search IoT Hardware
+          {isComponentsOnly ? 'Search IoT Components' : 'Search IoT Products'}
         </label>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-400" />
           <input
             type="text"
-            placeholder="Search sensors, boards..."
+            placeholder={isComponentsOnly ? "Search sensors, boards, modules..." : "Search smart devices, kits, plugs..."}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-9 pr-8 py-2 bg-zinc-50 dark:bg-zinc-900/70 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none focus:border-violet-500 focus:bg-white dark:focus:bg-[#111218] transition text-zinc-900 dark:text-zinc-100"
@@ -452,56 +404,7 @@ export default function IotProductsPage() {
         )}
       </div>
 
-      {/* 2. Color Circles Filter (Replaced category) */}
-      <div className="border-t border-zinc-100 dark:border-zinc-800/80 pt-4 space-y-3">
-        <button
-          onClick={() => toggleSection('colors')}
-          className="w-full flex items-center justify-between font-extrabold text-[11px] text-zinc-900 dark:text-white uppercase tracking-widest"
-        >
-          <div className="flex items-center gap-1.5">
-            <Palette className="h-3.5 w-3.5 text-violet-500" />
-            <span>Color Swatches</span>
-          </div>
-          {openSections.colors ? <ChevronUp className="h-3.5 w-3.5 text-zinc-400" /> : <ChevronDown className="h-3.5 w-3.5 text-zinc-400" />}
-        </button>
-
-        {openSections.colors && (
-          <div className="pt-1">
-            <div className="grid grid-cols-4 gap-2.5">
-              {availableColorSwatches.map((c) => {
-                const isSelected = selectedColors.includes(c.name);
-                const isWhite = c.value.toLowerCase() === '#ffffff' || c.value.toLowerCase() === 'white';
-                return (
-                  <button
-                    key={c.name}
-                    type="button"
-                    onClick={() => toggleColor(c.name)}
-                    title={c.name}
-                    className="flex flex-col items-center gap-1 group cursor-pointer"
-                  >
-                    <div
-                      className={`h-8 w-8 rounded-full border flex items-center justify-center transition-all ${isSelected
-                        ? 'ring-2 ring-violet-600 dark:ring-violet-400 border-white ring-offset-2 ring-offset-white dark:ring-offset-[#111218] scale-105'
-                        : 'border-zinc-300 dark:border-zinc-700 hover:scale-105'
-                        }`}
-                      style={{ backgroundColor: c.value }}
-                    >
-                      {isSelected && (
-                        <Check className={`h-3.5 w-3.5 ${isWhite ? 'text-zinc-900' : 'text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]'}`} />
-                      )}
-                    </div>
-                    <span className={`text-[9px] truncate max-w-full font-semibold ${isSelected ? 'text-violet-600 dark:text-violet-400 font-extrabold' : 'text-zinc-500 dark:text-zinc-400'}`}>
-                      {c.name}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* 3. Hardware / Material Filter */}
+      {/* 2. Hardware / Material Filter */}
       {materialsList.length > 0 && (
         <div className="border-t border-zinc-100 dark:border-zinc-800/80 pt-4 space-y-2.5">
           <button
@@ -637,11 +540,13 @@ export default function IotProductsPage() {
                 Home
               </Link>
               <span>/</span>
-              <span className="text-zinc-900 dark:text-zinc-200 font-medium">IoT Catalog</span>
+              <span className="text-zinc-900 dark:text-zinc-200 font-medium">
+                {isComponentsOnly ? 'IoT Components' : 'IoT Products'}
+              </span>
             </div>
             <div className="flex items-center gap-2.5 pt-1 flex-wrap">
               <h1 className="text-xl sm:text-3xl font-extrabold tracking-tight text-zinc-900 dark:text-white">
-                IoT &amp; Hardware Components
+                {isComponentsOnly ? 'IoT Components' : 'IoT Products'}
               </h1>
               {!isLoading && (
                 <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-violet-100 text-violet-700 dark:bg-violet-950/60 dark:text-violet-300 border border-violet-200 dark:border-violet-800/50">
@@ -718,7 +623,7 @@ export default function IotProductsPage() {
                     : 'bg-white dark:bg-[#111218] border-zinc-200 dark:border-zinc-800 text-zinc-650 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-white'
                     }`}
                 >
-                  All IoT Products
+                  All
                 </button>
                 {subCategoriesList.map((cat: string) => (
                   <button
@@ -840,5 +745,17 @@ export default function IotProductsPage() {
 
       <Toast message={toastMessage} />
     </main>
+  );
+}
+
+export default function IotProductsPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-zinc-50/60 dark:bg-[#090a0f] pt-28 flex items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-violet-600 border-t-transparent" />
+      </div>
+    }>
+      <IotProductsContent />
+    </Suspense>
   );
 }

@@ -254,6 +254,10 @@ export default function AdminCategoriesPage() {
 
   const filteredCategories = categories.filter(category => {
     if (category.parentId || category.parent_id) return false;
+    // Commenting out non-IoT / 3D categories from Admin Categories view
+    const isIoT = (category.name || '').toLowerCase().includes('iot') || (category.slug || '').toLowerCase().includes('iot');
+    if (!isIoT) return false;
+
     const query = searchQuery.toLowerCase();
     return (
       category.name.toLowerCase().includes(query) ||

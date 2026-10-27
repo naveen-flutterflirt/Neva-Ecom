@@ -2,12 +2,12 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import {
   ArrowLeft, Star, Cpu, Layers, Heart, ShoppingCart, Zap,
   Ruler, RefreshCw, Truck, RotateCcw, Palette, Info, Sparkles,
   Smile, Droplets, Smartphone, Code, ShieldCheck, Box, Sun, Home, ShieldAlert,
-  Radio, Thermometer, Brain, MessageCircle
+  Radio, Thermometer, Brain, MessageCircle, Flame, Tag
 } from 'lucide-react';
 import Toast from '../../../components/ui/Toast';
 import { Product } from '../../../types/product';
@@ -20,10 +20,18 @@ import IotKitDetailsLayout from '../../../components/product/IotKitDetailsLayout
 
 export default function DynamicProductDetailsPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const dealDiscountParam = searchParams.get('dealDiscount');
+  const promoCouponParam = searchParams.get('coupon');
+  const comboParam = searchParams.get('combo') === 'true';
+  const qtyParam = searchParams.get('qty');
+  const initialQty = qtyParam ? Math.max(1, parseInt(qtyParam, 10)) : (comboParam ? 2 : 1);
+
   const dispatch = useAppDispatch();
   const cartItems = useAppSelector((state) => state.cart.items);
   const [product, setProduct] = useState<Product | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [quantity, setQuantity] = useState<number>(initialQty);
   const [selectedImage, setSelectedImage] = useState<string>('');
   const [selectedMaterialIdx, setSelectedMaterialIdx] = useState<number>(0);
   const [selectedColorIdx, setSelectedColorIdx] = useState<number | null>(null);
@@ -32,6 +40,28 @@ export default function DynamicProductDetailsPage() {
   const [isCustomColorModalOpen, setIsCustomColorModalOpen] = useState(false);
   const [customColorInput, setCustomColorInput] = useState('');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // Sync quantity if URL params change
+  useEffect(() => {
+    if (qtyParam) {
+      const q = Math.max(1, parseInt(qtyParam, 10));
+      if (!isNaN(q)) setQuantity(q);
+    } else if (comboParam) {
+      setQuantity(2);
+    }
+  }, [qtyParam, comboParam]);
+
+  // If user arrives via a deal with an attached coupon, auto-save coupon to localStorage
+  useEffect(() => {
+    if (promoCouponParam) {
+      try {
+        localStorage.setItem(
+          'neva-applied-coupon',
+          JSON.stringify({ code: promoCouponParam.toUpperCase(), discountAmount: 0 })
+        );
+      } catch (e) {}
+    }
+  }, [promoCouponParam]);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -138,12 +168,21 @@ export default function DynamicProductDetailsPage() {
             return activeColorNames.includes(img.color.toLowerCase().trim());
           });
 
+          let parsedSpecs: Record<string, any> = {};
+          if (raw.specifications) {
+            if (typeof raw.specifications === 'string') {
+              try { parsedSpecs = JSON.parse(raw.specifications); } catch (e) { parsedSpecs = {}; }
+            } else if (typeof raw.specifications === 'object') {
+              parsedSpecs = raw.specifications;
+            }
+          }
+
           const formatted: Product = {
             id: raw.id,
             name: raw.name,
             slug: raw.slug,
             sku: raw.sku,
-            category: raw.category || (checkIsIoT ? 'IoT Product' : '3D Product'),
+            category: raw.category || (checkIsIoT ? 'IoT Component' : '3D Product'),
             price: typeof raw.price === 'string' ? parseFloat(raw.price) : raw.price,
             discountPrice: raw.discountPrice ? (typeof raw.discountPrice === 'string' ? parseFloat(raw.discountPrice) : raw.discountPrice) : null,
             stock: raw.stock || 0,
@@ -158,8 +197,8 @@ export default function DynamicProductDetailsPage() {
             sizeVariants: parsedSizes,
             careInstructions: parsedCare,
             keyFeatures: parsedFeatures,
-            specifications: raw.specifications || {},
-            specs: raw.specifications || {},
+            specifications: parsedSpecs,
+            specs: parsedSpecs,
             averageRating: raw.averageRating,
             reviewCount: raw.reviewCount,
           };
@@ -208,11 +247,27 @@ export default function DynamicProductDetailsPage() {
 
   const rawDiscount = product.discountPrice ? (typeof product.discountPrice === 'string' ? parseFloat(product.discountPrice) : Number(product.discountPrice)) : null;
 
-  // Selling price is always the lower value between price and discountPrice
-  const baseSellingPrice = (rawDiscount && rawDiscount > 0) ? Math.min(basePrice, rawDiscount) : basePrice;
-  const baseMrpPrice = (rawDiscount && rawDiscount > 0) ? Math.max(basePrice, rawDiscount) : null;
+  // Check if user came from Popup Deal with custom deal discount percentage
+  const dealPercent = dealDiscountParam ? parseInt(dealDiscountParam, 10) : 0;
 
-  const finalSellingPrice = baseSellingPrice + matAdj + colAdj + szAdj;
+  // Selling price is lower value between price and discountPrice, or discounted by dealPercent
+  const currentStorePrice = (rawDiscount && rawDiscount > 0) ? Math.min(basePrice, rawDiscount) : basePrice;
+  const originalMrp = (rawDiscount && rawDiscount > 0) ? Math.max(basePrice, rawDiscount) : basePrice;
+
+  let baseSellingPrice = currentStorePrice;
+  let baseMrpPrice = (rawDiscount && rawDiscount > 0) ? originalMrp : null;
+
+  if (dealPercent > 0 && dealPercent < 100) {
+    // Discount is calculated on the current active store price (e.g. ₹1499 - 10% = ₹1349)
+    baseSellingPrice = Math.round(currentStorePrice * (1 - dealPercent / 100));
+    baseMrpPrice = originalMrp;
+  }
+
+  // When combo deal is active, 2 pieces are included for the price of 1!
+  // We keep finalSellingPrice exact without rounding drift:
+  // e.g. for price 229, unit is (229 / quantity) so total (price * quantity) = exact 229!
+  const comboUnitPrice = (comboParam && quantity >= 2) ? (baseSellingPrice / quantity) : baseSellingPrice;
+  const finalSellingPrice = comboUnitPrice + matAdj + colAdj + szAdj;
   const finalMrpPrice = baseMrpPrice ? baseMrpPrice + matAdj + colAdj + szAdj : null;
 
   const categoryName = typeof product.category === 'object' && product.category !== null ? product.category.name : (product.category || 'Product');
@@ -236,9 +291,9 @@ export default function DynamicProductDetailsPage() {
           price: finalSellingPrice,
           discountPrice: finalMrpPrice,
         },
-        quantity: 1,
+        quantity: quantity,
       }));
-      showToast(`✓ Added "${product.name}" to cart! 🛍️`);
+      showToast(`✓ Added ${quantity > 1 ? `${quantity}x ` : ''}"${product.name}" to cart! 🛍️`);
       return true;
     } catch (err) {
       console.error('Failed to update cart:', err);
@@ -271,7 +326,7 @@ export default function DynamicProductDetailsPage() {
         price: finalSellingPrice,
         discountPrice: finalMrpPrice,
       },
-      quantity: 1,
+      quantity: quantity,
     }));
     router.push('/checkout?buyNow=true');
   };
@@ -289,11 +344,11 @@ export default function DynamicProductDetailsPage() {
         {/* Top Navigation & Breadcrumb Header */}
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-200/80 dark:border-zinc-800/80 pb-3.5">
           <Link
-            href={isIoT ? "/iot-product" : "/3d-product"}
+            href={categoryName.toLowerCase().includes('component') ? "/iot-product?type=components" : "/iot-product?type=products"}
             className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white dark:bg-zinc-900/90 border border-zinc-200 dark:border-zinc-800 text-xs font-semibold text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white hover:border-purple-500/50 hover:bg-purple-50 dark:hover:bg-purple-950/30 transition-all duration-200 shadow-sm"
           >
             <ArrowLeft className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400" />
-            Back to {isIoT ? 'IoT Catalog' : '3D Products'}
+            Back to {categoryName.toLowerCase().includes('component') ? 'IoT Components' : 'IoT Products'}
           </Link>
 
           <div className="flex items-center gap-2 text-xs font-mono text-zinc-500 dark:text-zinc-400 bg-white/80 dark:bg-zinc-900/50 px-3 py-1 rounded-full border border-zinc-200/80 dark:border-zinc-800/60 shadow-sm">
@@ -393,26 +448,53 @@ export default function DynamicProductDetailsPage() {
                 </div>
 
                 {/* Price Header Box */}
-                <div className="p-3 rounded-2xl bg-zinc-100/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800/90 flex items-center justify-between">
+                <div className="p-3.5 rounded-2xl bg-gradient-to-r from-zinc-100/90 to-zinc-50 dark:from-zinc-900/90 dark:to-zinc-950/80 border border-zinc-200/80 dark:border-zinc-800/90 flex items-center justify-between">
                   <div>
-                    <span className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider block mb-0.5">Total Price</span>
+                    <span className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider block mb-0.5">
+                      {comboParam ? '🎁 Combo Pack Price (Set of 2 Items)' : dealPercent > 0 ? 'Special Deal Price 🔥' : 'Total Price'}
+                    </span>
                     <div className="flex items-baseline gap-2">
                       <span className="text-xl sm:text-2xl lg:text-3xl font-black font-mono text-zinc-900 dark:text-white tracking-tight">
-                        ₹{finalSellingPrice.toLocaleString()}
+                        ₹{(finalSellingPrice * quantity).toLocaleString()}
                       </span>
                       {finalMrpPrice && (
                         <span className="text-xs font-mono text-zinc-400 dark:text-zinc-500 line-through">
-                          ₹{finalMrpPrice.toLocaleString()}
+                          ₹{(finalMrpPrice * quantity).toLocaleString()}
                         </span>
                       )}
                     </div>
                   </div>
-                  {finalMrpPrice && (
+                  {comboParam ? (
+                    <span className="px-3 py-1.5 rounded-xl bg-amber-500 text-zinc-950 text-[10px] font-black uppercase tracking-wider shadow-sm flex items-center gap-1">
+                      <Sparkles className="h-3 w-3 fill-zinc-950 text-zinc-950" />
+                      COMBO DEAL (2x FOR 1x PRICE)
+                    </span>
+                  ) : dealPercent > 0 ? (
+                    <span className="px-3 py-1.5 rounded-xl bg-amber-500 text-zinc-950 text-[10px] font-black uppercase tracking-wider shadow-sm flex items-center gap-1">
+                      <Flame className="h-3 w-3 fill-zinc-950 text-zinc-950" />
+                      {dealPercent}% DEAL APPLIED
+                    </span>
+                  ) : finalMrpPrice ? (
                     <span className="px-2.5 py-1 rounded-xl bg-purple-100 dark:bg-purple-500/20 border border-purple-200 dark:border-purple-500/40 text-purple-700 dark:text-purple-300 text-[10px] font-extrabold uppercase tracking-wider shadow-sm">
                       SAVE {Math.round(((finalMrpPrice - finalSellingPrice) / finalMrpPrice) * 100)}%
                     </span>
-                  )}
+                  ) : null}
                 </div>
+
+                {/* Attached Promo Coupon Banner */}
+                {promoCouponParam && (
+                  <div className="p-3 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-700/60 flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-2">
+                      <Tag className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
+                      <span className="font-bold text-zinc-800 dark:text-zinc-200 text-[11px]">
+                        Coupon <strong className="font-mono text-amber-700 dark:text-amber-300 font-extrabold">{promoCouponParam.toUpperCase()}</strong> applied for checkout
+                      </span>
+                    </div>
+                    <span className="text-[10px] font-bold bg-amber-400 text-zinc-950 px-2 py-0.5 rounded-md">
+                      ACTIVE
+                    </span>
+                  </div>
+                )}
 
                 {/* Description */}
                 <p className="text-xs lg:text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed border-t border-b border-zinc-200/80 dark:border-zinc-800/80 py-2.5">
@@ -477,6 +559,39 @@ export default function DynamicProductDetailsPage() {
                   </div>
                 )}
 
+                {/* Quantity Selector */}
+                <div className="flex items-center justify-between p-3 rounded-2xl bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800">
+                  <div>
+                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 block">
+                      QUANTITY {comboParam ? '🎁 (COMBO DEAL - 2 PIECES)' : ''}
+                    </span>
+                    <span className="text-xs text-zinc-600 dark:text-zinc-300 font-semibold">
+                      Total: ₹{(finalSellingPrice * quantity).toLocaleString('en-IN')}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setQuantity((prev) => Math.max(1, prev - 1))}
+                      disabled={quantity <= 1}
+                      className="h-8 w-8 rounded-xl bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 flex items-center justify-center font-bold text-sm hover:bg-zinc-100 dark:hover:bg-zinc-700 transition disabled:opacity-40 cursor-pointer"
+                    >
+                      -
+                    </button>
+                    <span className="w-8 text-center font-mono font-black text-sm text-zinc-900 dark:text-white">
+                      {quantity}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setQuantity((prev) => prev + 1)}
+                      className="h-8 w-8 rounded-xl bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 flex items-center justify-center font-bold text-sm hover:bg-zinc-100 dark:hover:bg-zinc-700 transition cursor-pointer"
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+
                 {/* Request Custom Color Button */}
                 <button
                   type="button"
@@ -490,8 +605,18 @@ export default function DynamicProductDetailsPage() {
                   Request Custom Color / Finish
                 </button>
 
-                {/* Side-by-Side Action Buttons */}
+                {/* Side-by-Side Action Buttons: Add To Cart & Buy Now */}
                 <div className="grid grid-cols-2 gap-2 sm:gap-2.5 pt-1">
+                  {/* Add to Cart Button */}
+                  <button
+                    type="button"
+                    onClick={handleAddToCart}
+                    className="w-full px-2 py-2.5 sm:py-3 rounded-2xl border border-zinc-300 dark:border-zinc-700 hover:border-purple-500 bg-white dark:bg-zinc-900 hover:bg-purple-50 dark:hover:bg-purple-950/40 text-zinc-800 dark:text-zinc-100 text-[11px] sm:text-xs font-black uppercase tracking-tight sm:tracking-wider transition-all duration-200 active:scale-98 flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
+                  >
+                    <ShoppingCart className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-purple-600 dark:text-purple-400 shrink-0" />
+                    <span>Add {quantity > 1 ? `(${quantity})` : ''} to Cart</span>
+                  </button>
+
                   {/* Buy Now Button (Matching Card Gradient Fill Overlay Style) */}
                   <button
                     type="button"
@@ -501,24 +626,20 @@ export default function DynamicProductDetailsPage() {
                     <span className="absolute inset-0 bg-gradient-to-r from-fuchsia-600 to-indigo-600 w-0 group-hover/btn:w-full transition-all duration-500 ease-out z-0" />
                     <span className="relative z-10 flex items-center justify-center gap-1 sm:gap-1.5 truncate">
                       <Zap className="h-3.5 w-3.5 sm:h-4 sm:w-4 fill-current text-white shrink-0" />
-                      <span>Buy Now</span>
-                    </span>
-                  </button>
-
-                  {/* Chat on WhatsApp Button */}
-                  <button
-                    type="button"
-                    onClick={handleWhatsAppChat}
-                    className="group/btn relative overflow-hidden w-full px-2 py-2.5 sm:py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 border border-emerald-500 active:scale-98 text-white font-extrabold text-[11px] sm:text-xs uppercase tracking-tight sm:tracking-wider transition-all duration-300 shadow-md shadow-emerald-600/25 flex items-center justify-center gap-1 sm:gap-1.5 cursor-pointer"
-                  >
-                    <span className="absolute inset-0 bg-gradient-to-r from-emerald-500 to-teal-600 w-0 group-hover/btn:w-full transition-all duration-500 ease-out z-0" />
-                    <span className="relative z-10 flex items-center justify-center gap-1 sm:gap-1.5 truncate">
-                      <MessageCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4 fill-white text-white shrink-0" />
-                      <span className="hidden sm:inline">Chat on WhatsApp</span>
-                      <span className="sm:hidden">WhatsApp Chat</span>
+                      <span>Buy Now {quantity > 1 ? `(${quantity}x)` : ''}</span>
                     </span>
                   </button>
                 </div>
+
+                {/* WhatsApp Help Button */}
+                <button
+                  type="button"
+                  onClick={handleWhatsAppChat}
+                  className="w-full py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs uppercase tracking-wider transition-all shadow-md shadow-emerald-600/20 flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <MessageCircle className="h-4 w-4 fill-white text-white shrink-0" />
+                  <span>Chat on WhatsApp</span>
+                </button>
 
                 {/* Delivery & Replacement Strip */}
                 <div className="grid grid-cols-2 gap-3 pt-3 border-t border-zinc-200/80 dark:border-zinc-800/80 text-xs text-zinc-500 dark:text-zinc-400">

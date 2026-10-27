@@ -27,12 +27,18 @@ export default function QuickViewModal({ product, onClose, onAddToCart }: QuickV
 
   const categoryName = typeof product.category === 'object' && product.category !== null
     ? product.category.name
-    : (product.category || (product.isIoT ? 'IoT Product' : '3D Product'));
+    : (product.category || (product.isIoT ? 'IoT Component' : '3D Product'));
 
   const numPrice = typeof product.price === 'string' ? parseFloat(product.price) : product.price;
   const numDiscountPrice = product.discountPrice ? (typeof product.discountPrice === 'string' ? parseFloat(product.discountPrice) : product.discountPrice) : null;
-  const isIoT = product.isIoT || (typeof categoryName === 'string' && categoryName.toLowerCase().includes('iot'));
-  const specsObj = product.specifications || product.specs || {};
+  const isIoT = Boolean(product.isIoT || (typeof categoryName === 'string' && categoryName.toLowerCase().includes('iot')));
+  const rawSpecs = product.specifications || product.specs || {};
+  let specsObj: Record<string, any> = {};
+  if (typeof rawSpecs === 'string') {
+    try { specsObj = JSON.parse(rawSpecs); } catch (e) { specsObj = {}; }
+  } else if (typeof rawSpecs === 'object' && rawSpecs !== null) {
+    specsObj = rawSpecs;
+  }
 
   return (
     <AnimatePresence>
@@ -131,7 +137,7 @@ export default function QuickViewModal({ product, onClose, onAddToCart }: QuickV
                 </p>
               )}
 
-              {/* Technical Specs List (IoT Products) */}
+              {/* Technical Specs List (IoT Components) */}
               {isIoT && Object.keys(specsObj).length > 0 && (
                 <div className="mb-5 space-y-2">
                   <h4 className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">

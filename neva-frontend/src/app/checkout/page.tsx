@@ -19,6 +19,7 @@ import { Skeleton } from '../../components/ui/Skeleton';
 
 import { API_URL, apiClient } from '../../lib/api';
 import { INDIAN_STATES_AND_DISTRICTS } from '../../data/indiaData';
+import CouponSection from '../../components/checkout/CouponSection';
 
 declare global {
   interface Window {
@@ -75,9 +76,11 @@ export default function CheckoutPage() {
   const [cardCvv, setCardCvv] = useState('');
 
   // Discount Coupon State
-  const [couponCode, setCouponCode] = useState('');
-  const [appliedDiscount, setAppliedDiscount] = useState<number>(0);
-  const [appliedCouponName, setAppliedCouponName] = useState<string>('');
+  const [appliedCoupon, setAppliedCoupon] = useState<{
+    code: string;
+    discountAmount: number;
+    description?: string;
+  } | null>(null);
 
   const [userId, setUserId] = useState<string | null>(null);
 
@@ -100,7 +103,9 @@ export default function CheckoutPage() {
   };
 
   // Calculate checkout items subtotal
-  const subtotal = checkoutItems.reduce((sum, item) => sum + Number(item.product.price) * item.quantity, 0);
+  const subtotal = Math.round(
+    checkoutItems.reduce((sum, item) => sum + Number(item.product.price) * item.quantity, 0)
+  );
 
   // Shipping Fee Logic: Free if subtotal >= 300, otherwise 50
   useEffect(() => {
@@ -223,6 +228,39 @@ export default function CheckoutPage() {
       }).catch(() => { });
     }
 
+    // Load saved coupon from cart or deal click, and auto-validate if discountAmount is 0
+    try {
+      const savedCoupon = localStorage.getItem('neva-applied-coupon');
+      if (savedCoupon) {
+        const parsed = JSON.parse(savedCoupon);
+        setAppliedCoupon(parsed);
+
+        // If coupon was attached from banner with discountAmount 0, validate it immediately
+        if (parsed.code && (!parsed.discountAmount || parsed.discountAmount === 0)) {
+          apiClient('/coupons/validate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              code: parsed.code,
+              subtotal: subtotal || 1,
+            }),
+          }).then((res) => {
+            if (res && res.success && res.data) {
+              const fullCoupon = {
+                code: parsed.code,
+                discountAmount: Number(res.data.discountAmount) || 0,
+                description: res.data.description || res.message,
+              };
+              setAppliedCoupon(fullCoupon);
+              localStorage.setItem('neva-applied-coupon', JSON.stringify(fullCoupon));
+            }
+          }).catch((err) => {
+            console.warn('Coupon auto-validation failed:', err);
+          });
+        }
+      }
+    } catch (e) {}
+
     loadRazorpayScript().catch(err => console.warn('Razorpay pre-load error:', err));
   }, []);
 
@@ -247,40 +285,73 @@ export default function CheckoutPage() {
     setCheckoutItems(cartItems);
   }, [cartItems]);
 
+  // Re-calculate/validate coupon discount once subtotal is calculated
+  useEffect(() => {
+    if (!subtotal || subtotal <= 0) return;
+
+    // Check if applied coupon has discountAmount 0 or needs to re-calculate discount for current subtotal
+    if (appliedCoupon && appliedCoupon.code) {
+      apiClient('/coupons/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          code: appliedCoupon.code,
+          subtotal: subtotal,
+          userId: userId || undefined,
+          customerEmail: email || undefined,
+        }),
+      }).then((res) => {
+        if (res && res.success && res.data) {
+          const discount = Number(res.data.discountAmount) || 0;
+          if (discount !== appliedCoupon.discountAmount) {
+            const updated = {
+              code: appliedCoupon.code,
+              discountAmount: discount,
+              description: res.data.description || res.message,
+            };
+            setAppliedCoupon(updated);
+            try {
+              localStorage.setItem('neva-applied-coupon', JSON.stringify(updated));
+            } catch (e) {}
+          }
+        } else {
+          // If coupon is invalid or not found, clear the 0 discount dummy
+          setAppliedCoupon(null);
+          try {
+            localStorage.removeItem('neva-applied-coupon');
+          } catch (e) {}
+        }
+      }).catch((err) => {
+        console.warn('Coupon re-validation error:', err);
+        setAppliedCoupon(null);
+        try {
+          localStorage.removeItem('neva-applied-coupon');
+        } catch (e) {}
+      });
+    }
+  }, [subtotal, userId, email]);
+
   // Calculate Order Prices
-  const discountAmount = Math.round((subtotal * appliedDiscount) / 100);
+  const discountAmount = appliedCoupon ? Math.min(subtotal, appliedCoupon.discountAmount) : 0;
   const codFee = 0;
   const effectiveShippingFee = subtotal >= 300 || subtotal === 0 ? 0 : shippingFee;
   const grandTotal = Math.max(0, subtotal - discountAmount + effectiveShippingFee);
 
   // Apply Coupon Code
-  const handleApplyCoupon = (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    const code = couponCode.trim().toUpperCase();
-    if (!code) return;
-
-    if (code === 'NIVA10' || code === 'WELCOME10') {
-      setAppliedDiscount(10);
-      setAppliedCouponName(code);
-      showToast('🎉 Coupon NIVA10 applied! 10% Discount unlocked!');
-    } else if (code === 'NIVA15' || code === 'FESTIVE15') {
-      setAppliedDiscount(15);
-      setAppliedCouponName(code);
-      showToast('✨ Special 15% OFF Coupon Applied!');
-    } else if (code === 'FREESHIP') {
-      setAppliedDiscount(5);
-      setAppliedCouponName(code);
-      showToast('Extra 5% OFF + Free Shipping applied!');
-    } else {
-      showToast('❌ Invalid or Expired Coupon Code. Try NIVA10');
-    }
+  const handleApplyCoupon = (couponData: { code: string; discountAmount: number; description?: string }) => {
+    setAppliedCoupon(couponData);
+    try {
+      localStorage.setItem('neva-applied-coupon', JSON.stringify(couponData));
+    } catch (e) {}
+    showToast(`🎉 Coupon "${couponData.code}" applied! Saved ₹${couponData.discountAmount}`);
   };
 
   // Remove Coupon
   const handleRemoveCoupon = () => {
-    setAppliedDiscount(0);
-    setAppliedCouponName('');
-    setCouponCode('');
+    setAppliedCoupon(null);
+    try {
+      localStorage.removeItem('neva-applied-coupon');
+    } catch (e) {}
     showToast('Coupon removed');
   };
 
@@ -371,8 +442,10 @@ export default function CheckoutPage() {
         shipping: shippingFee,
         codFee,
         // gstTax,
-        total: grandTotal
+        total: grandTotal,
+        couponCode: appliedCoupon ? appliedCoupon.code : null,
       },
+      couponCode: appliedCoupon ? appliedCoupon.code : null,
       createdAt: new Date().toISOString()
     };
 
@@ -1013,7 +1086,7 @@ export default function CheckoutPage() {
                         <h4 className="text-xs font-bold text-zinc-900 dark:text-white truncate">{item.product.name}</h4>
                         <div className="flex items-center justify-between text-[11px] text-zinc-500 dark:text-zinc-400 pt-0.5">
                           <span>Qty: <strong className="text-zinc-800 dark:text-zinc-200 font-mono">{item.quantity}</strong></span>
-                          <span className="font-extrabold text-zinc-900 dark:text-white font-mono">₹{(Number(item.product.price) * item.quantity).toLocaleString()}</span>
+                          <span className="font-extrabold text-zinc-900 dark:text-white font-mono">₹{Math.round(Number(item.product.price) * item.quantity).toLocaleString()}</span>
                         </div>
                       </div>
                     </div>
@@ -1022,6 +1095,16 @@ export default function CheckoutPage() {
 
 
 
+                {/* Coupon Code Section */}
+                <CouponSection
+                  subtotal={subtotal}
+                  userId={userId}
+                  customerEmail={email}
+                  appliedCoupon={appliedCoupon}
+                  onApplyCoupon={handleApplyCoupon}
+                  onRemoveCoupon={handleRemoveCoupon}
+                />
+
                 {/* Bill Pricing Breakdown Table */}
                 <div className="space-y-2 pt-2 border-t border-zinc-100 dark:border-zinc-800/80 text-xs font-medium text-zinc-600 dark:text-zinc-400">
                   <div className="flex justify-between">
@@ -1029,9 +1112,9 @@ export default function CheckoutPage() {
                     <span className="font-mono text-zinc-900 dark:text-white font-semibold">₹{subtotal.toLocaleString()}</span>
                   </div>
 
-                  {appliedDiscount > 0 && (
+                  {appliedCoupon && discountAmount > 0 && (
                     <div className="flex justify-between text-emerald-600 dark:text-emerald-400 font-bold">
-                      <span>Coupon Discount ({appliedDiscount}%)</span>
+                      <span>Coupon Discount ({appliedCoupon.code})</span>
                       <span className="font-mono">-₹{discountAmount.toLocaleString()}</span>
                     </div>
                   )}

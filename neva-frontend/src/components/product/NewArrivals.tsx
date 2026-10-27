@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
-import { Sparkles, Loader2 } from 'lucide-react';
+import { Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Product } from '../../types/product';
 import ProductCard from './ProductCard';
 import QuickViewModal from './QuickViewModal';
@@ -18,10 +18,21 @@ export default function NewArrivals() {
     const [loading, setLoading] = useState(true);
     const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
     const [toastMessage, setToastMessage] = useState<string | null>(null);
+    const sliderRef = useRef<HTMLDivElement>(null);
     const dispatch = useAppDispatch();
     const router = useRouter();
 
     const cartItems = useAppSelector((state) => state.cart.items);
+
+    const scroll = (direction: 'left' | 'right') => {
+        if (sliderRef.current) {
+            const containerWidth = sliderRef.current.clientWidth;
+            // Scroll roughly one card width (card + gap: ~364px) or half container
+            const cardWidth = 340 + 24;
+            const scrollAmount = direction === 'left' ? -cardWidth : cardWidth;
+            sliderRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+        }
+    };
 
     useEffect(() => {
         // Fetch real live new arrival products from backend API (No dummy mock fallback)
@@ -33,7 +44,7 @@ export default function NewArrivals() {
                     return apiClient('/products').then(allRes => {
                         if (allRes && allRes.success && Array.isArray(allRes.data)) {
                             const newArrivalTagged = allRes.data.filter((p: any) => p.isNewArrival === true || p.status === 'active');
-                            setLiveProducts(newArrivalTagged.slice(0, 8));
+                            setLiveProducts(newArrivalTagged.slice(0, 10));
                         }
                     });
                 }
@@ -104,15 +115,35 @@ export default function NewArrivals() {
                         </h2>
                     </div>
 
-                    <a
-                        href="/3d-product"
-                        className="text-xs font-bold text-violet-600 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300 flex items-center gap-1 transition-colors self-start sm:self-auto"
-                    >
-                        View All Products &rarr;
-                    </a>
+                    <div className="flex items-center gap-3 self-start sm:self-auto">
+                        <a
+                            href="/iot-product"
+                            className="text-xs font-bold text-violet-600 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300 transition-colors mr-2"
+                        >
+                            View All Products &rarr;
+                        </a>
+
+                        {/* User manual slide navigation controls */}
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={() => scroll('left')}
+                                aria-label="Slide Left"
+                                className="h-9 w-9 rounded-full border border-zinc-300 dark:border-zinc-700 bg-white/80 dark:bg-zinc-900/80 hover:bg-zinc-100 dark:hover:bg-zinc-800 shadow-xs flex items-center justify-center transition-all active:scale-95 text-zinc-700 dark:text-zinc-300"
+                            >
+                                <ChevronLeft className="h-4 w-4" />
+                            </button>
+                            <button
+                                onClick={() => scroll('right')}
+                                aria-label="Slide Right"
+                                className="h-9 w-9 rounded-full border border-zinc-300 dark:border-zinc-700 bg-white/80 dark:bg-zinc-900/80 hover:bg-zinc-100 dark:hover:bg-zinc-800 shadow-xs flex items-center justify-center transition-all active:scale-95 text-zinc-700 dark:text-zinc-300"
+                            >
+                                <ChevronRight className="h-4 w-4" />
+                            </button>
+                        </div>
+                    </div>
                 </div>
 
-                {/* Horizontal Pure Smooth Marquee Slider */}
+                {/* Horizontal Manual Slide Carousel */}
                 {loading ? (
                     <div className="flex items-stretch gap-6 overflow-hidden py-2">
                         {[1, 2, 3, 4].map((idx) => (
@@ -122,24 +153,25 @@ export default function NewArrivals() {
                         ))}
                     </div>
                 ) : (
-                    <div className="relative overflow-hidden w-full py-2">
-                        <div className="product-marquee-track flex items-stretch gap-6">
-                            {/* Set 1 & Set 2 for seamless infinite marquee scroll */}
-                            {[...liveProducts, ...liveProducts].map((product, index) => (
-                                <div
-                                    key={`${product.id}-${index}`}
-                                    className="w-[85vw] sm:w-[320px] lg:w-[340px] shrink-0 flex select-none"
-                                >
-                                    <ProductCard
-                                        product={product}
-                                        onQuickShop={handleAddToCart}
-                                        onQuickView={handleQuickView}
-                                        onAddToCart={handleAddToCart}
-                                        onBuyNow={handleBuyNow}
-                                    />
-                                </div>
-                            ))}
-                        </div>
+                    <div
+                        ref={sliderRef}
+                        className="flex items-stretch gap-6 overflow-x-auto scroll-smooth py-3 px-1 scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none]"
+                        style={{ WebkitOverflowScrolling: 'touch' }}
+                    >
+                        {liveProducts.map((product) => (
+                            <div
+                                key={product.id}
+                                className="w-[85vw] sm:w-[320px] lg:w-[340px] shrink-0 flex select-none"
+                            >
+                                <ProductCard
+                                    product={product}
+                                    onQuickShop={handleAddToCart}
+                                    onQuickView={handleQuickView}
+                                    onAddToCart={handleAddToCart}
+                                    onBuyNow={handleBuyNow}
+                                />
+                            </div>
+                        ))}
                     </div>
                 )}
             </div>

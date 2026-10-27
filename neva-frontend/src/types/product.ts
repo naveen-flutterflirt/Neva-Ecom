@@ -48,6 +48,8 @@ export interface Product {
   badge?: string;
   isIoT?: boolean;
   isKit?: boolean;
+  isNewArrival?: boolean;
+  isTrending?: boolean;
   ebookUrl?: string | null;
   description?: string | null;
   materialVariants?: MaterialVariantItem[];

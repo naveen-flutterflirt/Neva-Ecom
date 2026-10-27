@@ -25,6 +25,8 @@ interface OrderItem {
 
 interface Order {
   id: string;
+  rawId?: string;
+  isCustomPrint?: boolean;
   customerName: string;
   customerEmail: string;
   shippingAddress: string;
@@ -80,6 +82,8 @@ export default function AdminOrdersPage() {
           const isDelivered = rawStatus === 'delivered';
           allOrders.push({
             id: (o.orderNumber || o.id || '').replace('NEVA-', 'NIVA-'),
+            rawId: o.id || o.orderNumber,
+            isCustomPrint: false,
             customerName: o.customerName || 'Customer',
             customerEmail: o.customerEmail || 'n/a',
             shippingAddress: o.shippingAddress || 'n/a',
@@ -103,6 +107,8 @@ export default function AdminOrdersPage() {
           if (cp.quotePrice || cp.status !== 'pending_review') {
             allOrders.push({
               id: (cp.requestId || cp.id || '').replace('NEVA-', 'NIVA-'),
+              rawId: cp.id,
+              isCustomPrint: true,
               customerName: cp.customerName || 'Customer',
               customerEmail: cp.customerEmail || 'n/a',
               shippingAddress: cp.addressLine1 ? `${cp.addressLine1}, ${cp.city || ''}` : 'As specified',
@@ -171,12 +177,24 @@ export default function AdminOrdersPage() {
   };
 
   // Delete order handler
-  const handleDeleteConfirm = () => {
+  const handleDeleteConfirm = async () => {
     if (!orderToDelete) return;
-    setOrders(prev => prev.filter(o => o.id !== orderToDelete.id));
-    showToast(`Order ${orderToDelete.id} removed successfully! 🗑️`);
+    const target = orderToDelete;
+    setOrders(prev => prev.filter(o => o.id !== target.id));
     setIsDeleteModalOpen(false);
     setOrderToDelete(null);
+
+    try {
+      if (target.isCustomPrint) {
+        await apiClient(`/custom-print/${target.rawId || target.id}`, { method: 'DELETE' });
+      } else {
+        await apiClient(`/orders/${target.rawId || target.id}`, { method: 'DELETE' });
+      }
+      showToast(`Order ${target.id} permanently deleted! 🗑️`);
+    } catch (err: any) {
+      console.error('Failed to delete order from database:', err);
+      showToast(`Order ${target.id} removed locally! 🗑️`);
+    }
   };
 
   // Items listing string formatter

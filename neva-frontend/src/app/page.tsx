@@ -1,6 +1,8 @@
+
 import React from 'react';
 import Hero from '../components/common/Hero';
 import NewArrivals from '../components/product/NewArrivals';
+import TrendingProducts from '../components/product/TrendingProducts';
 import MarqueeSlide from '../components/product/slide';
 import SocialProofStrip from '../components/product/SocialProofStrip';
 
@@ -44,6 +46,7 @@ export default function Home() {
       />
       <Hero />
       <NewArrivals />
+      <TrendingProducts />
       <MarqueeSlide />
       <SocialProofStrip />
     </main>

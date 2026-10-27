@@ -168,15 +168,15 @@ export default function Navbar() {
     setIsMobileMenuOpen((prev) => !prev);
   };
 
-  // Only these two products appear inside the Products dropdown
+  // Products dropdown links
   const productCategories = [
     {
-      label: '3D Products',
-      href: '/3d-product',
+      label: 'IoT Products',
+      href: '/iot-product?type=products',
     },
     {
-      label: 'IoT Products',
-      href: '/iot-product',
+      label: 'IoT Components',
+      href: '/iot-product?type=components',
     },
   ];
 

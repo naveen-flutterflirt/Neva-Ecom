@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import {
   Plus,
   Search,
@@ -13,7 +14,8 @@ import {
   Image as ImageIcon,
   Check,
   Video as VideoIcon,
-  Sparkles
+  Sparkles,
+  Flame
 } from 'lucide-react';
 import Toast from '../../../../components/ui/Toast';
 import Pagination from '../../../../components/ui/Pagination';
@@ -75,6 +77,9 @@ interface Product {
   keyFeatures?: { title: string; description: string }[];
   specifications?: Record<string, any>;
   sortOrder?: number;
+  isIoT?: boolean;
+  isNewArrival?: boolean;
+  isTrending?: boolean;
   subCategoryId?: string | null;
   subCategory?: {
     id: string;
@@ -107,7 +112,10 @@ const API_BASE = API_URL;
 const PRODUCTS_API = `${API_BASE}/products`;
 const CATEGORIES_API = `${API_BASE}/categories`;
 
-export default function AdminProductsPage() {
+function AdminProductsContent() {
+  const searchParams = useSearchParams();
+  const typeParam = searchParams.get('type'); // 'products' | 'components' | null
+
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
@@ -134,6 +142,7 @@ export default function AdminProductsPage() {
   const [description, setDescription] = useState('');
   const [status, setStatus] = useState<'draft' | 'active' | 'out_of_stock'>('draft');
   const [isNewArrival, setIsNewArrival] = useState(false);
+  const [isTrending, setIsTrending] = useState(false);
   const [autoSku, setAutoSku] = useState(true);
   const [sortOrder, setSortOrder] = useState<string>('0');
 
@@ -171,8 +180,42 @@ export default function AdminProductsPage() {
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
+  const [togglingTrendingId, setTogglingTrendingId] = useState<string | null>(null);
+
   // Search Filter
   const [searchQuery, setSearchQuery] = useState('');
+
+  const handleToggleTrending = async (product: Product, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const nextVal = !product.isTrending;
+    setTogglingTrendingId(product.id);
+    try {
+      const formData = new FormData();
+      formData.append('isTrending', nextVal.toString());
+
+      const res = await fetch(`${PRODUCTS_API}/${product.id}`, {
+        method: 'PUT',
+        body: formData,
+      });
+
+      if (res.ok) {
+        setProducts(prev =>
+          prev.map(p => (p.id === product.id ? { ...p, isTrending: nextVal } : p))
+        );
+        showToast(
+          nextVal
+            ? `🔥 "${product.name}" is now marked as Trending!`
+            : `Removed "${product.name}" from Trending.`
+        );
+      } else {
+        showToast('Failed to update trending status. Please try again.');
+      }
+    } catch (err: any) {
+      showToast('Error updating trending status: ' + err.message);
+    } finally {
+      setTogglingTrendingId(null);
+    }
+  };
 
   const showToast = (message: string) => {
     setToastMessage(message);
@@ -286,9 +329,13 @@ export default function AdminProductsPage() {
   const openCreateModal = () => {
     setModalMode('create');
     setSelectedProductId(null);
-    setName('');
-    setSku('');
-    setCategoryId(categories[0]?.id || '');
+    // Auto-select category matching current view
+    const defaultCat = isProductsView
+      ? categories.find(c => c.name.toLowerCase().includes('products'))
+      : isComponentsView
+        ? categories.find(c => c.name.toLowerCase().includes('component'))
+        : categories.find(c => (c.name || '').toLowerCase().includes('iot'));
+    setCategoryId(defaultCat?.id || categories[0]?.id || '');
     setSubCategoryId('');
     setPrice('');
     setDiscountPrice('');
@@ -296,6 +343,7 @@ export default function AdminProductsPage() {
     setDescription('');
     setStatus('active');
     setIsNewArrival(true);
+    setIsTrending(false);
     setAutoSku(true);
     setSelectedImageFiles([]);
     setImagePreviews([]);
@@ -350,6 +398,7 @@ export default function AdminProductsPage() {
     setDescription(product.description || '');
     setStatus(product.status);
     setIsNewArrival(!!(product as any).isNewArrival);
+    setIsTrending(!!(product as any).isTrending);
     setAutoSku(false);
     setSelectedImageFiles([]);
     setImagePreviews([]);
@@ -451,6 +500,7 @@ export default function AdminProductsPage() {
     formData.append('description', description);
     formData.append('status', status);
     formData.append('isNewArrival', isNewArrival.toString());
+    formData.append('isTrending', isTrending.toString());
     formData.append('primaryImageIndex', primaryIndex.toString());
     formData.append('sortOrder', sortOrder || '0');
 
@@ -542,7 +592,18 @@ export default function AdminProductsPage() {
     setCurrentPage(1);
   }, [searchQuery]);
 
+  const isProductsView = typeParam === 'products';
+  const isComponentsView = typeParam === 'components';
+
   const filteredProducts = products.filter((prod) => {
+    const catName = typeof prod.category === 'object' && prod.category !== null ? (prod.category.name || '') : (prod.category || '');
+    const isComponent = catName.toLowerCase().includes('component');
+    const isProduct = catName.toLowerCase().includes('products') || (!isComponent && (prod.isIoT || catName.toLowerCase().includes('iot')));
+
+    if (isProductsView && !isProduct) return false;
+    if (isComponentsView && !isComponent) return false;
+    if (!isProductsView && !isComponentsView && !(prod.isIoT || catName.toLowerCase().includes('iot'))) return false;
+
     const query = searchQuery.toLowerCase();
     return (
       prod.name.toLowerCase().includes(query) ||
@@ -556,20 +617,40 @@ export default function AdminProductsPage() {
     currentPage * itemsPerPage
   );
 
+  const pageTitle = isProductsView
+    ? 'IoT Products Catalog'
+    : isComponentsView
+      ? 'IoT Components Catalog'
+      : 'IoT Catalog (Products & Components)';
+
+  const pageSubtitle = isProductsView
+    ? 'Add, edit, and manage ready-to-use smart devices and trending IoT products.'
+    : isComponentsView
+      ? 'Add, edit, and manage electronic boards, sensors, and hardware components.'
+      : 'Add, edit, upload, and update IoT products and components in your catalog.';
+
+  const addButtonText = isProductsView
+    ? 'Add Product'
+    : isComponentsView
+      ? 'Add Component'
+      : 'Add Item';
+
+  const itemNoun = isProductsView ? 'product' : isComponentsView ? 'component' : 'item';
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-zinc-900">Products Catalog</h1>
-          <p className="mt-1 text-sm text-zinc-500">Add, edit, upload, and update products in your catalog.</p>
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-zinc-900">{pageTitle}</h1>
+          <p className="mt-1 text-sm text-zinc-500">{pageSubtitle}</p>
         </div>
         <button
           onClick={openCreateModal}
           className="inline-flex items-center justify-center gap-2 rounded-xl bg-violet-600 px-4 py-2.5 text-xs font-semibold text-white shadow-md hover:bg-violet-500 transition duration-200"
         >
           <Plus className="h-4 w-4" />
-          Add Product
+          {addButtonText}
         </button>
       </div>
 
@@ -578,7 +659,7 @@ export default function AdminProductsPage() {
         <Search className="h-4 w-4 text-zinc-400 mr-2 shrink-0" />
         <input
           type="text"
-          placeholder="Search products SKU, name..."
+          placeholder={`Search ${itemNoun}s SKU, name...`}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="w-full text-xs text-zinc-800 placeholder-zinc-400 bg-transparent outline-none"
@@ -589,7 +670,7 @@ export default function AdminProductsPage() {
       <div className="rounded-2xl border border-zinc-200 bg-white overflow-hidden shadow-sm">
         <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-100">
           <p className="text-sm font-semibold text-zinc-700">
-            {filteredProducts.length} {filteredProducts.length === 1 ? 'product' : 'products'} found
+            {filteredProducts.length} {filteredProducts.length === 1 ? itemNoun : `${itemNoun}s`} found
           </p>
         </div>
         <div className="overflow-x-auto scrollbar-none">
@@ -598,127 +679,147 @@ export default function AdminProductsPage() {
               <tr className="border-b border-zinc-100 bg-zinc-50 text-[11px] font-bold uppercase tracking-wider text-zinc-400">
                 <th className="px-6 py-3 w-14">No</th>
                 <th className="px-6 py-3 w-16">Image</th>
-                <th className="px-6 py-3">Product Name</th>
+                <th className="px-6 py-3">{isProductsView ? 'Product Name' : isComponentsView ? 'Component Name' : 'Item Name'}</th>
                 <th className="px-6 py-3">SKU</th>
                 <th className="px-6 py-3">Category</th>
                 <th className="px-6 py-3">Price</th>
                 <th className="px-6 py-3">Stock</th>
                 <th className="px-6 py-3">Status</th>
+                <th className="px-6 py-3 text-center">Trending</th>
                 <th className="px-6 py-3 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-100 text-zinc-700">
               {loading ? (
-                <TableSkeletonRows rows={6} cols={9} />
+                <TableSkeletonRows rows={6} cols={10} />
               ) : filteredProducts.length === 0 ? (
-                  <tr>
-                    <td colSpan={9} className="px-6 py-12 text-center text-zinc-400">
-                      No products found. Click "Add Product" to create one.
-                    </td>
-                  </tr>
-                ) : (
-                  paginatedProducts.map((product, index) => {
-                    const primaryImg = (product.images || []).find(img => img.isPrimary && (img.mediaType || 'image') === 'image') || (product.images || []).find(img => (img.mediaType || 'image') === 'image');
-                    return (
-                      <tr
-                        key={product.id}
-                        className={`hover:bg-zinc-50 transition-colors duration-150 ${deletingId === product.id ? 'opacity-40 pointer-events-none bg-red-50' : ''
-                          }`}
-                      >
-                        <td className="px-6 py-3.5 font-mono text-zinc-400 text-[11px] font-semibold">{(currentPage - 1) * itemsPerPage + index + 1}</td>
-                        <td className="px-6 py-3.5">
-                          {primaryImg ? (
-                            <img
-                              src={primaryImg.imageUrl}
-                              alt={product.name}
-                              className="h-9 w-9 rounded-lg object-cover border border-zinc-200 shadow-sm"
-                            />
-                          ) : (
-                            <div className="h-9 w-9 rounded-lg border border-dashed border-zinc-300 flex items-center justify-center bg-zinc-50 text-zinc-400">
-                              <ImageIcon className="h-3.5 w-3.5" />
-                            </div>
-                          )}
-                        </td>
-                        <td className="px-6 py-3.5">
-                          <span className="font-semibold text-zinc-900 text-xs">{product.name}</span>
-                        </td>
-                        <td className="px-6 py-3.5">
-                          <span className="font-mono text-[11px] text-zinc-500 bg-zinc-100 px-1.5 py-0.5 rounded">{product.sku}</span>
-                        </td>
-                        <td className="px-6 py-3.5">
-                          <span className="text-[11px] bg-zinc-100 border border-zinc-200 rounded-md px-2 py-0.5 text-zinc-700 font-medium block w-fit">
-                            {product.category?.name || '—'}
-                          </span>
-                          {product.subCategory && (
-                            <span className="text-[10px] text-violet-600 bg-violet-50/60 border border-violet-100 rounded-lg px-2 py-0.5 font-medium inline-flex items-center gap-1 mt-1.5">
-                              <span className="h-1 w-1 rounded-full bg-violet-500 animate-pulse" />
-                              {product.subCategory.name}
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-6 py-3.5">
-                          {product.discountPrice ? (
-                            <div className="flex flex-col">
-                              <span className="font-bold text-zinc-900 text-xs">₹{product.discountPrice}</span>
-                              <span className="text-[10px] text-zinc-400 line-through">₹{product.price}</span>
-                            </div>
-                          ) : (
-                            <span className="font-bold text-zinc-900 text-xs">₹{product.price}</span>
-                          )}
-                        </td>
-                        <td className="px-6 py-3.5">
-                          <span className={`text-xs font-semibold ${product.stock <= 5 ? 'text-amber-600' : 'text-zinc-700'}`}>
-                            {product.stock} units
-                          </span>
-                        </td>
-                        <td className="px-6 py-3.5">
-                          <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold border ${product.status === 'active' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
-                            product.status === 'out_of_stock' ? 'bg-red-50 text-red-700 border-red-200' :
-                              'bg-zinc-100 text-zinc-500 border-zinc-200'
-                            }`}>
-                            <span className={`h-1.5 w-1.5 rounded-full ${product.status === 'active' ? 'bg-emerald-500' :
-                              product.status === 'out_of_stock' ? 'bg-red-500' : 'bg-zinc-400'
-                              }`} />
-                            {product.status.replace('_', ' ')}
-                          </span>
-                        </td>
-                        <td className="px-6 py-3.5 text-right">
-                          <div className="flex items-center justify-end gap-1.5">
-                            <button
-                              onClick={() => openEditModal(product)}
-                              className="inline-flex items-center gap-1 px-2.5 py-1.5 text-[11px] font-semibold rounded-lg bg-violet-50 text-violet-700 hover:bg-violet-100 border border-violet-100 transition-colors"
-                              title="Edit"
-                            >
-                              <Edit2 className="h-3 w-3" />
-                              Edit
-                            </button>
-                            <button
-                              onClick={() => openDeleteModal(product)}
-                              className="inline-flex items-center gap-1 px-2.5 py-1.5 text-[11px] font-semibold rounded-lg bg-red-50 text-red-600 hover:bg-red-100 border border-red-100 transition-colors"
-                              title="Delete"
-                            >
-                              <Trash2 className="h-3 w-3" />
-                              Delete
-                            </button>
+                <tr>
+                  <td colSpan={10} className="px-6 py-12 text-center text-zinc-400">
+                    No {itemNoun}s found. Click "{addButtonText}" to create one.
+                  </td>
+                </tr>
+              ) : (
+                paginatedProducts.map((product, index) => {
+                  const primaryImg = (product.images || []).find(img => img.isPrimary && (img.mediaType || 'image') === 'image') || (product.images || []).find(img => (img.mediaType || 'image') === 'image');
+                  return (
+                    <tr
+                      key={product.id}
+                      className={`hover:bg-zinc-50 transition-colors duration-150 ${deletingId === product.id ? 'opacity-40 pointer-events-none bg-red-50' : ''
+                        }`}
+                    >
+                      <td className="px-6 py-3.5 font-mono text-zinc-400 text-[11px] font-semibold">{(currentPage - 1) * itemsPerPage + index + 1}</td>
+                      <td className="px-6 py-3.5">
+                        {primaryImg ? (
+                          <img
+                            src={primaryImg.imageUrl}
+                            alt={product.name}
+                            className="h-9 w-9 rounded-lg object-cover border border-zinc-200 shadow-sm"
+                          />
+                        ) : (
+                          <div className="h-9 w-9 rounded-lg border border-dashed border-zinc-300 flex items-center justify-center bg-zinc-50 text-zinc-400">
+                            <ImageIcon className="h-3.5 w-3.5" />
                           </div>
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Table Pagination Bar */}
-          <Pagination
-            currentPage={currentPage}
-            totalItems={filteredProducts.length}
-            itemsPerPage={itemsPerPage}
-            onPageChange={setCurrentPage}
-            onItemsPerPageChange={setItemsPerPage}
-          />
+                        )}
+                      </td>
+                      <td className="px-6 py-3.5">
+                        <span className="font-semibold text-zinc-900 text-xs">{product.name}</span>
+                      </td>
+                      <td className="px-6 py-3.5">
+                        <span className="font-mono text-[11px] text-zinc-500 bg-zinc-100 px-1.5 py-0.5 rounded">{product.sku}</span>
+                      </td>
+                      <td className="px-6 py-3.5">
+                        <span className="text-[11px] bg-zinc-100 border border-zinc-200 rounded-md px-2 py-0.5 text-zinc-700 font-medium block w-fit">
+                          {product.category?.name || '—'}
+                        </span>
+                        {product.subCategory && (
+                          <span className="text-[10px] text-violet-600 bg-violet-50/60 border border-violet-100 rounded-lg px-2 py-0.5 font-medium inline-flex items-center gap-1 mt-1.5">
+                            <span className="h-1 w-1 rounded-full bg-violet-500 animate-pulse" />
+                            {product.subCategory.name}
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-6 py-3.5">
+                        {product.discountPrice ? (
+                          <div className="flex flex-col">
+                            <span className="font-bold text-zinc-900 text-xs">₹{product.discountPrice}</span>
+                            <span className="text-[10px] text-zinc-400 line-through">₹{product.price}</span>
+                          </div>
+                        ) : (
+                          <span className="font-bold text-zinc-900 text-xs">₹{product.price}</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-3.5">
+                        <span className={`text-xs font-semibold ${product.stock <= 5 ? 'text-amber-600' : 'text-zinc-700'}`}>
+                          {product.stock} units
+                        </span>
+                      </td>
+                      <td className="px-6 py-3.5">
+                        <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold border ${product.status === 'active' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                          product.status === 'out_of_stock' ? 'bg-red-50 text-red-700 border-red-200' :
+                            'bg-zinc-100 text-zinc-500 border-zinc-200'
+                          }`}>
+                          <span className={`h-1.5 w-1.5 rounded-full ${product.status === 'active' ? 'bg-emerald-500' :
+                            product.status === 'out_of_stock' ? 'bg-red-500' : 'bg-zinc-400'
+                            }`} />
+                          {product.status.replace('_', ' ')}
+                        </span>
+                      </td>
+                      <td className="px-6 py-3.5 text-center">
+                        <button
+                          type="button"
+                          onClick={(e) => handleToggleTrending(product, e)}
+                          disabled={togglingTrendingId === product.id}
+                          title={product.isTrending ? 'Click to remove from Trending' : 'Click to feature in Trending'}
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border transition-all duration-200 ${product.isTrending
+                              ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white border-amber-500 shadow-xs hover:brightness-105 scale-100 active:scale-95'
+                              : 'bg-zinc-50 text-zinc-400 border-zinc-200 hover:border-zinc-300 hover:text-zinc-600'
+                            }`}
+                        >
+                          {togglingTrendingId === product.id ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            <Flame className={`h-3 w-3 ${product.isTrending ? 'fill-white text-white' : 'text-zinc-400'}`} />
+                          )}
+                          <span>{product.isTrending ? 'Trending' : 'Off'}</span>
+                        </button>
+                      </td>
+                      <td className="px-6 py-3.5 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            onClick={() => openEditModal(product)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 text-[11px] font-semibold rounded-lg bg-violet-50 text-violet-700 hover:bg-violet-100 border border-violet-100 transition-colors"
+                            title="Edit"
+                          >
+                            <Edit2 className="h-3 w-3" />
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => openDeleteModal(product)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 text-[11px] font-semibold rounded-lg bg-red-50 text-red-600 hover:bg-red-100 border border-red-100 transition-colors"
+                            title="Delete"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                            Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
         </div>
+
+        {/* Table Pagination Bar */}
+        <Pagination
+          currentPage={currentPage}
+          totalItems={filteredProducts.length}
+          itemsPerPage={itemsPerPage}
+          onPageChange={setCurrentPage}
+          onItemsPerPageChange={setItemsPerPage}
+        />
+      </div>
 
       {/* Save Product Modal */}
       {isModalOpen && (
@@ -726,7 +827,7 @@ export default function AdminProductsPage() {
           <div className="relative w-full max-w-4xl rounded-2xl bg-white border border-zinc-200 p-6 sm:p-8 shadow-xl flex flex-col max-h-[90vh]">
             <div className="flex items-center justify-between pb-4 border-b border-zinc-100 mb-4 shrink-0">
               <h3 className="text-base font-bold text-zinc-900">
-                {modalMode === 'create' ? 'Upload New Product' : 'Edit Catalog Product'}
+                {modalMode === 'create' ? 'Upload New Component' : 'Edit Catalog Component'}
               </h3>
               <button
                 onClick={() => setIsModalOpen(false)}
@@ -741,7 +842,7 @@ export default function AdminProductsPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-[10px] font-semibold uppercase tracking-wider text-zinc-400 mb-1.5">
-                    Product Name
+                    Component Name
                   </label>
                   <input
                     type="text"
@@ -800,6 +901,7 @@ export default function AdminProductsPage() {
                     <option value="">Select Category</option>
                     {categories
                       .filter((cat) => !cat.parentId && !cat.parent_id)
+                      .filter((cat) => (cat.name || '').toLowerCase().includes('iot')) // Commenting out 3D categories
                       .map((cat) => (
                         <option key={cat.id} value={cat.id}>
                           {cat.name}
@@ -934,6 +1036,29 @@ export default function AdminProductsPage() {
                     className="sr-only peer"
                   />
                   <div className="w-11 h-6 bg-zinc-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-pink-600"></div>
+                </label>
+              </div>
+
+              {/* Show in Trending Products Toggle Card */}
+              <div className="flex items-center justify-between p-3.5 border border-amber-200/80 bg-gradient-to-r from-amber-50/70 via-orange-50/50 to-amber-50/60 rounded-2xl">
+                <div className="flex items-center gap-2.5">
+                  <div className="h-8 w-8 rounded-xl bg-gradient-to-tr from-amber-500 to-orange-500 text-white flex items-center justify-center shadow-xs shrink-0">
+                    <Flame className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <span className="text-xs font-extrabold text-zinc-900 block">Show in Trending Products</span>
+                    <span className="text-[10px] text-zinc-500 block">Highlight this IoT device in the Trending section on the homepage & store</span>
+                  </div>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={isTrending}
+                    onChange={(e) => setIsTrending(e.target.checked)}
+                    disabled={isSaving}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-zinc-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
                 </label>
               </div>
 
@@ -1362,7 +1487,7 @@ export default function AdminProductsPage() {
                         {/* IoT Product: Technical Specifications Grid */}
                         <div className="space-y-3 border border-zinc-200 rounded-2xl p-4 bg-zinc-50/60">
                           <label className="block text-[10px] font-bold uppercase tracking-wider text-zinc-600">
-                            Product Technical Specifications (IoT / Hardware)
+                            Component Technical Specifications (IoT / Hardware)
                           </label>
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                             <div>
@@ -1585,9 +1710,9 @@ export default function AdminProductsPage() {
               <AlertTriangle className="h-6 w-6 text-red-650" />
             </div>
 
-            <h3 className="text-base font-bold text-zinc-900 mb-2">Delete Catalog Product</h3>
+            <h3 className="text-base font-bold text-zinc-900 mb-2">Delete Catalog Component</h3>
             <p className="text-xs text-zinc-500 mb-6 px-2">
-              Are you sure you want to delete the product <span className="font-bold text-zinc-800">"{productToDelete.name}"</span>? This will permanently delete its records and all associated images stored in S3.
+              Are you sure you want to delete the component <span className="font-bold text-zinc-800">"{productToDelete.name}"</span>? This will permanently delete its records and all associated images stored in S3.
             </p>
 
             <div className="flex items-center justify-center gap-3">
@@ -1681,5 +1806,17 @@ export default function AdminProductsPage() {
       {/* Global custom premium toast */}
       <Toast message={toastMessage} />
     </div>
+  );
+}
+
+export default function AdminProductsPage() {
+  return (
+    <Suspense fallback={
+      <div className="py-24 flex items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-violet-600 border-t-transparent" />
+      </div>
+    }>
+      <AdminProductsContent />
+    </Suspense>
   );
 }
