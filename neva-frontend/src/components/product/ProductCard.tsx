@@ -54,7 +54,7 @@ export default function ProductCard({ product, onQuickShop, onQuickView, onAddTo
       const primary = product.images.find(img => img.isPrimary && (img.mediaType || 'image') === 'image') || product.images[0];
       return primary.imageUrl;
     }
-    return product.image || 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=800&q=80';
+    return product.image || 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=800&q=80';
   };
 
   // Helper to extract material information

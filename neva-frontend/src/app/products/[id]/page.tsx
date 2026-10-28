@@ -92,8 +92,8 @@ export default function DynamicProductDetailsPage() {
             stock: 50,
             status: 'active',
             rating: 4.8,
-            image: 'https://images.unsplash.com/photo-1558346490-a72e53ae2d4f?auto=format&fit=crop&w=800&q=80',
-            images: [{ imageUrl: 'https://images.unsplash.com/photo-1558346490-a72e53ae2d4f?auto=format&fit=crop&w=800&q=80' }],
+            image: 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=800&q=80',
+            images: [{ imageUrl: 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=800&q=80' }],
             isIoT: true,
             description: 'Explore our complete IoT kit with premium electronic components, sensors, and microcontroller boards.',
             materialVariants: [],
@@ -106,7 +106,7 @@ export default function DynamicProductDetailsPage() {
             averageRating: 4.8,
             reviewCount: 124,
           } as Product);
-          setSelectedImage('https://images.unsplash.com/photo-1558346490-a72e53ae2d4f?auto=format&fit=crop&w=800&q=80');
+          setSelectedImage('https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=800&q=80');
           setIsLoading(false);
           return;
         }
@@ -177,6 +177,22 @@ export default function DynamicProductDetailsPage() {
             }
           }
 
+          // Safety filter: ensure internal/sourcing keys are never exposed on UI
+          const internalFilterKeywords = [
+            'moq', 'est. margin', 'gross margin', 'buy cost', 'net of gst',
+            'target buyer', 'why trending', 'sourcing', 'priority', 'demand',
+            'market retail', 'nivashop price', 'neva price'
+          ];
+          const cleanSpecs: Record<string, any> = {};
+          if (parsedSpecs && typeof parsedSpecs === 'object') {
+            for (const [k, v] of Object.entries(parsedSpecs)) {
+              const lower = k.toLowerCase().trim();
+              if (!internalFilterKeywords.some(bad => lower.includes(bad))) {
+                cleanSpecs[k] = v;
+              }
+            }
+          }
+
           const formatted: Product = {
             id: raw.id,
             name: raw.name,
@@ -188,7 +204,7 @@ export default function DynamicProductDetailsPage() {
             stock: raw.stock || 0,
             status: raw.status || 'active',
             rating: raw.rating || 4.9,
-            image: validImages.length > 0 ? validImages[0].imageUrl : (raw.image || 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=800&q=80'),
+            image: validImages.length > 0 ? validImages[0].imageUrl : (raw.image || 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=800&q=80'),
             images: validImages,
             isIoT: checkIsIoT,
             description: raw.description || 'Custom engineered 3D printed & IoT integrated hardware.',
@@ -197,8 +213,8 @@ export default function DynamicProductDetailsPage() {
             sizeVariants: parsedSizes,
             careInstructions: parsedCare,
             keyFeatures: parsedFeatures,
-            specifications: parsedSpecs,
-            specs: parsedSpecs,
+            specifications: cleanSpecs,
+            specs: cleanSpecs,
             averageRating: raw.averageRating,
             reviewCount: raw.reviewCount,
           };

@@ -131,7 +131,7 @@ export default function ThreeDProductsPage() {
             stock: p.stock || 0,
             status: p.status || 'active',
             rating: p.rating || 4.9,
-            image: p.images && p.images.length > 0 ? p.images[0].imageUrl : 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=800&q=80',
+            image: p.images && p.images.length > 0 ? p.images[0].imageUrl : 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=800&q=80',
             images: p.images || [],
             isIoT: false,
             description: p.description || '',

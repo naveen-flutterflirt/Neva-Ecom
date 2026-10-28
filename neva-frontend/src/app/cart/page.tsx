@@ -241,7 +241,7 @@ export default function CartPage() {
 
                   const itemPrice = Number(item.product.price);
                   const itemTotal = Math.round(itemPrice * item.quantity);
-                  const itemImg = item.product.image || (item.product.images && item.product.images[0]?.imageUrl) || 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=120&q=80';
+                  const itemImg = item.product.image || (item.product.images && item.product.images[0]?.imageUrl) || 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=120&q=80';
 
                   return (
                     <motion.div

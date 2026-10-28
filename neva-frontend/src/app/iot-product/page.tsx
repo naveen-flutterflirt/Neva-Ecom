@@ -113,7 +113,7 @@ function IotProductsContent() {
             stock: p.stock || 0,
             status: p.status || 'active',
             rating: p.rating || 4.9,
-            image: p.images && p.images.length > 0 ? p.images[0].imageUrl : 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=800&q=80',
+            image: p.images && p.images.length > 0 ? (p.images.find((img: any) => img.isPrimary)?.imageUrl || p.images[0].imageUrl) : 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=800&q=80',
             images: p.images || [],
             isIoT: true,
             description: p.description || '',
@@ -122,8 +122,24 @@ function IotProductsContent() {
             sizeVariants: safeParseJSON(p.sizeVariants, []),
             careInstructions: safeParseJSON(p.careInstructions, []),
             keyFeatures: safeParseJSON(p.keyFeatures, []),
-            specifications: safeParseJSON(p.specifications, {}),
-            specs: safeParseJSON(p.specifications, {}),
+            specifications: (() => {
+              const sp = safeParseJSON(p.specifications, {});
+              const clean: Record<string, any> = {};
+              const badKeys = ['moq', 'margin', 'cost', 'target buyer', 'why trending', 'sourcing', 'priority', 'demand', 'market retail', 'price'];
+              for (const [k, v] of Object.entries(sp)) {
+                if (!badKeys.some(b => k.toLowerCase().includes(b))) clean[k] = v;
+              }
+              return clean;
+            })(),
+            specs: (() => {
+              const sp = safeParseJSON(p.specifications, {});
+              const clean: Record<string, any> = {};
+              const badKeys = ['moq', 'margin', 'cost', 'target buyer', 'why trending', 'sourcing', 'priority', 'demand', 'market retail', 'price'];
+              for (const [k, v] of Object.entries(sp)) {
+                if (!badKeys.some(b => k.toLowerCase().includes(b))) clean[k] = v;
+              }
+              return clean;
+            })(),
             averageRating: p.averageRating,
             reviewCount: p.reviewCount,
           }));
