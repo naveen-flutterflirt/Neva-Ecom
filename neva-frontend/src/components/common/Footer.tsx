@@ -104,19 +104,30 @@ export default function Footer() {
                 PRODUCTS
               </h4>
               <ul className="space-y-2 text-xs md:text-sm">
-                <li>
-                  <Link href="/custom-product" className="font-semibold text-zinc-700 hover:text-violet-600 dark:text-zinc-200 dark:hover:text-white transition-colors block truncate">
-                    Custom Print
-                  </Link>
-                </li>
+
                 {/* <li>
                   <Link href="/3d-product" className="font-semibold text-zinc-700 hover:text-violet-600 dark:text-zinc-200 dark:hover:text-white transition-colors block">
                     3D Catalog
                   </Link>
                 </li> */}
                 <li>
-                  <Link href="/iot-product" className="font-semibold text-zinc-700 hover:text-violet-600 dark:text-zinc-200 dark:hover:text-white transition-colors block">
+                  <Link href="/iot-product?type=components" className="font-semibold text-zinc-700 hover:text-violet-600 dark:text-zinc-200 dark:hover:text-white transition-colors block">
                     IoT Components
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/iot-product" className="font-semibold text-zinc-700 hover:text-violet-600 dark:text-zinc-200 dark:hover:text-white transition-colors block">
+                    IoT Products
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/custom-product" className="font-semibold text-zinc-700 hover:text-violet-600 dark:text-zinc-200 dark:hover:text-white transition-colors block truncate">
+                    Custom Print
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/iot-kits" className="font-semibold text-zinc-700 hover:text-violet-600 dark:text-zinc-200 dark:hover:text-white transition-colors block">
+                    IoT Kits
                   </Link>
                 </li>
               </ul>

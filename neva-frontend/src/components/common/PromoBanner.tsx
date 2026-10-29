@@ -10,7 +10,7 @@ export default function PromoBanner() {
     const tickerItems = [...trendingProducts, ...trendingProducts];
 
     return (
-        <div className="z-20 w-full overflow-hidden py-2 mb-3 bg-transparent">
+        <div className="z-20 w-full overflow-hidden py-1.5 mb-2.5 bg-transparent">
             <div className="relative flex w-full items-center">
                 {/* Left Fixed "TRENDING" Pill */}
 

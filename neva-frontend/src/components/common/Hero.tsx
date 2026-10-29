@@ -70,7 +70,7 @@ export default function Hero() {
     };
 
     return (
-        <div className="relative flex w-full flex-col items-center overflow-hidden bg-transparent pb-0 pt-20 lg:pb-12 lg:pt-24 text-zinc-950 dark:text-white">
+        <div className="relative flex w-full flex-col items-center overflow-hidden bg-transparent pb-0 pt-[72px] lg:pb-12 lg:pt-[82px] text-zinc-950 dark:text-white">
 
             {/* Promo Banner Carousel overlay */}
             <PromoBanner />

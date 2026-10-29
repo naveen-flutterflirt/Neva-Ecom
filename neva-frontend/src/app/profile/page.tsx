@@ -1125,14 +1125,22 @@ export default function ProfilePage() {
                 </div>
                 <div>
                   <h3 className="text-base font-bold text-zinc-900 dark:text-white">No store orders found</h3>
-                  <p className="text-xs text-zinc-500 mt-1">Explore our 3D Printed products and smart IoT devices!</p>
+                  <p className="text-xs text-zinc-500 mt-1">Explore our smart IoT devices and components!</p>
                 </div>
-                <Link
-                  href="/3d-product"
-                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-violet-600 hover:bg-violet-500 text-white rounded-xl text-xs font-bold uppercase tracking-wider transition shadow-sm"
-                >
-                  Explore 3D Products
-                </Link>
+                <div className="flex flex-wrap items-center justify-center gap-3">
+                  <Link
+                    href="/iot-product?type=products"
+                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-violet-600 hover:bg-violet-500 text-white rounded-xl text-xs font-bold uppercase tracking-wider transition shadow-sm"
+                  >
+                    Explore IoT Products
+                  </Link>
+                  <Link
+                    href="/iot-product?type=components"
+                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-900 dark:text-zinc-100 border border-zinc-200 dark:border-zinc-700 rounded-xl text-xs font-bold uppercase tracking-wider transition shadow-sm"
+                  >
+                    IoT Components
+                  </Link>
+                </div>
               </div>
             ) : (
               <div className="space-y-6">
