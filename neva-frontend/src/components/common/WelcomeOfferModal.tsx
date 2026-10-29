@@ -15,6 +15,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { apiClient } from '../../lib/api';
 
 interface ProductImage {
@@ -49,12 +50,20 @@ interface PopupBannerData {
 }
 
 export default function WelcomeOfferModal() {
+  const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [banners, setBanners] = useState<PopupBannerData[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
 
+  // Never display the popup banner on admin pages or admin login
+  const isAdminRoute = Boolean(pathname && (pathname.startsWith('/admin') || pathname === '/admin-login'));
+
   useEffect(() => {
+    if (isAdminRoute) {
+      return;
+    }
+
     // Check if user already dismissed modal in this browser session
     const dismissed = sessionStorage.getItem('neva_deal_popup_dismissed');
     if (dismissed === 'true') {
@@ -76,7 +85,7 @@ export default function WelcomeOfferModal() {
         }
       })
       .catch((err) => console.warn('Banner fetch note:', err));
-  }, []);
+  }, [isAdminRoute]);
 
   const handleClose = () => {
     setIsOpen(false);
@@ -91,7 +100,7 @@ export default function WelcomeOfferModal() {
     }, 2500);
   };
 
-  if (!isOpen || banners.length === 0) {
+  if (isAdminRoute || !isOpen || banners.length === 0) {
     return null;
   }
 
